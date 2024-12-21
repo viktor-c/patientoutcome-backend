@@ -1,8 +1,8 @@
 {
-  "name": "express-typescript-boilerplate",
-  "version": "1.0.14",
-  "description": "An Express boilerplate backend",
-  "author": "Edwin Hernandez",
+  "name": "patientoutcome-backend",
+  "version": "0.4.0",
+  "description": "Backend for patient outcome app. Based on boilerplate of Edwin Hernández.",
+  "author": "Victor Cighir",
   "repository": "edwinhern/express-typescript-2024",
   "license": "MIT",
   "main": "index.ts",
