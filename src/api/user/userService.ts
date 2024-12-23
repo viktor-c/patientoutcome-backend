@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 
-import type { User } from "@/api/user/userModel";
+import { type User, UserNoPassword, userModel } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
@@ -15,7 +15,7 @@ export class UserService {
   // Retrieves all users from the database
   async findAll(): Promise<ServiceResponse<User[] | null>> {
     try {
-      const users = await this.userRepository.findAllAsync();
+      const users = await userModel.find().select("-password").lean();
       if (!users || users.length === 0) {
         return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
       }
@@ -34,7 +34,7 @@ export class UserService {
   // Retrieves a single user by their ID
   async findById(id: number): Promise<ServiceResponse<User | null>> {
     try {
-      const user = await this.userRepository.findByIdAsync(id);
+      const user = await userModel.findById(id).select("-password").lean();
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
