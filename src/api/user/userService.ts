@@ -5,7 +5,14 @@ import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 
+/**
+ * Service class for User operations
+ * this uses the UserRepository to interact with the database
+ * the data from UserRepository can then be manipulated and returned to the user
+ */
+
 export class UserService {
+  // userRepository will connect to the database
   private userRepository: UserRepository;
 
   constructor(repository: UserRepository = new UserRepository()) {
@@ -15,7 +22,7 @@ export class UserService {
   // Retrieves all users from the database
   async findAll(): Promise<ServiceResponse<User[] | null>> {
     try {
-      const users = await userModel.find().select("-password").lean();
+      const users = await this.userRepository.findAllAsync();
       if (!users || users.length === 0) {
         return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
       }
@@ -32,9 +39,9 @@ export class UserService {
   }
 
   // Retrieves a single user by their ID
-  async findById(id: number): Promise<ServiceResponse<User | null>> {
+  async findById(id: string): Promise<ServiceResponse<User | null>> {
     try {
-      const user = await userModel.findById(id).select("-password").lean();
+      const user = await this.userRepository.findByIdAsync(id);
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }

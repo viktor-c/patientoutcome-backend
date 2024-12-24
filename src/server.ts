@@ -13,11 +13,17 @@ import { env } from "@/common/utils/envConfig";
 
 import { extendZod } from "@zodyac/zod-mongoose";
 import { z } from "zod";
+import connectMongooseDB from "./common/database";
 
 extendZod(z);
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
+
+//initialize the database connection
+connectMongooseDB()
+  .then(() => console.log("server.ts: Mongoose connected successfully"))
+  .catch((error) => console.log("server.ts: Mongoose failed to connect", error));
 
 // Set the application to trust the reverse proxy
 app.set("trust proxy", true);

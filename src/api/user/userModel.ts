@@ -11,6 +11,7 @@ extendZodWithOpenApi(z);
 
 // Define the UserNoPassword schema
 export const UserNoPasswordSchema = z.object({
+  _id: z.string(),
   id: z.string(),
   username: z.string(),
   name: z.string(),
@@ -22,8 +23,19 @@ export const UserNoPasswordSchema = z.object({
 });
 
 // Define the User schema by extending UserNoPasswordSchema
-export const UserSchema = UserNoPasswordSchema.extend({
-  password: z.string(),
+export const UserSchema = z.object({
+  _id: z.string(),
+  id: z.string(),
+  username: z.string(),
+  name: z.string(),
+  department: z.string(),
+  role: z.number().min(0),
+  email: z.string().email(),
+  lastLogin: z.string().datetime(),
+  belongsToCenter: z.array(z.string()),
+
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
 });
 
 // Infer TypeScript type from the schema
