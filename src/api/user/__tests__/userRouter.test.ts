@@ -2,9 +2,9 @@ import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 
 import type { User } from "@/api/user/userModel";
-import { users } from "@/api/user/userRepository";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
+import { mockUsers } from "../userRepository";
 
 describe("User API Endpoints", () => {
   describe("GET /users", () => {
@@ -17,8 +17,8 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
-      expect(responseBody.responseObject.length).toEqual(users.length);
-      responseBody.responseObject.forEach((user, index) => compareUsers(users[index] as User, user));
+      expect(responseBody.responseObject.length).toEqual(mockUsers.length);
+      responseBody.responseObject.forEach((user, index) => compareUsers(mockUsers[index] as User, user));
     });
   });
 
@@ -26,7 +26,7 @@ describe("User API Endpoints", () => {
     it("should return a user for a valid ID", async () => {
       // Arrange
       const testId = "1e7f1d3e-8b6d-4b2e-9b6d-1e7f1d3e8b6d";
-      const expectedUser = users.find((user: User) => user.id === testId) as User;
+      const expectedUser = mockUsers.find((user: User) => user.id === testId) as User;
 
       // Act
       const response = await request(app).get(`/users/${testId}`);

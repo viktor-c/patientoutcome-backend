@@ -1,4 +1,4 @@
-openapi-source.yaml.source
+*.ignore
 # Logs
 logs
 *.log
