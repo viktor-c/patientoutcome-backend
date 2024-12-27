@@ -17,8 +17,28 @@ export class UserRepository {
 
   async findByIdAsync(id: string): Promise<User> {
     try {
-      const user = userModel.findOne({ id }).select("-password").lean();
+      // const objectid = new mongoose.Types.ObjectId(id);
+      console.debug("UserRepository.ts: Finding user with id ", id);
+      const user = userModel.findById(id).select("-password").lean();
       return user;
+    } catch (error: any) {
+      return Promise.reject(error);
+    }
+  }
+
+  async updateByIdAsync(id: string, userData: Partial<User>): Promise<User> {
+    try {
+      const updatedUser = userModel.findByIdAndUpdate(id, userData, { new: true, lean: true, select: { password: 0 } }); //.select("-password");
+      return updatedUser;
+    } catch (error: any) {
+      return Promise.reject(error);
+    }
+  }
+
+  async deleteByIdAsync(id: string): Promise<User> {
+    try {
+      const deletedUser = userModel.findByIdAndDelete(id);
+      return deletedUser;
     } catch (error: any) {
       return Promise.reject(error);
     }
@@ -31,7 +51,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["1"],
     department: "Cardiology",
     email: "jdoe@example.com",
-    id: "1e7f1d3e-8b6d-4b2e-9b6d-1e7f1d3e8b6d",
     lastLogin: "2023-10-01T12:34:56Z",
     name: "John Doe",
     role: 100,
@@ -42,7 +61,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["1"],
     department: "Neurology",
     email: "asmith@example.com",
-    id: "2e7f1d3e-8b6d-4b2e-9b6d-2e7f1d3e8b6d",
     lastLogin: "2023-10-02T12:34:56Z",
     name: "Alice Smith",
     role: 2,
@@ -53,7 +71,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["1"],
     department: "Oncology",
     email: "bwhite@example.com",
-    id: "3e7f1d3e-8b6d-4b2e-9b6d-3e7f1d3e8b6d",
     lastLogin: "2023-10-03T12:34:56Z",
     name: "Bob White",
     role: 1,
@@ -64,7 +81,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["2"],
     department: "Pediatrics",
     email: "cjones@example.com",
-    id: "4e7f1d3e-8b6d-4b2e-9b6d-4e7f1d3e8b6d",
     lastLogin: "2023-10-04T12:34:56Z",
     name: "Carol Jones",
     role: 2,
@@ -75,7 +91,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["2"],
     department: "Dermatology",
     email: "dlee@example.com",
-    id: "5e7f1d3e-8b6d-4b2e-9b6d-5e7f1d3e8b6d",
     lastLogin: "2023-10-05T12:34:56Z",
     name: "David Lee",
     role: 1,
@@ -86,7 +101,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["2"],
     department: "Radiology",
     email: "ewilson@example.com",
-    id: "6e7f1d3e-8b6d-4b2e-9b6d-6e7f1d3e8b6d",
     lastLogin: "2023-10-06T12:34:56Z",
     name: "Emma Wilson",
     role: 2,
@@ -97,7 +111,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["1"],
     department: "Surgery",
     email: "fmartin@example.com",
-    id: "7e7f1d3e-8b6d-4b2e-9b6d-7e7f1d3e8b6d",
     lastLogin: "2023-10-07T12:34:56Z",
     name: "Frank Martin",
     role: 1,
@@ -108,7 +121,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["2"],
     department: "Orthopedics",
     email: "gthomas@example.com",
-    id: "8e7f1d3e-8b6d-4b2e-9b6d-8e7f1d3e8b6d",
     lastLogin: "2023-10-08T12:34:56Z",
     name: "Grace Thomas",
     role: 2,
@@ -119,7 +131,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["1"],
     department: "Urology",
     email: "hroberts@example.com",
-    id: "9e7f1d3e-8b6d-4b2e-9b6d-9e7f1d3e8b6d",
     lastLogin: "2023-10-09T12:34:56Z",
     name: "Henry Roberts",
     role: 1,
@@ -130,7 +141,6 @@ export const mockUsers: User[] = [
     belongsToCenter: ["2"],
     department: "Gastroenterology",
     email: "ijackson@example.com",
-    id: "10e7f1d3e-8b6d-4b2e-9b6d-10e7f1d3e8b6d",
     lastLogin: "2023-10-10T12:34:56Z",
     name: "Ivy Jackson",
     role: 2,

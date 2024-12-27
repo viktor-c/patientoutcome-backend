@@ -41,6 +41,7 @@ export class UserService {
   // Retrieves a single user by their ID
   async findById(id: string): Promise<ServiceResponse<User | null>> {
     try {
+      console.debug("UserRepository.ts: Finding user with id ", id);
       const user = await this.userRepository.findByIdAsync(id);
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
@@ -50,6 +51,36 @@ export class UserService {
       const errorMessage = `Error finding user with id ${id}:, ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Update a user by their ID
+  async updateUser(id: string, userData: Partial<User>): Promise<ServiceResponse<User | null>> {
+    try {
+      const updatedUser = await this.userRepository.updateByIdAsync(id, userData);
+      if (!updatedUser) {
+        return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success<User>("User updated successfully", updatedUser);
+    } catch (ex) {
+      const errorMessage = `Error updating user with id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while updating user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Delete a user by their ID
+  async deleteUser(id: string): Promise<ServiceResponse<User | null>> {
+    try {
+      const deletedUser = await this.userRepository.deleteByIdAsync(id);
+      if (!deletedUser) {
+        return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success<null>("User deleted successfully", null);
+    } catch (ex) {
+      const errorMessage = `Error deleting user with id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while deleting user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

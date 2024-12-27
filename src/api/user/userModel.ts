@@ -1,7 +1,7 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-import { zodSchema } from "@zodyac/zod-mongoose";
+import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose, { model } from "mongoose";
 
 import { commonValidations } from "@/common/utils/commonValidation";
@@ -11,8 +11,7 @@ extendZodWithOpenApi(z);
 
 // Define the UserNoPassword schema
 export const UserNoPasswordSchema = z.object({
-  _id: z.string(),
-  id: z.string(),
+  _id: zId(),
   username: z.string(),
   name: z.string(),
   department: z.string(),
@@ -24,8 +23,7 @@ export const UserNoPasswordSchema = z.object({
 
 // Define the User schema by extending UserNoPasswordSchema
 export const UserSchema = z.object({
-  _id: z.string(),
-  id: z.string(),
+  _id: zId(),
   username: z.string(),
   name: z.string(),
   department: z.string(),
@@ -46,7 +44,13 @@ export type UserNoPassword = z.infer<typeof UserNoPasswordSchema>;
 const MongooseUserSchema = zodSchema(UserSchema);
 export const userModel = mongoose.models.User || mongoose.model("User", MongooseUserSchema, "users");
 
-// Input Validation for 'GET users/:id' endpoint
+// Input Validation for 'GET user/:id' endpoint
 export const GetUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
+});
+
+// Input Validation for 'PUT user/:id' endpoint
+export const UpdateUserSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: UserSchema.partial(),
 });
