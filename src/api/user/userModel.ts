@@ -11,29 +11,21 @@ extendZodWithOpenApi(z);
 
 // Define the UserNoPassword schema
 export const UserNoPasswordSchema = z.object({
-  _id: zId(),
+  _id: zId().optional(),
   username: z.string(),
   name: z.string(),
   department: z.string(),
   role: z.number().min(0),
   email: z.string().email(),
-  lastLogin: z.string().datetime(),
+  lastLogin: z.string().datetime().optional(),
   belongsToCenter: z.array(z.string()),
 });
 
 // Define the User schema by extending UserNoPasswordSchema
-export const UserSchema = z.object({
-  _id: zId(),
-  username: z.string(),
-  name: z.string(),
-  department: z.string(),
-  role: z.number().min(0),
-  email: z.string().email(),
-  lastLogin: z.string().datetime(),
-  belongsToCenter: z.array(z.string()),
-
-  password: z.string().optional(),
-  confirmPassword: z.string().optional(),
+export const UserSchema = UserNoPasswordSchema.extend({
+  password: z.string().min(6),
+  confirmPassword: z.string().min(6).optional(),
+  registerCode: z.string().min(8).optional(),
 });
 
 // Infer TypeScript type from the schema
@@ -41,8 +33,15 @@ export type User = z.infer<typeof UserSchema>;
 export type UserNoPassword = z.infer<typeof UserNoPasswordSchema>;
 
 /** Create Mongoose Schema and Model */
-const MongooseUserSchema = zodSchema(UserSchema);
+/***    REMOVE _id: we need it for typescript, but if we give it to mongoose.model, then we have the situation, where _id will not
+ * automatically be created, and we have to provide it manually.
+ * If we don't provide it, then we get an error "Error: document must have an _id before saving".
+ */
+const MongooseUserSchema = zodSchema(UserSchema.omit({ _id: true }));
 export const userModel = mongoose.models.User || mongoose.model("User", MongooseUserSchema, "users");
+
+// ****************************************************
+// Input validation
 
 // Input Validation for 'GET user/:id' endpoint
 export const GetUserSchema = z.object({
@@ -54,3 +53,17 @@ export const UpdateUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
   body: UserSchema.partial(),
 });
+
+// Input Validation for 'POST user' endpoint
+export const CreateUserSchema = z.object({
+  body: UserSchema.omit({
+    _id: true,
+    lastLogin: true,
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  }),
+});
+
+// Infer TypeScript type from the schema
+export type CreateUser = z.infer<typeof CreateUserSchema>;

@@ -1,12 +1,26 @@
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
+import { z } from "zod";
 
 import type { User } from "@/api/user/userModel";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
+import type { ObjectId } from "mongoose";
 import { vi } from "vitest";
 import { mockUsers } from "../userRepository";
 import { userService } from "../userService";
+
+//TODO regenerate Database
+let newUserId: string | ObjectId = "";
+
+const newUser = {
+  username: "newuser",
+  name: "New User",
+  department: "orthopedics",
+  role: 1,
+  email: "newuser@example.com",
+  belongsToCenter: ["1"],
+} as User;
 
 describe("User API Endpoints", () => {
   describe("GET /user", () => {
@@ -24,6 +38,7 @@ describe("User API Endpoints", () => {
     });
   });
 
+  // get user by id
   describe("GET /user/:id", () => {
     it("should return a user for a valid ID", async () => {
       // Arrange
@@ -42,9 +57,9 @@ describe("User API Endpoints", () => {
       compareUsers(expectedUser, responseBody.responseObject);
     });
 
-    it("should return a not found error for non-existent ID", async () => {
+    it("should return a NOT FOUND for nonexistent ID", async () => {
       // Arrange
-      const testId = Number.MAX_SAFE_INTEGER;
+      const testId = "123412341234123412341234";
 
       // Act
       const response = await request(app).get(`/user/${testId}`);
@@ -57,10 +72,164 @@ describe("User API Endpoints", () => {
       expect(responseBody.responseObject).toBeNull();
     });
 
-    it("should return a NOT FOUND for invalid ID format", async () => {
+    it("should return a BAD REQUEST for number instead ID", async () => {
+      // Arrange
+      const testId = Number.MAX_SAFE_INTEGER;
+
+      // Act
+      const response = await request(app).get(`/user/${testId}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return a BAD REQUEST for invalid ID format", async () => {
       // Act
       const invalidInput = "abc";
       const response = await request(app).get(`/user/${invalidInput}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.responseObject).toBeNull();
+    });
+  });
+
+  // create user
+  describe("POST /user", () => {
+    it("should create a user successfully", async () => {
+      // Arrange
+      const newUserWithPassword = {
+        ...newUser,
+        password: "password123",
+        confirmPassword: "password123",
+      };
+
+      // Act
+      const response = await request(app).post("/user").send(newUserWithPassword);
+      const responseBody: ServiceResponse<User> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.CREATED);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("User created successfully");
+      expect(responseBody.responseObject).toMatchObject({
+        username: newUserWithPassword.username,
+        name: newUserWithPassword.name,
+        department: newUserWithPassword.department,
+        role: newUserWithPassword.role,
+        email: newUserWithPassword.email,
+        belongsToCenter: newUserWithPassword.belongsToCenter,
+      });
+      newUserId = responseBody.responseObject._id as string;
+    });
+    it("should return an error if required fields are missing", async () => {
+      // Arrange
+      const newUserWithMissingFields = {
+        username: "newuser",
+        name: "New User",
+        department: "orthopedics",
+      };
+
+      // Act
+      const response = await request(app).post("/user").send(newUserWithMissingFields);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid input: Required");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return an error if password is too short", async () => {
+      // Arrange
+      const newUserWithShortPassword = {
+        ...newUser,
+        password: "short",
+        confirmPassword: "short",
+      };
+
+      // Act
+      const response = await request(app).post("/user").send(newUserWithShortPassword);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid input:");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return an error if passwords do not match", async () => {
+      // Arrange
+      newUser.password = "password123";
+      newUser.confirmPassword = "password456";
+
+      // Act
+      const response = await request(app).post("/user").send(newUser);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Passwords do not match");
+      expect(responseBody.responseObject).toBeNull();
+    });
+  });
+
+  // update user
+  describe("PUT /user/:id", () => {
+    it("should update a user successfully", async () => {
+      // Arrange
+      const testId = mockUsers[0]._id;
+      const updatedData = { name: "Updated Name" };
+      const expectedUser = mockUsers[0] as User;
+      expectedUser.name = updatedData.name;
+
+      // Act
+      const response = await request(app).put(`/user/${testId}`).send(updatedData);
+      const responseBody: ServiceResponse<User> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("User updated successfully");
+      compareUsers(expectedUser, responseBody.responseObject);
+
+      // Reset the name back to original
+      await request(app).put(`/user/${testId}`).send(mockUsers[0]);
+    });
+
+    it("should return an error if id is not valid", async () => {
+      // Arrange
+      const testId = "invalid-id";
+      const updatedData = { name: "Updated Name" };
+
+      // Act
+      const response = await request(app).put(`/user/${testId}`).send(updatedData);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("An error occurred while updating user.");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return User not found if id is was not found", async () => {
+      // Arrange
+      const testId = "123412341234123412341234";
+      const updatedData = { name: "Updated Name" };
+
+      // Act
+      const response = await request(app).put(`/user/${testId}`).send(updatedData);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -70,139 +239,70 @@ describe("User API Endpoints", () => {
       expect(responseBody.responseObject).toBeNull();
     });
   });
-});
 
-describe("PUT /user/:id", () => {
-  it("should update a user successfully", async () => {
-    // Arrange
-    const testId = mockUsers[0]._id;
-    const updatedData = { name: "Updated Name" };
-    const expectedUser = { ...mockUsers[0], ...updatedData };
+  describe("DELETE /user/:id", () => {
+    it("should delete a user successfully", async () => {
+      // Arrange
+      const testId = newUserId;
 
-    // Act
-    const response = await request(app).put(`/user/${testId}`).send(updatedData);
-    const responseBody: ServiceResponse<User> = response.body;
+      // Act
+      const response = await request(app).delete(`/user/${testId}`);
+      const responseBody: ServiceResponse<User> = response.body;
 
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.OK);
-    expect(responseBody.success).toBeTruthy();
-    expect(responseBody.message).toContain("User updated successfully");
-    compareUsers(expectedUser, responseBody.responseObject);
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("User deleted successfully");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return not found if user does not exist", async () => {
+      // Arrange
+      const testId = "123412341234123412341234";
+
+      // Act
+      const response = await request(app).delete(`/user/${testId}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("User not found");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return an internal server error if the id is invalid", async () => {
+      // Arrange
+      const testId = "nonexistent-id";
+
+      // Act
+      const response = await request(app).delete(`/user/${testId}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("An error occurred while deleting user.");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    // it("should handle errors", async () => {
+    //   // Arrange
+    //   const testId = mockUsers[0]._id;
+
+    //   vi.spyOn(userService, "deleteUser").mockRejectedValue(new Error("Database error"));
+
+    //   // Act
+    //   const response = await request(app).delete(`/user/${testId}`);
+    //   const responseBody: ServiceResponse = response.body;
+
+    //   // Assert
+    //   expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+    //   expect(responseBody.success).toBeFalsy();
+    //   expect(responseBody.message).toContain("An error occurred while deleting user.");
+    //   expect(responseBody.responseObject).toBeNull();
+    // });
   });
-
-  it("should return an error if id is not valid", async () => {
-    // Arrange
-    const testId = "invalid-id";
-    const updatedData = { name: "Updated Name" };
-
-    // Act
-    const response = await request(app).put(`/user/${testId}`).send(updatedData);
-    const responseBody: ServiceResponse = response.body;
-
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
-    expect(responseBody.success).toBeFalsy();
-    expect(responseBody.message).toContain("An error occurred while updating user.");
-    expect(responseBody.responseObject).toBeNull();
-  });
-
-  it("should return User not found if id is was not found", async () => {
-    // Arrange
-    const testId = "123412341234123412341234";
-    const updatedData = { name: "Updated Name" };
-
-    // Act
-    const response = await request(app).put(`/user/${testId}`).send(updatedData);
-    const responseBody: ServiceResponse = response.body;
-
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
-    expect(responseBody.success).toBeFalsy();
-    expect(responseBody.message).toContain("User not found");
-    expect(responseBody.responseObject).toBeNull();
-  });
-
-  // it("should handle errors", async () => {
-  //   // Arrange
-  //   const testId = mockUsers[0]._id;
-  //   const updatedData = { name: "Updated Name" };
-
-  //   vi.spyOn(userService, "updateUser").mockRejectedValue(new Error("Database error"));
-
-  //   // Act
-  //   const response = await request(app).put(`/user/${testId}`).send(updatedData);
-  //   const responseBody: ServiceResponse = response.body;
-
-  //   // Assert
-  //   expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
-  //   expect(responseBody.success).toBeFalsy();
-  //   expect(responseBody.message).toContain("An error occurred while updating user.");
-  //   expect(responseBody.responseObject).toBeNull();
-  // });
-});
-
-describe("DELETE /user/:id", () => {
-  it("should delete a user successfully", async () => {
-    // Arrange
-    const testId = mockUsers[0]._id;
-
-    // Act
-    const response = await request(app).delete(`/user/${testId}`);
-    const responseBody: ServiceResponse<User> = response.body;
-
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.OK);
-    expect(responseBody.success).toBeTruthy();
-    expect(responseBody.message).toContain("User deleted successfully");
-    expect(responseBody.responseObject).toBeNull();
-  });
-
-  it("should return not found if user does not exist", async () => {
-    // Arrange
-    const testId = "123412341234123412341234";
-
-    // Act
-    const response = await request(app).delete(`/user/${testId}`);
-    const responseBody: ServiceResponse = response.body;
-
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
-    expect(responseBody.success).toBeFalsy();
-    expect(responseBody.message).toContain("User not found");
-    expect(responseBody.responseObject).toBeNull();
-  });
-
-  it("should return an internal server error if the id is invalid", async () => {
-    // Arrange
-    const testId = "nonexistent-id";
-
-    // Act
-    const response = await request(app).delete(`/user/${testId}`);
-    const responseBody: ServiceResponse = response.body;
-
-    // Assert
-    expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
-    expect(responseBody.success).toBeFalsy();
-    expect(responseBody.message).toContain("An error occurred while deleting user.");
-    expect(responseBody.responseObject).toBeNull();
-  });
-
-  // it("should handle errors", async () => {
-  //   // Arrange
-  //   const testId = mockUsers[0]._id;
-
-  //   vi.spyOn(userService, "deleteUser").mockRejectedValue(new Error("Database error"));
-
-  //   // Act
-  //   const response = await request(app).delete(`/user/${testId}`);
-  //   const responseBody: ServiceResponse = response.body;
-
-  //   // Assert
-  //   expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
-  //   expect(responseBody.success).toBeFalsy();
-  //   expect(responseBody.message).toContain("An error occurred while deleting user.");
-  //   expect(responseBody.responseObject).toBeNull();
-  // });
 });
 
 function compareUsers(mockUser: User, responseUser: User) {

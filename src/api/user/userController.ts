@@ -17,6 +17,12 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public createUser: RequestHandler = async (req: Request, res: Response) => {
+    const userData = req.body;
+    const serviceResponse = await userService.createUser(userData);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public updateUser: RequestHandler = async (req: Request, res: Response) => {
     const id = z.string().parse(req.params.id);
     const userData = req.body;

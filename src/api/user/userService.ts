@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 
-import { type User, UserNoPassword, userModel } from "@/api/user/userModel";
+import { type CreateUser, type User, UserNoPassword, userModel } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
@@ -48,12 +48,28 @@ export class UserService {
       }
       return ServiceResponse.success<User>("User found", user);
     } catch (ex) {
+      if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
+        logger.error(`Invalid ID: ${id}`);
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
+      }
+
       const errorMessage = `Error finding user with id ${id}:, ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
-
+  // Create a new user
+  async createUser(userData: CreateUser): Promise<ServiceResponse<User>> {
+    try {
+      const newUser = new userModel(userData);
+      await newUser.save();
+      return ServiceResponse.created<User>("User created successfully", newUser);
+    } catch (ex) {
+      const errorMessage = `Error creating user: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while creating user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
   // Update a user by their ID
   async updateUser(id: string, userData: Partial<User>): Promise<ServiceResponse<User | null>> {
     try {

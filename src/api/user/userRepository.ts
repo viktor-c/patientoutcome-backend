@@ -45,17 +45,7 @@ export class UserRepository {
   }
 }
 
-export const mockUsers: User[] = [
-  {
-    _id: "676336bea497301f6eff8c8d",
-    belongsToCenter: ["1"],
-    department: "Cardiology",
-    email: "jdoe@example.com",
-    lastLogin: "2023-10-01T12:34:56Z",
-    name: "John Doe",
-    role: 100,
-    username: "jdoe",
-  },
+export const mockUsers: UserNoPassword[] = [
   {
     _id: "676336bea497301f6eff8c8e",
     belongsToCenter: ["1"],
@@ -105,45 +95,5 @@ export const mockUsers: User[] = [
     name: "Emma Wilson",
     role: 2,
     username: "ewilson",
-  },
-  {
-    _id: "676336bea497301f6eff8c93",
-    belongsToCenter: ["1"],
-    department: "Surgery",
-    email: "fmartin@example.com",
-    lastLogin: "2023-10-07T12:34:56Z",
-    name: "Frank Martin",
-    role: 1,
-    username: "fmartin",
-  },
-  {
-    _id: "676336bea497301f6eff8c94",
-    belongsToCenter: ["2"],
-    department: "Orthopedics",
-    email: "gthomas@example.com",
-    lastLogin: "2023-10-08T12:34:56Z",
-    name: "Grace Thomas",
-    role: 2,
-    username: "gthomas",
-  },
-  {
-    _id: "676336bea497301f6eff8c95",
-    belongsToCenter: ["1"],
-    department: "Urology",
-    email: "hroberts@example.com",
-    lastLogin: "2023-10-09T12:34:56Z",
-    name: "Henry Roberts",
-    role: 1,
-    username: "hroberts",
-  },
-  {
-    _id: "676336bea497301f6eff8c96",
-    belongsToCenter: ["2"],
-    department: "Gastroenterology",
-    email: "ijackson@example.com",
-    lastLogin: "2023-10-10T12:34:56Z",
-    name: "Ivy Jackson",
-    role: 2,
-    username: "ijackson",
   },
 ];
