@@ -13,6 +13,7 @@ import { env } from "@/common/utils/envConfig";
 
 import { extendZod } from "@zodyac/zod-mongoose";
 import { z } from "zod";
+import { patientRouter } from "./api/patient/patientRouter";
 import connectMongooseDB from "./common/database";
 
 extendZod(z);
@@ -41,6 +42,7 @@ app.use(requestLogger);
 // Routes
 app.use("/health-check", healthCheckRouter);
 app.use("/user", userRouter);
+app.use("/patient", patientRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
