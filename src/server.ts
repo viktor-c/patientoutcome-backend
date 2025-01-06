@@ -3,17 +3,20 @@ import express, { type Express } from "express";
 import helmet from "helmet";
 import { pino } from "pino";
 
+//****************** Routers import ****************************** */
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
+import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { userRouter } from "@/api/user/userRouter";
+/*******************  Middleware import **************************/
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import { patientRouter } from "./api/patient/patientRouter";
 
 import { extendZod } from "@zodyac/zod-mongoose";
 import { z } from "zod";
-import { patientRouter } from "./api/patient/patientRouter";
 import connectMongooseDB from "./common/database";
 
 extendZod(z);
@@ -43,6 +46,7 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use("/user", userRouter);
 app.use("/patient", patientRouter);
+app.use("/clinicalstudy", clinicalStudyRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
