@@ -1,14 +1,11 @@
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
-import { z } from "zod";
 
 import type { User } from "@/api/user/userModel";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ObjectId } from "mongoose";
-import { vi } from "vitest";
 import { mockUsers } from "../userRepository";
-import { userService } from "../userService";
 
 //TODO regenerate Database
 let newUserId: string | ObjectId = "";
@@ -190,6 +187,7 @@ describe("User API Endpoints", () => {
       // Arrange
       const testId = mockUsers[0]._id;
       const updatedData = { name: "Updated Name" };
+      const originalData = { name: mockUsers[0].name };
       const expectedUser = mockUsers[0] as User;
       expectedUser.name = updatedData.name;
 
@@ -204,7 +202,7 @@ describe("User API Endpoints", () => {
       compareUsers(expectedUser, responseBody.responseObject);
 
       // Reset the name back to original
-      await request(app).put(`/user/${testId}`).send(mockUsers[0]);
+      await request(app).put(`/user/${testId}`).send(originalData);
     });
 
     it("should return an error if id is not valid", async () => {
