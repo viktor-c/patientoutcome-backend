@@ -68,6 +68,13 @@ export class PatientRepository {
 // Mock patients data
 export const mockPatients: Patient[] = [
   {
+    _id: "6771d9d410ede2552b7bba40",
+    externalPatientId: ["12345"],
+    age: 41,
+    sex: "F",
+    cases: [],
+  },
+  {
     _id: "6771d9d410ede2552b7bba41",
     externalPatientId: ["12346"],
     age: 46,

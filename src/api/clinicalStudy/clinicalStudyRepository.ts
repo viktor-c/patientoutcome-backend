@@ -136,7 +136,6 @@ export const mockClinicalStudies: ClinicalStudy[] = [
         department: "Dermatology",
         role: 1,
         email: "dlee@example.com",
-        password: "$2b$10$gi8rqXfRG1hckWYgumr7TOZij6w7AdImyG4qkSlw6SE10lYJIG9a2",
         lastLogin: "2023-10-05T12:34:56Z",
         belongsToCenter: ["2"],
       },
@@ -163,7 +162,18 @@ export const mockClinicalStudies: ClinicalStudy[] = [
     beginDate: new Date("2024-02-02"),
     endDate: new Date("2024-03-02"),
     studyType: ["retrospective"],
-    studyNurses: [],
+    studyNurses: [
+      {
+        _id: "676336bea497301f6eff8c8e",
+        username: "asmith",
+        name: "Alice Smith",
+        department: "Neurology",
+        role: 2,
+        email: "asmith@example.com",
+        lastLogin: "2023-10-02T12:34:56Z",
+        belongsToCenter: ["1"],
+      },
+    ],
     supervisors: [],
   },
   {

@@ -278,9 +278,9 @@ describe("User API Endpoints", () => {
       const responseBody: ServiceResponse = response.body;
 
       // Assert
-      expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("An error occurred while deleting user.");
+      expect(responseBody.message).toContain("Invalid ID");
       expect(responseBody.responseObject).toBeNull();
     });
 
