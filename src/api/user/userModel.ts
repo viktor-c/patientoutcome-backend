@@ -1,8 +1,8 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-import { zId, zodSchema } from "@zodyac/zod-mongoose";
-import mongoose, { model } from "mongoose";
+import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
+import mongoose, { model, Mongoose } from "mongoose";
 
 import { commonValidations } from "@/common/utils/commonValidation";
 
@@ -37,7 +37,12 @@ export type UserNoPassword = z.infer<typeof UserNoPasswordSchema>;
  * automatically be created, and we have to provide it manually.
  * If we don't provide it, then we get an error "Error: document must have an _id before saving".
  */
-const MongooseUserSchema = zodSchema(UserSchema.omit({ _id: true }));
+const MongooseUserSchemaRaw = zodSchemaRaw(UserSchema.omit({ _id: true }));
+// make password field not show up in the response by default; makes queries with subdocuments easier, because they don't pupulate the password field
+//@ts-ignore
+MongooseUserSchemaRaw.password.select = false;
+const MongooseUserSchema = new mongoose.Schema(MongooseUserSchemaRaw);
+
 export const userModel = mongoose.models.User || mongoose.model("User", MongooseUserSchema, "users");
 
 // ****************************************************

@@ -96,6 +96,10 @@ export class UserService {
     } catch (ex) {
       const errorMessage = `Error deleting user with id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
+      if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
+        logger.error(`Invalid ID: ${id}`);
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
+      }
       return ServiceResponse.failure("An error occurred while deleting user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
