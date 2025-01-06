@@ -144,7 +144,8 @@ describe("Patient API Endpoints", () => {
       // Arrange
       const testId = mockPatients[0]._id;
       const updatedData = { age: 100 };
-      const expectedPatient = mockPatients[0] as Patient;
+      // does not work otherwise because copies are shallow
+      const expectedPatient = JSON.parse(JSON.stringify(mockPatients[0])) as Patient;
       expectedPatient.age = 100;
 
       // Act
