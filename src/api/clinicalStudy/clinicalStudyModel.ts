@@ -26,8 +26,6 @@ export type ClinicalStudy = z.infer<typeof ClinicalStudySchema>;
 
 /** Create Mongoose Schema and Model */
 const MongooseClinicalStudySchema = zodSchema(ClinicalStudySchema.omit({ _id: true }));
-const rawTest = zodSchemaRaw(ClinicalStudySchema);
-console.debug("rawTest", rawTest);
 
 const personSchema = new mongoose.Schema({
   _id: mongoose.Schema.Types.ObjectId,
@@ -35,7 +33,6 @@ const personSchema = new mongoose.Schema({
   age: Number,
   stories: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 });
-console.debug("personSchema", personSchema);
 
 export const clinicalStudyModel =
   mongoose.models.ClinicalStudy || mongoose.model("ClinicalStudy", MongooseClinicalStudySchema, "clinicalstudies");

@@ -6,6 +6,9 @@ import { generateOpenAPIDocument } from "@/api-docs/openAPIDocumentGenerator";
 export const openAPIRouter: Router = express.Router();
 const openAPIDocument = generateOpenAPIDocument();
 
+/**
+ * Route to serve the OpenAPI document
+ */
 openAPIRouter.get("/swagger.json", (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.send(openAPIDocument);

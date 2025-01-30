@@ -1,9 +1,9 @@
 import { StatusCodes } from "http-status-codes";
 
-import { type CreateUser, type User, UserNoPassword, userModel } from "@/api/user/userModel";
-import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
+import { type CreateUser, type User, UserNoPassword, userModel } from "./userModel";
+import { UserRepository } from "./userRepository";
 
 /**
  * Service class for User operations
@@ -59,7 +59,7 @@ export class UserService {
     }
   }
   // Create a new user
-  async createUser(userData: CreateUser): Promise<ServiceResponse<User>> {
+  async createUser(userData: CreateUser): Promise<ServiceResponse<User | null>> {
     try {
       const newUser = new userModel(userData);
       await newUser.save();

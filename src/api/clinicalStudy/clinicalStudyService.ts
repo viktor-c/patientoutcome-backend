@@ -68,7 +68,7 @@ export class ClinicalStudyService {
     }
   }
 
-  async deleteClinicalStudyById(id: string): Promise<ServiceResponse<ClinicalStudy | null>> {
+  async deleteClinicalStudyById(id: string): Promise<ServiceResponse<null>> {
     try {
       const deletedStudy = await this.clinicalStudyRepository.deleteClinicalStudyByIdAsync(id);
       if (!deletedStudy) {
@@ -86,7 +86,7 @@ export class ClinicalStudyService {
     }
   }
 
-  async createClinicalStudy(study: ClinicalStudy): Promise<ServiceResponse<ClinicalStudy>> {
+  async createClinicalStudy(study: ClinicalStudy): Promise<ServiceResponse<ClinicalStudy | null>> {
     try {
       const newStudy = await this.clinicalStudyRepository.createClinicalStudy(study);
       return ServiceResponse.created<ClinicalStudy>("Clinical Study created successfully", newStudy);

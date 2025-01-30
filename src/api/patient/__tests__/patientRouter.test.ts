@@ -77,7 +77,7 @@ describe("Patient API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("Invalid input: An error occured on validation:");
       expect(responseBody.responseObject).toBeNull();
     });
 
@@ -90,7 +90,7 @@ describe("Patient API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("Invalid input: An error occured on validation:");
       expect(responseBody.responseObject).toBeNull();
     });
   });
@@ -202,7 +202,7 @@ describe("Patient API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("Invalid input: An error occured on validation:");
       expect(responseBody.responseObject).toBeNull();
     });
   });

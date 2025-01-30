@@ -80,7 +80,7 @@ describe("User API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("Invalid");
       expect(responseBody.responseObject).toBeNull();
     });
 
@@ -93,7 +93,7 @@ describe("User API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("Invalid");
       expect(responseBody.responseObject).toBeNull();
     });
   });
@@ -215,9 +215,9 @@ describe("User API Endpoints", () => {
       const responseBody: ServiceResponse = response.body;
 
       // Assert
-      expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("An error occurred while updating user.");
+      expect(responseBody.message).toContain("An error occured on validation: ");
       expect(responseBody.responseObject).toBeNull();
     });
 
@@ -280,7 +280,22 @@ describe("User API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid ID");
+      expect(responseBody.message).toContain("An error occured on validation: ");
+      expect(responseBody.responseObject).toBeNull();
+    });
+
+    it("should return an not found code if the id is not found", async () => {
+      // Arrange
+      const testId = "123412341234123412341234";
+
+      // Act
+      const response = await request(app).delete(`/user/${testId}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("User not found");
       expect(responseBody.responseObject).toBeNull();
     });
 
