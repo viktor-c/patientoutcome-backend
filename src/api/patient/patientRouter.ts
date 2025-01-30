@@ -1,9 +1,9 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
-import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { patientCaseRouter } from "@/api/patient/case/patientCaseRouter"; // Import the patientCaseRouter
 import { CreatePatientSchema, GetPatientSchema, PatientSchema, UpdatePatientSchema } from "@/api/patient/patientModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { patientController } from "./patientController";
@@ -60,7 +60,7 @@ patientRegistry.registerPath({
   path: "/patient/{id}",
   tags: ["Patient"],
   request: {
-    params: GetPatientSchema.shape.params,
+    params: UpdatePatientSchema.shape.params,
     body: {
       content: {
         "application/json": { schema: UpdatePatientSchema.shape.body },
@@ -79,13 +79,13 @@ patientRegistry.registerPath({
   tags: ["Patient"],
   request: { params: GetPatientSchema.shape.params },
   responses: {
-    [StatusCodes.NO_CONTENT]: {
+    [204]: {
       description: "Patient deleted successfully",
-    },
-    [StatusCodes.NOT_FOUND]: {
-      description: "Patient not found",
     },
   },
 });
 
 patientRouter.delete("/:id", validateRequest(GetPatientSchema), patientController.deletePatient);
+
+// Use the patientCaseRouter within the patientRouter
+patientRouter.use("/:patientId/cases/", patientCaseRouter);

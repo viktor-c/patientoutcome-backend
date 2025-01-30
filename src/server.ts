@@ -7,6 +7,7 @@ import { pino } from "pino";
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
+import { seedRouter } from "@/api/seed/seedRouter";
 import { userRouter } from "@/api/user/userRouter";
 /*******************  Middleware import **************************/
 import errorHandler from "@/common/middleware/errorHandler";
@@ -47,11 +48,14 @@ app.use("/health-check", healthCheckRouter);
 app.use("/user", userRouter);
 app.use("/patient", patientRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);
+app.use("/seed", seedRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
+
+console.debug("Node env is ", env.NODE_ENV);
 
 export { app, logger };

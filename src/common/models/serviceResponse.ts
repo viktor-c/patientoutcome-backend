@@ -18,6 +18,10 @@ export class ServiceResponse<T = null> {
     return new ServiceResponse(true, message, responseObject, statusCode);
   }
 
+  static noContent<T>(message: string, responseObject: T, statusCode: number = StatusCodes.NO_CONTENT) {
+    return new ServiceResponse(true, message, responseObject, statusCode);
+  }
+
   static failure<T>(message: string, responseObject: T, statusCode: number = StatusCodes.BAD_REQUEST) {
     return new ServiceResponse(false, message, responseObject, statusCode);
   }

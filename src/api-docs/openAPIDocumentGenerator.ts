@@ -2,11 +2,23 @@ import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-open
 
 import { clinicalStudyRegistry } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
+import { patientCaseRegistry } from "@/api/patient/case/patientCaseRouter";
 import { patientRegistry } from "@/api/patient/patientRouter";
 import { userRegistry } from "@/api/user/userRouter";
 
+/**
+ * This function generates the OpenAPI document by combining the OpenAPIRegistry objects from the different routers.
+ *
+ * @returns {object} The OpenAPI document.
+ */
 export function generateOpenAPIDocument() {
-  const registry = new OpenAPIRegistry([healthCheckRegistry, userRegistry, patientRegistry, clinicalStudyRegistry]);
+  const registry = new OpenAPIRegistry([
+    healthCheckRegistry,
+    userRegistry,
+    patientRegistry,
+    clinicalStudyRegistry,
+    patientCaseRegistry,
+  ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({
