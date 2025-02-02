@@ -38,7 +38,7 @@ export type UserNoPassword = z.infer<typeof UserNoPasswordSchema>;
  * If we don't provide it, then we get an error "Error: document must have an _id before saving".
  */
 const MongooseUserSchemaRaw = zodSchemaRaw(UserSchema.omit({ _id: true }));
-// make password field not show up in the response by default; makes queries with subdocuments easier, because they don't pupulate the password field
+// make password field not show up in the response by default; makes queries with subdocuments easier, because they don't populate the password field
 //@ts-ignore
 MongooseUserSchemaRaw.password.select = false;
 const MongooseUserSchema = new mongoose.Schema(MongooseUserSchemaRaw);
