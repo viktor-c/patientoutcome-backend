@@ -3,7 +3,6 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { patientCaseRouter } from "@/api/patient/case/patientCaseRouter"; // Import the patientCaseRouter
 import { CreatePatientSchema, GetPatientSchema, PatientSchema, UpdatePatientSchema } from "@/api/patient/patientModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { patientController } from "./patientController";
@@ -12,6 +11,10 @@ import { patientController } from "./patientController";
 export const patientRegistry = new OpenAPIRegistry();
 // create an express router
 export const patientRouter: Router = express.Router();
+
+// Use the patientCaseRouter within the patientRouter
+import { patientCaseRouter } from "@/api/patient/case/patientCaseRouter"; // Import the patientCaseRouter
+patientRouter.use("/:patientId/cases/", patientCaseRouter);
 
 /* Define schemas and paths to create openapi */
 patientRegistry.register("Patient", PatientSchema);
@@ -86,6 +89,3 @@ patientRegistry.registerPath({
 });
 
 patientRouter.delete("/:id", validateRequest(GetPatientSchema), patientController.deletePatient);
-
-// Use the patientCaseRouter within the patientRouter
-patientRouter.use("/:patientId/cases/", patientCaseRouter);

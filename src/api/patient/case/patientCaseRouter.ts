@@ -30,7 +30,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all patient cases for patient with patientId",
   path: "/patient/{patientId}/cases",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id }) },
   responses: createApiResponse(z.array(PatientCaseSchema), "Returns an array of patient cases"),
 });
@@ -46,8 +46,8 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get a patient case by patientId and caseId",
-  path: "/patient/{patientId/}cases/{caseId}",
-  tags: ["Patient Cases"],
+  path: "/patient/{patientId}/cases/{caseId}",
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(PatientCaseSchema, "Returns the patient case"),
 });
@@ -63,8 +63,8 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "post",
   summary: "Create a patient case for patient with patientId",
-  path: "/patient/{patientId/}cases",
-  tags: ["Patient Cases"],
+  path: "/patient/{patientId}/cases",
+  tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id }),
     body: {
@@ -90,7 +90,7 @@ patientCaseRegistry.registerPath({
   method: "put",
   summary: "Update a patient case by patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
     body: {
@@ -119,7 +119,7 @@ patientCaseRegistry.registerPath({
   method: "delete",
   summary: "Delete a patient case by patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(
     z.null(),
@@ -141,7 +141,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all notes for a patient case by patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}/notes/",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(z.array(PatientCaseSchema.shape.notes.element), "Returns an array of notes"),
 });
@@ -158,7 +158,7 @@ patientCaseRegistry.registerPath({
   method: "post",
   summary: "Add a note to a patient case by patientId and caseId.",
   path: "/patient/{patientId}/cases/{caseId}/notes/",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
     body: {
@@ -187,7 +187,7 @@ patientCaseRegistry.registerPath({
   method: "delete",
   summary: "Delete a note from a patient case by patientId, caseId and noteId",
   path: "/patient/{patientId}/cases/{caseId}/notes/{noteId}",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id, noteId: commonValidations.id }),
   },
@@ -210,7 +210,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all case diagnosis for patient with patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}/diagnosis/",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(z.array(DiagnosisSchema), "Returns an array of diagnosis for the given case"),
 });
@@ -227,7 +227,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all diagnosisICD10 for patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}/diagnosisICD10",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(z.array(DiagnosisSchema), "Returns an array of diagnosisICD10 for the given case"),
 });
@@ -244,7 +244,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all surgeons for patient with patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}/surgeons",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(z.array(UserSchema), "Returns an array of surgeons for the given case"),
 });
@@ -261,7 +261,7 @@ patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all supervisors for patientId and caseId",
   path: "/patient/{patientId}/cases/{caseId}/supervisors",
-  tags: ["Patient Cases"],
+  tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponse(z.array(UserSchema), "Returns an array of supervisors for the given case"),
 });

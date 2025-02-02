@@ -40,7 +40,7 @@ export const PatientCaseSchema = z.object({
   supervisors: z.array(zId("User")),
   notes: z.array(NoteSchema),
   medicalHistory: z.string().optional(),
-  consultations: z.array(zId("CaseConsultation")).optional(),
+  consultations: z.array(zId("Consultation")).optional(),
   consultationTemplate: z.array(zId("ConsultationTemplate")).optional(),
 });
 
