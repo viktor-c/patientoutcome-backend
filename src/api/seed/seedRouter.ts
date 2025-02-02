@@ -1,3 +1,4 @@
+import { ConsultationRepository } from "@/api/patient/case/consultation/consultationRepository";
 import { PatientCaseRepository } from "@/api/patient/case/patientCaseRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { env } from "@/common/utils/envConfig";
@@ -7,18 +8,18 @@ import { StatusCodes } from "http-status-codes";
 
 const seedRouter: Router = express.Router();
 const patientCaseRepository = new PatientCaseRepository();
+const consultationRepository = new ConsultationRepository();
 
-// Middleware to check if the environment is development
-const checkDevelopmentEnv = (req: Request, res: Response, next: NextFunction) => {
+// Middleware to check if the environment is testing, if not we cannot use this route
+const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV !== "test") {
-    //if (env.NODE_ENV !== 'development') { //when testing, this is not defined
     const serviceResponse = ServiceResponse.failure("Access denied", null, StatusCodes.FORBIDDEN);
     return handleServiceResponse(serviceResponse, res);
   }
   next();
 };
 
-seedRouter.use(checkDevelopmentEnv);
+seedRouter.use(checkTestingEnv);
 
 seedRouter.get("/patientCase", async (_req: Request, res: Response) => {
   try {
@@ -35,4 +36,19 @@ seedRouter.get("/patientCase", async (_req: Request, res: Response) => {
   }
 });
 
-export { seedRouter, patientCaseRepository };
+seedRouter.get("/consultation", async (_req: Request, res: Response) => {
+  try {
+    await consultationRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+export { seedRouter, patientCaseRepository, consultationRepository };
