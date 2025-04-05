@@ -26,6 +26,15 @@ export class PatientRepository {
     }
   }
 
+  async findByExternalIdAsync(externalId: string): Promise<Patient[]> {
+    try {
+      const patient = await patientModel.find({ externalPatientId: { $in: [externalId] } }).lean();
+      return patient[0];
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
   async createAsync(patientData: Patient): Promise<Patient> {
     try {
       const newPatient = new patientModel(patientData);

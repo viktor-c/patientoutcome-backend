@@ -14,7 +14,7 @@ export const patientCaseRegistry = new OpenAPIRegistry();
 export const patientCaseRouter: Router = express.Router({ mergeParams: true });
 
 // Import the consultationRouter and add it to the patientCaseRouter
-import { consultationRouter } from "./consultation/consultationRouter";
+import { consultationRouter } from "@/api/patient/consultation/consultationRouter";
 // Register the consultation router
 patientCaseRouter.use("/:caseId/consultations/", consultationRouter);
 

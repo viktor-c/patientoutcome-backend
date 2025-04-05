@@ -2,8 +2,14 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { CreatePatientSchema, GetPatientSchema, PatientSchema, UpdatePatientSchema } from "@/api/patient/patientModel";
+import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import {
+  CreatePatientSchema,
+  GetPatientByExternalIdSchema,
+  GetPatientSchema,
+  PatientSchema,
+  UpdatePatientSchema,
+} from "@/api/patient/patientModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { patientController } from "./patientController";
 
@@ -24,7 +30,25 @@ patientRegistry.registerPath({
   method: "get",
   path: "/patient",
   tags: ["Patient"],
-  responses: createApiResponse(z.array(PatientSchema), "Success"),
+  summary: "Get all patients",
+  description: "Get all patients",
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientSchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving patients.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 patientRouter.get("/", patientController.getPatients);
@@ -34,17 +58,72 @@ patientRegistry.registerPath({
   method: "get",
   path: "/patient/{id}",
   tags: ["Patient"],
+  summary: "Get a patient by ID",
+  description: "Get a patient by ID",
   request: { params: GetPatientSchema.shape.params },
-  responses: createApiResponse(PatientSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: PatientSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+  ]),
 });
 
 patientRouter.get("/:id", validateRequest(GetPatientSchema), patientController.getPatient);
+
+// Register the path for getting patients by external ID,
+// useful when searching for a patient from the frontend, when you do not have the id of a patient
+patientRegistry.registerPath({
+  method: "get",
+  path: "/patient/externalPatientId/{externalPatientId}",
+  tags: ["Patient"],
+  summary: "Get patient by externalPatientId",
+  description:
+    "Get patient by externalPatientId, useful when searching for a patient from the frontend, when you do not have the id of a patient",
+  request: { params: GetPatientByExternalIdSchema.shape.params },
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientSchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "No patient found with the given external ID",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving patients by external ID.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+patientRouter.get(
+  "/externalPatientId/:externalPatientId",
+  validateRequest(GetPatientByExternalIdSchema),
+  patientController.getPatientByExternalId,
+);
 
 // Register the path for creating a patient
 patientRegistry.registerPath({
   method: "post",
   path: "/patient",
   tags: ["Patient"],
+  summary: "Create a new patient",
+  description:
+    "Create a new patient with the provided details. </br>'externalPatientId' must be unique, if not it will return a 409 error.",
   request: {
     body: {
       content: {
@@ -52,7 +131,28 @@ patientRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(PatientSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: PatientSchema,
+      description: "Success",
+      statusCode: 201,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient with the same external ID already exists",
+      statusCode: 409,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the patient",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 patientRouter.post("/", validateRequest(CreatePatientSchema), patientController.createPatient);
@@ -62,6 +162,8 @@ patientRegistry.registerPath({
   method: "put",
   path: "/patient/{id}",
   tags: ["Patient"],
+  summary: "Update a patient",
+  description: "Update a patient with the provided details.",
   request: {
     params: UpdatePatientSchema.shape.params,
     body: {
@@ -70,7 +172,28 @@ patientRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(PatientSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: PatientSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the patient",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 patientRouter.put("/:id", validateRequest(UpdatePatientSchema), patientController.updatePatient);
@@ -81,11 +204,30 @@ patientRegistry.registerPath({
   path: "/patient/{id}",
   tags: ["Patient"],
   request: { params: GetPatientSchema.shape.params },
-  responses: {
-    [204]: {
-      description: "Patient deleted successfully",
+  summary: "Delete a patient",
+  description: "Delete a patient by ID",
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 204,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the patient",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 patientRouter.delete("/:id", validateRequest(GetPatientSchema), patientController.deletePatient);

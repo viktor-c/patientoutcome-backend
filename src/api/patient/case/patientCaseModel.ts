@@ -1,7 +1,7 @@
 import { AnaesthesiaTypeSchema, NoteSchema, dateSchema } from "@/api/generalSchemas";
-import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
+import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
-import { date, z } from "zod";
+import { z } from "zod";
 
 export const DiagnosisSchema = z.string();
 export type DiagnosisSchema = z.infer<typeof DiagnosisSchema>;

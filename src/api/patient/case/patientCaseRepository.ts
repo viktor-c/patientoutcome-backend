@@ -1,6 +1,5 @@
 import { fa, fakerDE as faker } from "@faker-js/faker";
 import mongoose from "mongoose";
-import { patientModel } from "../patientModel";
 import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 
 export class PatientCaseRepository {
@@ -443,7 +442,7 @@ export class PatientCaseRepository {
       supervisors: ["676336bea497301f6eff8c91"],
     },
   ];
-  async createMockData() {
+  async createMockData(): Promise<void> {
     try {
       // Add code to save mockCases to the database
       await PatientCaseModel.deleteMany({});

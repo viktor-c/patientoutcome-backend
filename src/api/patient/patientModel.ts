@@ -28,6 +28,10 @@ export const GetPatientSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
+export const GetPatientByExternalIdSchema = z.object({
+  params: z.object({ externalPatientId: z.string() }),
+});
+
 // Input validation for 'POST patient' endpoint
 export const CreatePatientSchema = z.object({
   body: PatientSchema.omit({ _id: true }),

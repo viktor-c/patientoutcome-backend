@@ -95,6 +95,43 @@ describe("Patient API Endpoints", () => {
     });
   });
 
+  // get patient by external id
+  describe("GET /patient/externalPatientId/:externalPatientId", () => {
+    it("should return a patient for a valid external ID", async () => {
+      // Arrange
+      const testExternalId = mockPatients[0].externalPatientId[0];
+      const expectedPatient = mockPatients.find((patient: Patient) =>
+        patient.externalPatientId.includes(testExternalId),
+      ) as Patient;
+
+      // Act
+      const response = await request(app).get(`/patient/externalPatientId/${testExternalId}`);
+      const responseBody: ServiceResponse<Patient> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Patient found");
+      if (!expectedPatient) throw new Error("Invalid test data: expectedPatient is undefined");
+      comparePatients(expectedPatient, responseBody.responseObject);
+    });
+
+    it("should return a NOT FOUND for nonexistent external ID", async () => {
+      // Arrange
+      const testExternalId = "nonexistent-external-id";
+
+      // Act
+      const response = await request(app).get(`/patient/externalPatientId/${testExternalId}`);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("No patient found with the given external ID");
+      expect(responseBody.responseObject).toBeNull();
+    });
+  });
+
   // create patient
   describe("POST /patient", () => {
     it("should create a patient successfully", async () => {

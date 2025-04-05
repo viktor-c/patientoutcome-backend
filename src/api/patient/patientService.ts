@@ -44,8 +44,30 @@ export class PatientService {
     }
   }
 
+  async findByExternalId(externalPatientId: string): Promise<ServiceResponse<Patient[] | null>> {
+    try {
+      const patient = await this.patientRepository.findByExternalIdAsync(externalPatientId);
+      if (!patient || patient.length === 0) {
+        return ServiceResponse.failure("No patient found with the given external ID", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Patient found", patient);
+    } catch (ex) {
+      // we do not need to look for "cast to objectId failure" here, because externalPatientId is a string
+      return ServiceResponse.failure(
+        "An error occurred while retrieving patients by external ID.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async createPatient(patientData: Patient): Promise<ServiceResponse<Patient>> {
     try {
+      //must check if external patient id already exists
+      const existingPatient = await this.patientRepository.findByExternalIdAsync(patientData.externalPatientId[0]);
+      if (existingPatient) {
+        return ServiceResponse.conflict("Patient with the same external ID already exists", null, StatusCodes.CONFLICT);
+      }
       const newPatient = await this.patientRepository.createAsync(patientData);
       return ServiceResponse.created("Patient created successfully", newPatient);
     } catch (ex) {

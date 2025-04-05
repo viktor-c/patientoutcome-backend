@@ -29,6 +29,10 @@ export class ServiceResponse<T = null> {
   static created<T>(message: string, responseObject: T, statusCode: number = StatusCodes.CREATED) {
     return new ServiceResponse(true, message, responseObject, statusCode);
   }
+
+  static conflict<T>(message: string, responseObject: T, statusCode: number = StatusCodes.CONFLICT) {
+    return new ServiceResponse(true, message, responseObject, statusCode);
+  }
 }
 
 export const ServiceResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
