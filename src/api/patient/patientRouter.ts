@@ -81,7 +81,7 @@ patientRouter.get("/:id", validateRequest(GetPatientSchema), patientController.g
 // useful when searching for a patient from the frontend, when you do not have the id of a patient
 patientRegistry.registerPath({
   method: "get",
-  path: "/patient/externalPatientId/{externalPatientId}",
+  path: "/patient/externalPatient/{id}",
   tags: ["Patient"],
   summary: "Get patient by externalPatientId",
   description:
@@ -111,7 +111,7 @@ patientRegistry.registerPath({
   ]),
 });
 patientRouter.get(
-  "/externalPatientId/:externalPatientId",
+  "/externalPatient/:id",
   validateRequest(GetPatientByExternalIdSchema),
   patientController.getPatientByExternalId,
 );

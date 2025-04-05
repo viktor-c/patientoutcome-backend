@@ -15,8 +15,8 @@ class PatientController {
   };
 
   public getPatientByExternalId: RequestHandler = async (req: Request, res: Response) => {
-    const { externalPatientId } = req.params;
-    const serviceResponse = await patientService.findByExternalId(externalPatientId);
+    const { id } = req.params;
+    const serviceResponse = await patientService.findByExternalId(id);
     return handleServiceResponse(serviceResponse, res);
   };
 
