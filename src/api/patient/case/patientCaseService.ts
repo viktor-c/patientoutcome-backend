@@ -1,3 +1,4 @@
+import type { User } from "@/api/user/userModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
@@ -16,13 +17,14 @@ export class PatientCaseService {
   }
 
   /**
-   *
-   * @param patientId
+   * @description Get all patient cases for a given patient
+   * @param patientId the ID of the patient
    * @returns an array of patient cases, or null if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
    */
-  async getAllCases(patientId: string): Promise<ServiceResponse<PatientCase[] | null>> {
+  async getAllPatientCases(patientId: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
-      const cases = await this.repository.getAllCases(patientId);
+      const cases = await this.repository.getAllPatientCases(patientId);
       if (!cases || cases.length === 0) {
         return ServiceResponse.failure("No case found", null, StatusCodes.NOT_FOUND);
       }
@@ -37,15 +39,17 @@ export class PatientCaseService {
       );
     }
   }
+
   /**
-   *
-   * @param patientId
-   * @param caseId
-   * @returns the patient case with the specified ID, or null if no case is found
+   * @description Get a patient case by ID
+   * @param patientId the ID of the patient
+   * @param caseId the ID of the case to find
+   * @returns the patient case, or null if not found
+   * @throws {ServiceResponse} if an error occurs while finding the case
    */
-  async getCaseById(patientId: string, caseId: string): Promise<ServiceResponse<PatientCase | null>> {
+  async getPatientCaseById(patientId: string, caseId: string): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const patientCase = await this.repository.findCaseById(patientId, caseId);
+      const patientCase = await this.repository.findPatientCaseById(patientId, caseId);
       if (!patientCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }
@@ -61,9 +65,19 @@ export class PatientCaseService {
     }
   }
 
-  async createCase(patientId: string, caseData: Partial<PatientCase>): Promise<ServiceResponse<PatientCase | null>> {
+  /**
+   * @description Create a new patient case
+   * @param patientId the ID of the patient
+   * @param caseData the data for the new case
+   * @returns the created patient case, or null if not found
+   * @throws {ServiceResponse} if an error occurs while creating the case
+   */
+  async createPatientCase(
+    patientId: string,
+    caseData: Partial<PatientCase>,
+  ): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const newCase = await this.repository.create(patientId, caseData);
+      const newCase = await this.repository.createPatientCase(patientId, caseData);
       return ServiceResponse.created("Case created successfully", newCase);
     } catch (ex) {
       const errorMessage = `Error creating case: ${(ex as Error).message}`;
@@ -72,13 +86,21 @@ export class PatientCaseService {
     }
   }
 
-  async updateCase(
+  /**
+   * @description Update a patient case by ID
+   * @param patientId the ID of the patient
+   * @param caseId the ID of the case to update
+   * @param caseData the data to update in the case
+   * @returns the updated patient case, or null if not found
+   * @throws {ServiceResponse} if an error occurs while updating the case
+   */
+  async updatePatientCaseById(
     patientId: string,
     caseId: string,
     caseData: Partial<PatientCase>,
   ): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const updatedCase = await this.repository.updateCaseById(patientId, caseId, caseData);
+      const updatedCase = await this.repository.updatePatientCaseById(patientId, caseId, caseData);
       if (!updatedCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }
@@ -90,9 +112,16 @@ export class PatientCaseService {
     }
   }
 
-  async deleteCaseById(patientId: string, caseId: string): Promise<ServiceResponse<null>> {
+  /**
+   * @description Delete a patient case by ID
+   * @param patientId the ID of the patient
+   * @param caseId the ID of the case to delete
+   * @returns a success message if the case is deleted, or an error message if not found
+   * @throws {ServiceResponse} if an error occurs while deleting the case
+   */
+  async deletePatientCaseById(patientId: string, caseId: string): Promise<ServiceResponse<null>> {
     try {
-      const deleted = await this.repository.deleteCaseById(patientId, caseId);
+      const deleted = await this.repository.deletePatientCaseById(patientId, caseId);
       if (!deleted) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }
@@ -108,6 +137,12 @@ export class PatientCaseService {
     }
   }
 
+  /**
+   * @description Get notes by case ID
+   * @param caseId the ID of the case
+   * @returns an array of notes for the specified case, or null if no notes are found
+   * @throws {ServiceResponse} if an error occurs while finding notes
+   */
   async getNotesByCaseId(caseId: string): Promise<ServiceResponse<PatientCase["notes"] | null>> {
     try {
       const notes = await this.repository.findNotesByCaseId(caseId);
@@ -119,9 +154,19 @@ export class PatientCaseService {
     }
   }
 
-  async addNoteToCase(caseId: string, note: PatientCase["notes"][0]): Promise<ServiceResponse<PatientCase | null>> {
+  /**
+   * @description Create a new patient case note
+   * @param caseId the ID of the case
+   * @param note the note to add
+   * @returns the updated patient case with the new note, or an error message if not found
+   * @throws {ServiceResponse} if an error occurs while adding the note
+   */
+  async createPatientCaseNote(
+    caseId: string,
+    note: PatientCase["notes"][0],
+  ): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const updatedCase = await this.repository.addNoteToCase(caseId, note);
+      const updatedCase = await this.repository.createPatientCaseNote(caseId, note);
       if (!updatedCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }
@@ -133,9 +178,16 @@ export class PatientCaseService {
     }
   }
 
-  async deleteNoteFromCase(caseId: string, noteId: string): Promise<ServiceResponse<PatientCase | null>> {
+  /**
+   * @description Delete a patient case note by ID
+   * @param caseId the ID of the case
+   * @param noteId the ID of the note to delete
+   * @returns a success message if the note is deleted, or an error message if not found
+   * @throws {ServiceResponse} if an error occurs while deleting the note
+   */
+  async deletePatientCaseNoteById(caseId: string, noteId: string): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const deletedCase = await this.repository.deleteNoteFromCase(caseId, noteId);
+      const deletedCase = await this.repository.deletePatientCaseNoteById(caseId, noteId);
       if (!deletedCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }
@@ -147,9 +199,20 @@ export class PatientCaseService {
     }
   }
 
+  /**
+   * @description Get cases by diagnosis
+   * @param diagnosis to search for
+   * @returns an array of patient cases with the specified diagnosis, or null if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   * @throws {ServiceResponse} if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   */
   async getCasesByDiagnosis(diagnosis: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
       const cases = await this.repository.findCasesByDiagnosis(diagnosis);
+      if (!cases || cases.length === 0) {
+        return ServiceResponse.failure("No cases found for this diagnosis", null, StatusCodes.NOT_FOUND);
+      }
       return ServiceResponse.success("Cases found", cases);
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ${diagnosis}: ${(ex as Error).message}`;
@@ -158,9 +221,20 @@ export class PatientCaseService {
     }
   }
 
+  /**
+   * @description Get cases by diagnosis ICD10
+   * @param diagnosisICD10 diagnosis ICD10 to search for
+   * @returns an array of patient cases with the specified diagnosis ICD10, or null if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   * @throws {ServiceResponse} if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   */
   async getCasesByDiagnosisICD10(diagnosisICD10: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
       const cases = await this.repository.findCasesByDiagnosisICD10(diagnosisICD10);
+      if (!cases || cases.length === 0) {
+        return ServiceResponse.failure("No cases found for this diagnosis ICD10", null, StatusCodes.NOT_FOUND);
+      }
       return ServiceResponse.success("Cases found", cases);
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ICD10 ${diagnosisICD10}: ${(ex as Error).message}`;
@@ -169,9 +243,20 @@ export class PatientCaseService {
     }
   }
 
+  /**
+   * @description Get cases by surgeon
+   * @param surgeonId surgeon ID to search for
+   * @returns an array of patient cases with the specified surgeon, or null if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   * @throws {ServiceResponse} if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   */
   async getCasesBySurgeon(surgeonId: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
       const cases = await this.repository.findCasesBySurgeon(surgeonId);
+      if (!cases || cases.length === 0) {
+        return ServiceResponse.failure("No cases found for this surgeon", null, StatusCodes.NOT_FOUND);
+      }
       return ServiceResponse.success("Cases found", cases);
     } catch (ex) {
       const errorMessage = `Error finding cases with surgeon id ${surgeonId}: ${(ex as Error).message}`;
@@ -180,9 +265,20 @@ export class PatientCaseService {
     }
   }
 
+  /**
+   * @description Get cases by supervisor
+   * @param supervisorId supervisor ID to search for
+   * @returns an array of patient cases with the specified supervisor, or null if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   * @throws {ServiceResponse} if no cases are found
+   * @throws {ServiceResponse} if an error occurs while finding cases
+   */
   async getCasesBySupervisor(supervisorId: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
       const cases = await this.repository.findCasesBySupervisor(supervisorId);
+      if (!cases || cases.length === 0) {
+        return ServiceResponse.failure("No cases found for this supervisor", null, StatusCodes.NOT_FOUND);
+      }
       return ServiceResponse.success("Cases found", cases);
     } catch (ex) {
       const errorMessage = `Error finding cases with supervisor id ${supervisorId}: ${(ex as Error).message}`;
@@ -190,6 +286,52 @@ export class PatientCaseService {
       return ServiceResponse.failure("An error occurred while finding cases.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
-}
 
+  /**
+   * @description Get surgeons by case ID
+   * @param caseId the ID of the case
+   * @returns an array of surgeons for the specified case, or null if no surgeons are found
+   * @throws {ServiceResponse} if an error occurs while finding surgeons
+   */
+  async getSurgeonsByCaseId(caseId: string): Promise<ServiceResponse<User[] | null>> {
+    try {
+      const surgeons = await this.repository.findSurgeonsByCaseId(caseId);
+      if (!surgeons) {
+        return ServiceResponse.failure("No surgeons found for this case", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Surgeons found", surgeons);
+    } catch (ex) {
+      const errorMessage = `Error finding surgeons for case with id ${caseId}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while finding surgeons.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  /**
+   * @description Get supervisors by case ID
+   * @param caseId the ID of the case
+   * @returns an array of supervisors for the specified case, or null if no supervisors are found
+   * @throws {ServiceResponse} if an error occurs while finding supervisors
+   */
+  async getSupervisorsByCaseId(caseId: string): Promise<ServiceResponse<User[] | null>> {
+    try {
+      const supervisors = await this.repository.findSupervisorsByCaseId(caseId);
+      if (!supervisors) {
+        return ServiceResponse.failure("No supervisors found for this case", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Supervisors found", supervisors);
+    } catch (ex) {
+      const errorMessage = `Error finding supervisors for case with id ${caseId}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while finding supervisors.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+}
 export const patientCaseService = new PatientCaseService();

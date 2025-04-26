@@ -1,9 +1,10 @@
+import type { User } from "@/api/user/userModel";
 import { fa, fakerDE as faker } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 
 export class PatientCaseRepository {
-  async getAllCases(patientId: string): Promise<PatientCase[]> {
+  async getAllPatientCases(patientId: string): Promise<PatientCase[]> {
     try {
       return PatientCaseModel.find({ patient: patientId }).lean() as unknown as Promise<PatientCase[]>;
     } catch (error) {
@@ -11,7 +12,7 @@ export class PatientCaseRepository {
     }
   }
 
-  async findCaseById(patientId: string, caseId: string): Promise<PatientCase | null> {
+  async findPatientCaseById(patientId: string, caseId: string): Promise<PatientCase | null> {
     try {
       return PatientCaseModel.findById({
         _id: caseId,
@@ -22,7 +23,7 @@ export class PatientCaseRepository {
     }
   }
 
-  async create(patientId: string, data: Partial<PatientCase>): Promise<PatientCase> {
+  async createPatientCase(patientId: string, data: Partial<PatientCase>): Promise<PatientCase> {
     try {
       const newCase = new PatientCaseModel(data);
       //newCase.patient = new mongoose.Schema.ObjectId(patientId);
@@ -33,7 +34,11 @@ export class PatientCaseRepository {
     }
   }
 
-  async updateCaseById(patientId: string, caseId: string, caseData: Partial<PatientCase>): Promise<PatientCase | null> {
+  async updatePatientCaseById(
+    patientId: string,
+    caseId: string,
+    caseData: Partial<PatientCase>,
+  ): Promise<PatientCase | null> {
     try {
       return await PatientCaseModel.findOneAndUpdate({ patient: patientId, _id: caseId }, caseData, { new: true });
     } catch (error) {
@@ -41,7 +46,7 @@ export class PatientCaseRepository {
     }
   }
 
-  async deleteCaseById(patientId: string, caseId: string): Promise<boolean> {
+  async deletePatientCaseById(patientId: string, caseId: string): Promise<boolean> {
     try {
       const result = await PatientCaseModel.findByIdAndDelete({ patient: patientId, _id: caseId });
       return !!result;
@@ -59,7 +64,7 @@ export class PatientCaseRepository {
     }
   }
 
-  async addNoteToCase(caseId: string, note: PatientCase["notes"][0]): Promise<PatientCase | null> {
+  async createPatientCaseNote(caseId: string, note: PatientCase["notes"][0]): Promise<PatientCase | null> {
     try {
       const tryToFind = await PatientCaseModel.findById(caseId);
       const res = await PatientCaseModel.findByIdAndUpdate(caseId, { $push: { notes: note } }, { new: true });
@@ -69,7 +74,7 @@ export class PatientCaseRepository {
     }
   }
 
-  async deleteNoteFromCase(caseId: string, noteId: string): Promise<PatientCase | null> {
+  async deletePatientCaseNoteById(caseId: string, noteId: string): Promise<PatientCase | null> {
     try {
       return await PatientCaseModel.findByIdAndUpdate(caseId, { $pull: { notes: { _id: noteId } } }, { new: true });
     } catch (error) {
@@ -104,6 +109,23 @@ export class PatientCaseRepository {
   async findCasesBySupervisor(supervisorId: string): Promise<PatientCase[]> {
     try {
       return await PatientCaseModel.find({ supervisors: supervisorId });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  async findSurgeonsByCaseId(caseId: string): Promise<User[]> {
+    try {
+      return PatientCaseModel.findById(caseId).select("surgeons").populate("surgeons") as unknown as Promise<User[]>;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+  async findSupervisorsByCaseId(caseId: string): Promise<User[]> {
+    try {
+      return PatientCaseModel.findById(caseId).select("supervisors").populate("supervisors") as unknown as Promise<
+        User[]
+      >;
     } catch (error) {
       return Promise.reject(error);
     }

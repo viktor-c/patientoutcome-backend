@@ -10,8 +10,8 @@ export type DiagnosisSchema = z.infer<typeof DiagnosisSchema>;
  * This is a schema for a surgery. It contains the following fields:
  */
 export const SurgerySchema = z.object({
-  _id: zId().optional(),
-  externalId: z.string().optional(),
+  _id: zId(),
+  // externalId: z.string().optional(),
   diagnosis: z.array(DiagnosisSchema).optional(),
   diagnosisICD10: z.array(DiagnosisSchema).optional(),
   therapy: z.string().optional(),
@@ -28,7 +28,7 @@ export const SurgerySchema = z.object({
 });
 
 export const PatientCaseSchema = z.object({
-  _id: zId().optional(),
+  _id: zId(),
   patient: zId("Patient"),
   MainDiagnosis: z.array(DiagnosisSchema).optional(),
   StudyDiagnosis: z.array(DiagnosisSchema).optional(),

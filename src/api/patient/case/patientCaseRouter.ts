@@ -3,7 +3,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { UserSchema } from "@/api/user/userModel";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";
@@ -29,15 +29,33 @@ patientCaseRegistry.register("PatientCase", PatientCaseSchema);
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all patient cases for patient with patientId",
+  description: "Get all patient cases for patient with patientId",
+  operationId: "getAllPatientCases",
   path: "/patient/{patientId}/cases",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id }) },
-  responses: createApiResponse(z.array(PatientCaseSchema), "Returns an array of patient cases"),
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientCaseSchema),
+      description: "Returns an array of patient cases",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving patient cases.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 patientCaseRouter.get(
   "/",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id }) })),
-  patientCaseController.getAllCases,
+  patientCaseController.getAllPatientCases,
 );
 
 /**
@@ -46,15 +64,38 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get a patient case by patientId and caseId",
+  description: "Get a patient case by patientId and caseId",
+  operationId: "getPatientCaseById",
   path: "/patient/{patientId}/cases/{caseId}",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(PatientCaseSchema, "Returns the patient case"),
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Returns the patient case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 patientCaseRouter.get(
   "/:caseId",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.getCaseById,
+  patientCaseController.getPatientCaseById,
 );
 
 /**
@@ -63,6 +104,8 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "post",
   summary: "Create a patient case for patient with patientId",
+  description: "Create a patient case for patient with patientId",
+  operationId: "createPatientCase",
   path: "/patient/{patientId}/cases",
   tags: ["patient case"],
   request: {
@@ -73,14 +116,40 @@ patientCaseRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(PatientCaseSchema, "Returns the created patient case"),
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Returns the created patient case",
+      statusCode: 201,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case with the same external ID already exists",
+      statusCode: 409,
+    },
+  ]),
 });
 patientCaseRouter.post(
   "/",
   validateRequest(
     z.object({ body: PatientCaseSchema.omit({ _id: true }), params: z.object({ patientId: commonValidations.id }) }),
   ),
-  patientCaseController.createCase,
+  patientCaseController.createPatientCase,
 );
 
 /**
@@ -89,6 +158,8 @@ patientCaseRouter.post(
 patientCaseRegistry.registerPath({
   method: "put",
   summary: "Update a patient case by patientId and caseId",
+  description: "Update a patient case by patientId and caseId",
+  operationId: "updatePatientCaseById",
   path: "/patient/{patientId}/cases/{caseId}",
   tags: ["patient case"],
   request: {
@@ -99,7 +170,38 @@ patientCaseRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(PatientCaseSchema, "Returns the updated patient case"),
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Returns the updated patient case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case with the same external ID already exists",
+      statusCode: 409,
+    },
+  ]),
 });
 patientCaseRouter.put(
   "/:caseId",
@@ -109,7 +211,7 @@ patientCaseRouter.put(
       body: PatientCaseSchema.partial(),
     }),
   ),
-  patientCaseController.updateCase,
+  patientCaseController.updatePatientCaseById,
 );
 
 /**
@@ -118,19 +220,43 @@ patientCaseRouter.put(
 patientCaseRegistry.registerPath({
   method: "delete",
   summary: "Delete a patient case by patientId and caseId",
+  description: "Delete a patient case by patientId and caseId",
+  operationId: "deletePatientCaseById",
   path: "/patient/{patientId}/cases/{caseId}",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(
-    z.null(),
-    "When patient case is deleted successfully, returns null",
-    StatusCodes.NO_CONTENT,
-  ),
+  responses: createApiResponses([
+    {
+      schema: z.null(),
+      description: "When patient case is deleted successfully, returns null",
+      statusCode: 204,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.delete(
   "/:caseId",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.deleteCaseById,
+  patientCaseController.deletePatientCaseById,
 );
 
 // Extra endpoints
@@ -140,10 +266,38 @@ patientCaseRouter.delete(
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all notes for a patient case by patientId and caseId",
+  description: "Get all notes for a patient case by patientId and caseId",
+  operationId: "getNotesByCaseId",
   path: "/patient/{patientId}/cases/{caseId}/notes/",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(z.array(PatientCaseSchema.shape.notes.element), "Returns an array of notes"),
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientCaseSchema.shape.notes.element),
+      description: "Returns an array of notes for the given case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving notes for the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.get(
   "/:caseId/notes/",
@@ -157,6 +311,8 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "post",
   summary: "Add a note to a patient case by patientId and caseId.",
+  description: "Add a note to a patient case by patientId and caseId.",
+  operationId: "createPatientCaseNote",
   path: "/patient/{patientId}/cases/{caseId}/notes/",
   tags: ["patient case"],
   request: {
@@ -167,7 +323,33 @@ patientCaseRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(PatientCaseSchema, "On success returns the updated case"),
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Returns the updated case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while adding the note to the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.post(
   "/:caseId/notes/",
@@ -177,7 +359,7 @@ patientCaseRouter.post(
       body: PatientCaseSchema.shape.notes.element.omit({ _id: true }),
     }),
   ),
-  patientCaseController.addNoteToCase,
+  patientCaseController.createPatientCaseNote,
 );
 
 /**
@@ -186,12 +368,45 @@ patientCaseRouter.post(
 patientCaseRegistry.registerPath({
   method: "delete",
   summary: "Delete a note from a patient case by patientId, caseId and noteId",
+  description: "Delete a note from a patient case by patientId, caseId and noteId",
+  operationId: "deletePatientCaseNoteById",
   path: "/patient/{patientId}/cases/{caseId}/notes/{noteId}",
   tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id, noteId: commonValidations.id }),
   },
-  responses: createApiResponse(z.null(), "On success returns null", StatusCodes.NO_CONTENT),
+  responses: createApiResponses([
+    {
+      schema: z.null(),
+      description: "On success returns null",
+      statusCode: 204,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the note from the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Note not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.delete(
   "/:caseId/notes/:noteId",
@@ -200,7 +415,7 @@ patientCaseRouter.delete(
       params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id, noteId: commonValidations.id }),
     }),
   ),
-  patientCaseController.deleteNoteFromCase,
+  patientCaseController.deletePatientCaseNoteById,
 );
 
 /**
@@ -208,50 +423,129 @@ patientCaseRouter.delete(
  */
 patientCaseRegistry.registerPath({
   method: "get",
-  summary: "Get all case diagnosis for patient with patientId and caseId",
-  path: "/patient/{patientId}/cases/{caseId}/diagnosis/",
-  tags: ["patient case"],
-  request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(z.array(DiagnosisSchema), "Returns an array of diagnosis for the given case"),
+  summary: "Get all cases with a specific diagnosis",
+  description: "Get all cases with a specific diagnosis",
+  operationId: "getCasesByDiagnosis",
+  path: "/diagnosis/{diagnosis}",
+  tags: ["query"],
+  request: { params: z.object({ diagnosis: z.string() }) },
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientCaseSchema),
+      description: "Returns an array of cases with a given diagnosis",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving cases with the given diagnosis.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Diagnosis not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.get(
-  "/:caseId/diagnosis/",
-  validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.getDiagnosis,
+  "/diagnosis/:diagnosis",
+  validateRequest(z.object({ params: z.object({ diagnosis: z.string() }) })),
+  patientCaseController.getCasesByDiagnosis,
 );
 
 /**
- * description: Get all diagnosisICD10 for patientId and caseId
+ * description: Get all cases with a diagnosisICD10
  */
 patientCaseRegistry.registerPath({
   method: "get",
-  summary: "Get all diagnosisICD10 for patientId and caseId",
-  path: "/patient/{patientId}/cases/{caseId}/diagnosisICD10",
-  tags: ["patient case"],
-  request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(z.array(DiagnosisSchema), "Returns an array of diagnosisICD10 for the given case"),
+  summary: "Get all cases with a diagnosisICD10",
+  description: "Get all cases with a diagnosisICD10",
+  operationId: "getCasesByDiagnosisICD10",
+  path: "/diagnosisICD10/{diagnosisICD10}",
+  tags: ["query"],
+  request: { params: z.object({ diagnosisICD10: z.string() }) },
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientCaseSchema),
+      description: "Returns an array of cases with a given diagnosisICD10",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving cases with the given diagnosisICD10.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "DiagnosisICD10 not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.get(
-  "/:caseId/diagnosisICD10",
-  validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.getDiagnosisICD10,
+  "/diagnosisICD10/:diagnosisICD10",
+  validateRequest(z.object({ params: z.object({ diagnosisICD10: z.string() }) })),
+  patientCaseController.getCasesByDiagnosisICD10,
 );
 
 /**
- * description: Get all surgeons for patient with patientId and caseId
+ * description: Get all surgeons for case with patientId and caseId
  */
 patientCaseRegistry.registerPath({
   method: "get",
-  summary: "Get all surgeons for patient with patientId and caseId",
+  summary: "Get all surgeons for case with patientId and caseId",
+  description: "Get all surgeons for case with patientId and caseId",
+  operationId: "getSurgeonsByCaseId",
   path: "/patient/{patientId}/cases/{caseId}/surgeons",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(z.array(UserSchema), "Returns an array of surgeons for the given case"),
+  responses: createApiResponses([
+    {
+      schema: z.array(UserSchema),
+      description: "Returns an array of surgeons for the given case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving surgeons for the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Surgeon not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.get(
   "/:caseId/surgeons",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.getSurgeons,
+  patientCaseController.getSurgeonsByCaseId,
 );
 
 /**
@@ -260,13 +554,41 @@ patientCaseRouter.get(
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Get all supervisors for patientId and caseId",
+  description: "Get all supervisors for patientId and caseId",
+  operationId: "getSupervisorsByCaseId",
   path: "/patient/{patientId}/cases/{caseId}/supervisors",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: createApiResponse(z.array(UserSchema), "Returns an array of supervisors for the given case"),
+  responses: createApiResponses([
+    {
+      schema: z.array(UserSchema),
+      description: "Returns an array of supervisors for the given case",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving supervisors for the patient case.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+  ]),
 });
 patientCaseRouter.get(
   "/:caseId/supervisors",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
-  patientCaseController.getSupervisors,
+  patientCaseController.getSupervisorsByCaseId,
 );
