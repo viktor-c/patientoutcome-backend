@@ -96,16 +96,16 @@ describe("Patient API Endpoints", () => {
   });
 
   // get patient by external id
-  describe("GET /patient/externalPatientId/:externalPatientId", () => {
+  describe("GET /patient/externalId/:externalPatientId", () => {
     it("should return a patient for a valid external ID", async () => {
       // Arrange
-      const testExternalId = mockPatients[0].externalPatientId[0];
+      const testExternalId = mockPatients[1].externalPatientId[0];
       const expectedPatient = mockPatients.find((patient: Patient) =>
         patient.externalPatientId.includes(testExternalId),
       ) as Patient;
 
       // Act
-      const response = await request(app).get(`/patient/externalPatientId/${testExternalId}`);
+      const response = await request(app).get(`/patient/externalId/${testExternalId}`);
       const responseBody: ServiceResponse<Patient> = response.body;
 
       // Assert
@@ -121,7 +121,7 @@ describe("Patient API Endpoints", () => {
       const testExternalId = "nonexistent-external-id";
 
       // Act
-      const response = await request(app).get(`/patient/externalPatientId/${testExternalId}`);
+      const response = await request(app).get(`/patient/externalId/${testExternalId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert

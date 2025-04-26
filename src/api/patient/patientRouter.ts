@@ -30,6 +30,7 @@ patientRegistry.registerPath({
   method: "get",
   path: "/patient",
   tags: ["Patient"],
+  operationId: "getPatients",
   summary: "Get all patients",
   description: "Get all patients",
   responses: createApiResponses([
@@ -58,6 +59,7 @@ patientRegistry.registerPath({
   method: "get",
   path: "/patient/{id}",
   tags: ["Patient"],
+  operationId: "getPatientById",
   summary: "Get a patient by ID",
   description: "Get a patient by ID",
   request: { params: GetPatientSchema.shape.params },
@@ -81,15 +83,16 @@ patientRouter.get("/:id", validateRequest(GetPatientSchema), patientController.g
 // useful when searching for a patient from the frontend, when you do not have the id of a patient
 patientRegistry.registerPath({
   method: "get",
-  path: "/patient/externalPatient/{id}",
+  path: "/patient/externalId/{id}",
   tags: ["Patient"],
+  operationId: "getPatientByExternalId",
   summary: "Get patient by externalPatientId",
   description:
     "Get patient by externalPatientId, useful when searching for a patient from the frontend, when you do not have the id of a patient",
   request: { params: GetPatientByExternalIdSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: z.array(PatientSchema),
+      schema: PatientSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -111,7 +114,7 @@ patientRegistry.registerPath({
   ]),
 });
 patientRouter.get(
-  "/externalPatient/:id",
+  "/externalId/:id",
   validateRequest(GetPatientByExternalIdSchema),
   patientController.getPatientByExternalId,
 );
@@ -121,6 +124,7 @@ patientRegistry.registerPath({
   method: "post",
   path: "/patient",
   tags: ["Patient"],
+  operationId: "createPatient",
   summary: "Create a new patient",
   description:
     "Create a new patient with the provided details. </br>'externalPatientId' must be unique, if not it will return a 409 error.",
@@ -162,6 +166,7 @@ patientRegistry.registerPath({
   method: "put",
   path: "/patient/{id}",
   tags: ["Patient"],
+  operationId: "updatePatient",
   summary: "Update a patient",
   description: "Update a patient with the provided details.",
   request: {
@@ -203,6 +208,7 @@ patientRegistry.registerPath({
   method: "delete",
   path: "/patient/{id}",
   tags: ["Patient"],
+  operationId: "deletePatient",
   request: { params: GetPatientSchema.shape.params },
   summary: "Delete a patient",
   description: "Delete a patient by ID",
