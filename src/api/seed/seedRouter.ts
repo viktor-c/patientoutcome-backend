@@ -1,7 +1,9 @@
-import { ConsultationRepository } from "@/api/patient/case/consultation/consultationRepository";
+import { FormRepository } from "@/api/form/formRepository";
+import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { PatientCaseRepository } from "@/api/patient/case/patientCaseRepository";
+import { ConsultationRepository } from "@/api/patient/consultation/consultationRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { env } from "@/common/utils/envConfig";
+// import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import express, { type Router, type Request, type Response, type NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -9,6 +11,8 @@ import { StatusCodes } from "http-status-codes";
 const seedRouter: Router = express.Router();
 const patientCaseRepository = new PatientCaseRepository();
 const consultationRepository = new ConsultationRepository();
+const formTemplateRepository = new FormTemplateRepository();
+const formRepository = new FormRepository();
 
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
@@ -51,4 +55,34 @@ seedRouter.get("/consultation", async (_req: Request, res: Response) => {
   }
 });
 
-export { seedRouter, patientCaseRepository, consultationRepository };
+seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
+  try {
+    await formTemplateRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Mock form templates inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock form templates",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+seedRouter.get("/form", async (_req: Request, res: Response) => {
+  try {
+    await formRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+export { seedRouter, patientCaseRepository, consultationRepository, formTemplateRepository };
