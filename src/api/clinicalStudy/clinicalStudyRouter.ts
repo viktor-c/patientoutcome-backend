@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { clinicalStudyController } from "./clinicalStudyController";
 // ********************** specific imports for clinicalstudy ************************
@@ -35,7 +35,7 @@ clinicalStudyRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(ClinicalStudySchema, "Success"),
+  responses: createApiResponse(ClinicalStudySchema, "Returns the created clinical study"),
 });
 
 clinicalStudyRouter.post("/", validateRequest(ClinicalStudySchema), clinicalStudyController.createClinicalStudy);
@@ -45,7 +45,26 @@ clinicalStudyRegistry.registerPath({
   method: "get",
   path: "/clinicalstudy",
   tags: ["ClinicalStudy"],
-  responses: createApiResponse(z.array(ClinicalStudySchema), "Success"),
+  operationId: "getClinicalStudies",
+  summary: "Get all clinical studies",
+  description: "Get all clinical studies",
+  responses: createApiResponses([
+    {
+      schema: z.array(ClinicalStudySchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving clinical studies.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.get("/", clinicalStudyController.getClinicalStudies);
@@ -55,8 +74,27 @@ clinicalStudyRegistry.registerPath({
   method: "get",
   path: "/clinicalstudy/{id}",
   tags: ["ClinicalStudy"],
+  operationId: "getClinicalStudyById",
+  summary: "Get a clinical study by ID",
+  description: "Get a clinical study by ID",
   request: { params: GetClinicalStudySchema.shape.params },
-  responses: createApiResponse(ClinicalStudySchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: ClinicalStudySchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.get("/:id", validateRequest(GetClinicalStudySchema), clinicalStudyController.getClinicalStudyById);
@@ -66,6 +104,9 @@ clinicalStudyRegistry.registerPath({
   method: "put",
   path: "/clinicalstudy/{id}",
   tags: ["ClinicalStudy"],
+  operationId: "updateClinicalStudy",
+  summary: "Update a clinical study by ID",
+  description: "Update a clinical study by ID",
   request: {
     params: UpdateClinicalStudySchema.shape.params,
     body: {
@@ -74,7 +115,28 @@ clinicalStudyRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(ClinicalStudySchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: ClinicalStudySchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the clinical study",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.put(
@@ -88,12 +150,32 @@ clinicalStudyRegistry.registerPath({
   method: "delete",
   path: "/clinicalstudy/{id}",
   tags: ["ClinicalStudy"],
+  operationId: "deleteClinicalStudy",
+  summary: "Delete a clinical study by ID",
+  description: "Delete a clinical study by ID",
   request: { params: GetClinicalStudySchema.shape.params },
-  responses: {
-    [204]: {
-      description: "Clinical study deleted successfully",
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 204,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the clinical study",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.delete(
@@ -107,8 +189,32 @@ clinicalStudyRegistry.registerPath({
   method: "get",
   path: "/clinicalstudy/supervisor/{supervisorId}",
   tags: ["ClinicalStudy"],
+  operationId: "getClinicalStudiesBySupervisorId",
+  summary: "Get clinical studies by supervisor ID",
+  description: "Get clinical studies by supervisor ID",
   request: { params: GetClinicalStudyBySupervisorIdSchema.shape.params },
-  responses: createApiResponse(z.array(ClinicalStudySchema), "Success"),
+  responses: createApiResponses([
+    {
+      schema: z.array(ClinicalStudySchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving clinical studies.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.get(
@@ -122,8 +228,32 @@ clinicalStudyRegistry.registerPath({
   method: "get",
   path: "/clinicalstudy/studynurse/{studyNurseId}",
   tags: ["ClinicalStudy"],
+  operationId: "getClinicalStudiesByStudyNurseId",
+  summary: "Get clinical studies by study nurse ID",
+  description: "Get clinical studies by study nurse ID",
   request: { params: GetClinicalStudyByNurseIdSchema.shape.params },
-  responses: createApiResponse(z.array(ClinicalStudySchema), "Success"),
+  responses: createApiResponses([
+    {
+      schema: z.array(ClinicalStudySchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving clinical studies.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.get(
@@ -137,8 +267,32 @@ clinicalStudyRegistry.registerPath({
   method: "get",
   path: "/clinicalstudy/diagnosis/{diagnosis}",
   tags: ["ClinicalStudy"],
+  operationId: "getClinicalStudiesByDiagnosis",
+  summary: "Get clinical studies by diagnosis",
+  description: "Get clinical studies by diagnosis",
   request: { params: GetClinicalStudyByDiagnosisSchema.shape.params },
-  responses: createApiResponse(z.array(ClinicalStudySchema), "Success"),
+  responses: createApiResponses([
+    {
+      schema: z.array(ClinicalStudySchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Clinical study not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving clinical studies.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.get(
