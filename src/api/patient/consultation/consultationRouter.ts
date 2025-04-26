@@ -1,3 +1,4 @@
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -16,7 +17,9 @@ patientCaseConsultationRegistry.registerPath({
   method: "post",
   path: "/patient/{patientId}/cases/{caseId}/consultation",
   tags: ["patient case consultation"],
+  operationId: "createConsultation",
   summary: "Create a new consultation for a patient case",
+  description: "Create a new consultation for a patient case",
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
     body: {
@@ -25,12 +28,23 @@ patientCaseConsultationRegistry.registerPath({
       },
     },
   },
-  responses: {
-    201: {
+  responses: createApiResponses([
+    {
+      schema: PatientCaseConsultationSchema,
       description: "Consultation created successfully",
-      content: { "application/json": { schema: PatientCaseConsultationSchema } },
+      statusCode: 201,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the consultation.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 consultationRouter.post(
@@ -44,7 +58,9 @@ patientCaseConsultationRegistry.registerPath({
   method: "get",
   path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
+  operationId: "getConsultationById",
   summary: "Retrieve a consultation by ID for a patientId and caseId",
+  description: "Retrieve a consultation by ID for a patientId and caseId",
   request: {
     params: z.object({
       patientId: commonValidations.id,
@@ -52,12 +68,28 @@ patientCaseConsultationRegistry.registerPath({
       consultationId: commonValidations.id,
     }),
   },
-  responses: {
-    200: {
+  responses: createApiResponses([
+    {
+      schema: PatientCaseConsultationSchema,
       description: "Consultation retrieved successfully",
-      content: { "application/json": { schema: PatientCaseConsultationSchema } },
+      statusCode: 200,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Consultation not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the consultation.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 consultationRouter.get("/:consultationId", consultationController.getConsultationById);
@@ -67,14 +99,27 @@ patientCaseConsultationRegistry.registerPath({
   method: "get",
   path: "/patient/{patientId}/cases/{caseId}/consultations",
   tags: ["patient case consultation"],
+  operationId: "getAllConsultations",
   summary: "Retrieve all consultations for a given patientId and caseId",
+  description: "Retrieve all consultations for a given patientId and caseId",
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
-  responses: {
-    200: {
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientCaseConsultationSchema),
       description: "Consultations retrieved successfully",
-      content: { "application/json": { schema: z.array(PatientCaseConsultationSchema) } },
+      statusCode: 200,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the consultations.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 consultationRouter.get("/", consultationController.getAllConsultations);
@@ -84,7 +129,9 @@ patientCaseConsultationRegistry.registerPath({
   method: "put",
   path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
+  operationId: "updateConsultation",
   summary: "Update a consultation by ID for a patient case",
+  description: "Update a consultation by ID for a patient case",
   request: {
     params: z.object({
       patientId: commonValidations.id,
@@ -99,12 +146,28 @@ patientCaseConsultationRegistry.registerPath({
       },
     },
   },
-  responses: {
-    200: {
+  responses: createApiResponses([
+    {
+      schema: PatientCaseConsultationSchema,
       description: "Consultation updated successfully",
-      content: { "application/json": { schema: PatientCaseConsultationSchema } },
+      statusCode: 200,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Consultation not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the consultation.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 consultationRouter.put(
@@ -118,6 +181,9 @@ patientCaseConsultationRegistry.registerPath({
   method: "delete",
   path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
+  operationId: "deleteConsultation",
+  summary: "Delete a consultation by ID for a patient case",
+  description: "Delete a consultation by ID for a patient case",
   request: {
     params: z.object({
       patientId: commonValidations.id,
@@ -125,11 +191,28 @@ patientCaseConsultationRegistry.registerPath({
       consultationId: commonValidations.id,
     }),
   },
-  responses: {
-    204: {
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
       description: "Consultation deleted successfully",
+      statusCode: 204,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Consultation not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the consultation.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 consultationRouter.delete("/:consultationId", consultationController.deleteConsultation);

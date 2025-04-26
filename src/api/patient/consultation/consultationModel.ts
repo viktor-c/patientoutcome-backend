@@ -1,6 +1,6 @@
 import { NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
-import mongoose, { type Document } from "mongoose";
+import mongoose from "mongoose";
 import { z } from "zod";
 
 // Define the Form schema
@@ -38,7 +38,7 @@ export type PatientCaseConsultation = z.infer<typeof PatientCaseConsultationSche
 // Define the mongoose schema and model
 const PatientCaseConsultationMongooseSchema = zodSchema(PatientCaseConsultationSchema.omit({ _id: true }));
 
-export const consultationModel = mongoose.model<PatientCaseConsultation & Document>(
+export const consultationModel = mongoose.model<PatientCaseConsultation>(
   "Consultation",
   PatientCaseConsultationMongooseSchema,
   "consultations",

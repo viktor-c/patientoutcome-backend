@@ -33,73 +33,73 @@ export class ConsultationRepository {
       _id: "60d5ec49f1b2c12d88f1e8a1",
       __v: 0,
       patientCaseId: "677da5d8cb4569ad1c65515f",
-      dateAndTime: faker.date.past().toISOString(),
+      dateAndTime: faker.date.past(),
       reasonForConsultation: ["planned"],
       notes: [
         {
           _id: "507f1f77bcf86cd799439011",
-          dateCreated: faker.date.past().toISOString(),
-          createdBy: faker.helpers.arrayElement(mockUsers)._id,
+          dateCreated: faker.date.past(),
+          createdBy: faker.helpers.arrayElement(mockUsers)._id || "",
           text: faker.lorem.paragraph(),
         },
       ],
       proms: [],
       images: [],
-      visitedBy: [faker.helpers.arrayElement(mockUsers)._id],
+      visitedBy: [faker.helpers.arrayElement(mockUsers)._id || ""],
     },
     {
       _id: "60d5ec49f1b2c12d88f1e8a2",
       __v: 0,
       patientCaseId: "677da5d8cb4569ad1c65515f",
-      dateAndTime: faker.date.past().toISOString(),
+      dateAndTime: faker.date.past(),
       reasonForConsultation: ["emergency"],
       notes: [
         {
           _id: "60d5ec49f1b2c12d88f1e8b5",
-          dateCreated: faker.date.past().toISOString(),
-          createdBy: faker.helpers.arrayElement(mockUsers)._id,
+          dateCreated: faker.date.past(),
+          createdBy: faker.helpers.arrayElement(mockUsers)._id || "",
           text: faker.lorem.paragraph(),
         },
       ],
       proms: [],
       images: [],
-      visitedBy: [faker.helpers.arrayElement(mockUsers)._id],
+      visitedBy: [faker.helpers.arrayElement(mockUsers)._id || ""],
     },
     {
       _id: "60d5ec49f1b2c12d88f1e8a3",
       __v: 0,
       patientCaseId: "677da5efcb4569ad1c655160",
-      dateAndTime: faker.date.past().toISOString(),
+      dateAndTime: faker.date.past(),
       reasonForConsultation: ["pain"],
       notes: [
         {
           _id: "60d5ec49f1b2c12d88f1e8b6",
-          dateCreated: faker.date.past().toISOString(),
-          createdBy: faker.helpers.arrayElement(mockUsers)._id,
+          dateCreated: faker.date.past(),
+          createdBy: faker.helpers.arrayElement(mockUsers)._id || "",
           text: faker.lorem.paragraph(),
         },
       ],
       proms: [],
       images: [],
-      visitedBy: [faker.helpers.arrayElement(mockUsers)._id],
+      visitedBy: [faker.helpers.arrayElement(mockUsers)._id || ""],
     },
     {
       _id: "60d5ec49f1b2c12d88f1e8a4",
       __v: 0,
       patientCaseId: "677da5efcb4569ad1c655160",
-      dateAndTime: faker.date.past().toISOString(),
+      dateAndTime: faker.date.past(),
       reasonForConsultation: ["followup"],
       notes: [
         {
           _id: "60d5ec49f1b2c12d88f1e8b7",
-          dateCreated: faker.date.past().toISOString(),
-          createdBy: faker.helpers.arrayElement(mockUsers)._id,
+          dateCreated: faker.date.past(),
+          createdBy: faker.helpers.arrayElement(mockUsers)._id || "",
           text: faker.lorem.paragraph(),
         },
       ],
       proms: [],
       images: [],
-      visitedBy: [faker.helpers.arrayElement(mockUsers)._id],
+      visitedBy: [faker.helpers.arrayElement(mockUsers)._id || ""],
     },
   ];
 
@@ -108,5 +108,3 @@ export class ConsultationRepository {
     return consultationModel.insertMany(this.mockConsultations);
   }
 }
-
-// export const consultationRepository = new ConsultationRepository();
