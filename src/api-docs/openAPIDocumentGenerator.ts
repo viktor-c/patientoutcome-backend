@@ -4,8 +4,8 @@ import { clinicalStudyRegistry } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formRegistry } from "@/api/form/formRouter";
 import { formTemplateRegistry } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
-import { patientCaseConsultationRegistry } from "@/api/patient/case/consultation/consultationRouter";
 import { patientCaseRegistry } from "@/api/patient/case/patientCaseRouter";
+import { patientCaseConsultationRegistry } from "@/api/patient/consultation/consultationRouter";
 import { patientRegistry } from "@/api/patient/patientRouter";
 import { userRegistry } from "@/api/user/userRouter";
 
