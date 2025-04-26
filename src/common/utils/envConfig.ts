@@ -14,3 +14,14 @@ export const env = cleanEnv(process.env, {
     devDefault: testOnly("mongodb://patientmanager:1234Test@localhost:27017/clinical-patientoutcome?authSource=admin"),
   }),
 });
+
+//only show debug info when node env is development
+if (env.NODE_ENV === "development") {
+  console.debug("Debug mode is ON");
+  console.debug("Environment variables loaded successfully");
+  console.debug("CORS_ORIGIN: ", env.CORS_ORIGIN);
+  console.debug("NODE_ENV: ", env.NODE_ENV);
+  console.debug("MONGO_URI: ", env.MONGO_URI);
+  console.debug("PORT: ", env.PORT);
+  console.debug("HOST: ", env.HOST);
+}
