@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { clinicalStudyController } from "./clinicalStudyController";
 // ********************** specific imports for clinicalstudy ************************
@@ -28,6 +28,9 @@ clinicalStudyRegistry.registerPath({
   method: "post",
   path: "/clinicalstudy",
   tags: ["ClinicalStudy"],
+  operationId: "createClinicalStudy",
+  summary: "Create a new clinical study",
+  description: "Create a new clinical study",
   request: {
     body: {
       content: {
@@ -35,7 +38,23 @@ clinicalStudyRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(ClinicalStudySchema, "Returns the created clinical study"),
+  responses: createApiResponses([
+    {
+      schema: ClinicalStudySchema,
+      description: "Success",
+      statusCode: 201,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the clinical study",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 clinicalStudyRouter.post("/", validateRequest(ClinicalStudySchema), clinicalStudyController.createClinicalStudy);
