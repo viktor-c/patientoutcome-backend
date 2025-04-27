@@ -65,10 +65,14 @@ seedRouter.get("/patientCase", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * seed database with mock data for consultations
+ * @route GET /seed/consultation
+ */
 seedRouter.get("/consultation", async (_req: Request, res: Response) => {
   try {
     await consultationRepository.createMockData();
-    const serviceResponse = ServiceResponse.success("Mock data inserted successfully", null);
+    const serviceResponse = ServiceResponse.success("Consultation Mock data inserted successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(

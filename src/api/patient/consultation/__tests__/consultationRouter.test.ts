@@ -24,8 +24,8 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should get a consultation by ID", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const consultationId = consultationRepository.mockConsultations[0]._id;
 
     const response = await request(app).get(`/patient/${patientId}/cases/${caseId}/consultations/${consultationId}`);
@@ -40,8 +40,8 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should get all consultations", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const response = await request(app).get(`/patient/${patientId}/cases/${caseId}/consultations`);
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultations retrieved successfully");
@@ -54,8 +54,8 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should create and delete a consultation", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     // Create a new consultation
     const createResponse = await request(app)
       .post(`/patient/${patientId}/cases/${caseId}/consultations/`)
@@ -81,8 +81,8 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should update a consultation by ID", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const consultationId = consultationRepository.mockConsultations[0]._id;
     const response = await request(app)
       .put(`/patient/${patientId}/cases/${caseId}/consultations/${consultationId}`)
@@ -93,8 +93,8 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should return 404 for an invalid consultation ID", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const invalidConsultationId = new mongoose.Types.ObjectId().toString();
 
     const response = await request(app).get(

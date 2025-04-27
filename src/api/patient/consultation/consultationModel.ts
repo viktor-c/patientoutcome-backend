@@ -6,7 +6,9 @@ import { z } from "zod";
 // Define the Form schema
 export const FormSchema = z.object({
   id: z.string(),
-  data: z.record(z.any()), // Placeholder for form data
+  formData: z.record(z.any()), // Placeholder for form data
+  basedOnTemplateId: zId("FormTemplate"),
+  notedScore: z.number().optional(),
   createdAt: z.date(),
   createdBy: zId("User"),
 });
