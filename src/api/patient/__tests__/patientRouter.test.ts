@@ -2,21 +2,36 @@ import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 
 import type { Patient } from "@/api/patient/patientModel";
+import { patientRepository } from "@/api/seed/seedRouter";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ObjectId } from "mongoose";
-import { mockPatients } from "../patientRepository";
 
 //TODO regenerate Database
 let newPatientId: string | ObjectId = "";
 
 const newPatient = {
-  externalPatientId: ["12345"],
+  externalPatientId: ["99999"],
   age: 30,
   sex: "M",
 } as Patient;
 
 describe("Patient API Endpoints", () => {
+  beforeAll(async () => {
+    try {
+      const res = await request(app).get("/seed/patients");
+      if (res.status !== StatusCodes.OK) {
+        throw new Error("Failed to insert consultation data");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Setup failed: ${error.message}`);
+      } else {
+        throw new Error("Setup failed: Unknown error");
+      }
+    }
+  });
+
   describe("GET /patient", () => {
     it("should return a list of patients", async () => {
       // Act
@@ -27,8 +42,10 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Patients found");
-      expect(responseBody.responseObject.length).toEqual(mockPatients.length);
-      responseBody.responseObject.forEach((patient, index) => comparePatients(mockPatients[index] as Patient, patient));
+      expect(responseBody.responseObject.length).toEqual(patientRepository.mockPatients.length);
+      responseBody.responseObject.forEach((patient, index) =>
+        comparePatients(patientRepository.mockPatients[index] as Patient, patient),
+      );
     });
   });
 
@@ -36,8 +53,10 @@ describe("Patient API Endpoints", () => {
   describe("GET /patient/:id", () => {
     it("should return a patient for a valid ID", async () => {
       // Arrange
-      const testId = mockPatients[0]._id;
-      const expectedPatient = mockPatients.find((patient: Patient) => patient._id === testId) as Patient;
+      const testId = patientRepository.mockPatients[0]._id;
+      const expectedPatient = patientRepository.mockPatients.find(
+        (patient: Patient) => patient._id === testId,
+      ) as Patient;
 
       // Act
       const response = await request(app).get(`/patient/${testId}`);
@@ -99,8 +118,8 @@ describe("Patient API Endpoints", () => {
   describe("GET /patient/externalId/:externalPatientId", () => {
     it("should return a patient for a valid external ID", async () => {
       // Arrange
-      const testExternalId = mockPatients[1].externalPatientId[0];
-      const expectedPatient = mockPatients.find((patient: Patient) =>
+      const testExternalId = patientRepository.mockPatients[1].externalPatientId[0];
+      const expectedPatient = patientRepository.mockPatients.find((patient: Patient) =>
         patient.externalPatientId.includes(testExternalId),
       ) as Patient;
 
@@ -179,10 +198,10 @@ describe("Patient API Endpoints", () => {
   describe("PUT /patient/:id", () => {
     it("should update a patient successfully", async () => {
       // Arrange
-      const testId = mockPatients[0]._id;
+      const testId = patientRepository.mockPatients[0]._id;
       const updatedData = { age: 100 };
       // does not work otherwise because copies are shallow
-      const expectedPatient = JSON.parse(JSON.stringify(mockPatients[0])) as Patient;
+      const expectedPatient = JSON.parse(JSON.stringify(patientRepository.mockPatients[0])) as Patient;
       expectedPatient.age = 100;
 
       // Act
@@ -196,12 +215,14 @@ describe("Patient API Endpoints", () => {
       comparePatients(expectedPatient, responseBody.responseObject);
 
       // Reset the name back to original
-      await request(app).put(`/patient/${testId}`).send(mockPatients[0]);
+      await request(app).put(`/patient/${testId}`).send(patientRepository.mockPatients[0]);
     });
 
     // restore the original data
     afterAll(async () => {
-      await request(app).put(`/patient/${mockPatients[0]._id}`).send(mockPatients[0]);
+      await request(app)
+        .put(`/patient/${patientRepository.mockPatients[0]._id}`)
+        .send(patientRepository.mockPatients[0]);
     });
   });
 

@@ -4,6 +4,8 @@ import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
 
+import { PatientCaseSchema } from "@/api/patient/case/patientCaseModel";
+
 // Extend zod with OpenAPI support
 extendZodWithOpenApi(z);
 
@@ -13,7 +15,7 @@ export const PatientSchema = z.object({
   externalPatientId: z.array(z.string()),
   age: z.number(),
   sex: z.string(),
-  cases: z.array(z.object({ id: z.string(), description: z.string() })).optional(),
+  cases: z.array(zId("PatientCase")).optional(),
 });
 
 // Infer TypeScript type from the schema

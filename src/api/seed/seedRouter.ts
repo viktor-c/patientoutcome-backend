@@ -7,8 +7,10 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import express, { type Router, type Request, type Response, type NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+import { PatientRepository } from "../patient/patientRepository";
 
 const seedRouter: Router = express.Router();
+const patientRepository = new PatientRepository();
 const patientCaseRepository = new PatientCaseRepository();
 const consultationRepository = new ConsultationRepository();
 const formTemplateRepository = new FormTemplateRepository();
@@ -25,6 +27,29 @@ const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
 
 seedRouter.use(checkTestingEnv);
 
+/**
+ * seed database with mock data for patients
+ * @route GET /seed/patients
+ */
+seedRouter.get("/patients", async (_req: Request, res: Response) => {
+  try {
+    await patientRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Patient mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+/**
+ * seed database with mock data for patient cases
+ * @route GET /seed/patientCase
+ */
 seedRouter.get("/patientCase", async (_req: Request, res: Response) => {
   try {
     await patientCaseRepository.createMockData();
