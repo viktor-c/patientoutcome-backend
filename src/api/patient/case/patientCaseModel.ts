@@ -11,7 +11,7 @@ export type DiagnosisSchema = z.infer<typeof DiagnosisSchema>;
  */
 export const SurgerySchema = z.object({
   _id: zId(),
-  // externalId: z.string().optional(),
+  externalId: z.string().optional(),
   diagnosis: z.array(DiagnosisSchema).optional(),
   diagnosisICD10: z.array(DiagnosisSchema).optional(),
   therapy: z.string().optional(),

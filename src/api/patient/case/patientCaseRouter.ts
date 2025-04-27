@@ -3,7 +3,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { UserSchema } from "@/api/user/userModel";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";

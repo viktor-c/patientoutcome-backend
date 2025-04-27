@@ -52,8 +52,8 @@ seedRouter.get("/patients", async (_req: Request, res: Response) => {
  */
 seedRouter.get("/patientCase", async (_req: Request, res: Response) => {
   try {
-    await patientCaseRepository.createMockData();
-    const serviceResponse = ServiceResponse.success("Mock data inserted successfully", null);
+    await patientCaseRepository.createMockPatientCaseData();
+    const serviceResponse = ServiceResponse.success("Patient case mock data inserted successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(

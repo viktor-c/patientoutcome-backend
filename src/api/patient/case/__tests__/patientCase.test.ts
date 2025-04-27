@@ -1,6 +1,5 @@
 import { patientCaseRepository } from "@/api/seed/seedRouter";
-import { app } from "@/server"; // Assuming you have an Express app instance
-import mongoose from "mongoose";
+import { app } from "@/server";
 import request from "supertest";
 import { type PatientCase, PatientCaseSchema } from "../patientCaseModel";
 
@@ -22,54 +21,63 @@ describe("PatientCase API", () => {
   });
 
   it("should get all cases", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const res = await request(app).get(`/patient/${patientId}/cases`);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
     expect(res.body.responseObject).length(1);
     expect(PatientCaseSchema.safeParse(res.body.responseObject[0]).success).toBeTruthy();
-    expect(res.body.responseObject[0]._id).toEqual(patientCaseRepository.mockCases[0]._id);
+    expect(res.body.responseObject[0]._id).toEqual(patientCaseRepository.mockPatientCases[0]._id);
     //TODO add indepth compare of objects
   });
 
   it("should get a case by ID", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const res = await request(app).get(`/patient/${patientId}/cases/${caseId}`);
     expect(res.status).toBe(200);
-    comparePatientCases(res.body.responseObject, patientCaseRepository.mockCases[0] as unknown as PatientCase);
+    comparePatientCases(res.body.responseObject, patientCaseRepository.mockPatientCases[0] as unknown as PatientCase);
   });
 
   it("should create and delete a case", async () => {
     const newCase = {
-      patient: new mongoose.Types.ObjectId(patientCaseRepository.mockCases[0].patient),
-      MainDiagnosis: ["Diagnosis"],
+      _id: "677da5efcb4569ad1c655190",
+      patient: "6771d9d410ede2552b7bba41",
+      MainDiagnosis: ["M24.1", "M71.0"],
       StudyDiagnosis: ["Hallux valgus"],
-      MainDiagnosisICD10: ["A123"],
-      StudyDiagnosisICD10: ["B456"],
+      MainDiagnosisICD10: ["M20.5"],
+      StudyDiagnosisICD10: ["M20.1"],
       surgeries: [
         {
-          externalId: "12345",
-          diagnosis: ["Diagnosis"],
-          surgeryDate: new Date().toISOString(),
+          _id: "677da5efcb4569ad1c655560",
+          externalId: "23a9618a-456a-49e3-8156-e2189f888bdb",
+          diagnosis: ["M78.7", "M73.8"],
           side: "none",
-          roentgenDosis: 10,
-          roentgenTime: "00:00:10.000",
-          anaesthesiaType: { id: 1, type: "block" },
-          surgeons: [new mongoose.Types.ObjectId("676336bea497301f6eff8c91")],
-        },
-      ],
-      medicalHistory: "History",
-      notes: [
-        {
-          dateCreated: new Date(),
-          createdBy: new mongoose.Types.ObjectId("676336bea497301f6eff8c91"),
-          text: "Note text",
+          surgeryDate: "2025-03-01T04:11:41.154Z",
+          anaesthesiaType: {
+            id: 1,
+            type: "block",
+          },
+          roentgenDosis: 76.89170063405697,
+          roentgenTime: "00:00:03.000",
+          surgeons: ["676336bea497301f6eff8c91"],
         },
       ],
       supervisors: ["676336bea497301f6eff8c91"],
+      notes: [
+        {
+          _id: "680e82ae009afe565f47e432",
+          dateCreated: "2025-04-27T19:17:02.977Z",
+          createdBy: "676336bea497301f6eff8c90",
+          text: "Rem dignissimos quisquam impedit ut nulla. Id dignissimos rem. Dicta in perferendis neque ut ea numquam dolore minus nemo.",
+        },
+      ],
+      medicalHistory:
+        "Officiis amet repudiandae quidem pariatur quia ipsam praesentium aut. Rerum repudiandae libero rerum culpa dolorum. Reprehenderit eum laudantium dolorum officia nihil et architecto.",
+      __v: 0,
     };
-    const patientId = patientCaseRepository.mockCases[0].patient;
+
+    const patientId = newCase.patient;
     const createRes = await request(app).post(`/patient/${patientId}/cases`).send(newCase);
     expect(createRes.status).toBe(201);
     expect(createRes.body.responseObject).toHaveProperty("_id");
@@ -82,8 +90,8 @@ describe("PatientCase API", () => {
   });
 
   it("should update a case", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const updateData = { MainDiagnosis: ["Updated Diagnosis"] };
     const res = await request(app).put(`/patient/${patientId}/cases/${caseId}`).send(updateData);
     expect(res.status).toBe(200);
@@ -91,17 +99,18 @@ describe("PatientCase API", () => {
   });
 
   it("should get all notes for a case", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
+    const notes = patientCaseRepository.mockPatientCases[0].notes;
     const res = await request(app).get(`/patient/${patientId}/cases/${caseId}/notes`);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
-    expect(compareObjects(res.body.responseObject[0], patientCaseRepository.mockCases[0].notes[0])).toBeTruthy();
+    expect(compareObjects(res.body.responseObject[0], notes[0])).toBeTruthy();
   });
 
   it("should post and delete a note for a case", async () => {
-    const patientId = patientCaseRepository.mockCases[0].patient;
-    const caseId = patientCaseRepository.mockCases[0]._id;
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const newNote = {
       dateCreated: new Date(),
       createdBy: "676336bea497301f6eff8c90",
@@ -130,11 +139,11 @@ describe("PatientCase API", () => {
   }
 
   it("should compare two patient cases", () => {
-    const case1 = patientCaseRepository.mockCases[0] as unknown as PatientCase;
-    const case2 = { ...patientCaseRepository.mockCases[0] } as unknown as PatientCase;
+    const case1 = patientCaseRepository.mockPatientCases[0] as unknown as PatientCase;
+    const case2 = { ...patientCaseRepository.mockPatientCases[0] } as unknown as PatientCase;
     expect(comparePatientCases(case1, case2)).toBe(true);
 
-    const case3 = patientCaseRepository.mockCases[1] as unknown as PatientCase;
+    const case3 = patientCaseRepository.mockPatientCases[1] as unknown as PatientCase;
     expect(comparePatientCases(case1, case3)).toBe(false);
   });
 });

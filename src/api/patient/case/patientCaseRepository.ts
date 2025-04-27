@@ -26,7 +26,6 @@ export class PatientCaseRepository {
   async createPatientCase(patientId: string, data: Partial<PatientCase>): Promise<PatientCase> {
     try {
       const newCase = new PatientCaseModel(data);
-      //newCase.patient = new mongoose.Schema.ObjectId(patientId);
       newCase.patient = patientId;
       return newCase.save();
     } catch (error) {
@@ -400,7 +399,7 @@ export class PatientCaseRepository {
     { id: 3, type: "general anaesthesia" },
     { id: 4, type: "local" },
   ];
-  public mockCases = [
+  public mockPatientCases = [
     {
       _id: "677da5d8cb4569ad1c65515f",
       patient: "6771d9d410ede2552b7bba40",
@@ -411,6 +410,7 @@ export class PatientCaseRepository {
       __v: 0,
       surgeries: [
         {
+          _id: "677da5d8cb4569ad1c65525f",
           externalId: faker.string.uuid(),
           diagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
           surgeryDate: faker.date.past().toISOString(),
@@ -442,6 +442,7 @@ export class PatientCaseRepository {
       __v: 0,
       surgeries: [
         {
+          _id: "677da5efcb4569ad1c655560",
           externalId: faker.string.uuid(),
           diagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
           surgeryDate: faker.date.past().toISOString(),
@@ -464,11 +465,11 @@ export class PatientCaseRepository {
       supervisors: ["676336bea497301f6eff8c91"],
     },
   ];
-  async createMockData(): Promise<void> {
+  async createMockPatientCaseData(): Promise<void> {
     try {
-      // Add code to save mockCases to the database
+      // Add code to save mockPatientCases to the database
       await PatientCaseModel.deleteMany({});
-      const result = await PatientCaseModel.insertMany(this.mockCases);
+      const result = await PatientCaseModel.insertMany(this.mockPatientCases);
     } catch (error) {
       return Promise.reject(error);
     }
