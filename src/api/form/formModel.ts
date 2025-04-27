@@ -9,6 +9,7 @@ export const Form = z
     patientId: zId(),
     caseId: zId(),
     consultationId: zId(),
+    formTemplateId: zId(),
     formData: z.object({}).passthrough(),
     score: z.number(),
   })

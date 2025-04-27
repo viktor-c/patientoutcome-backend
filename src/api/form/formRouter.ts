@@ -1,4 +1,4 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -35,9 +35,11 @@ const updateFormSchema = z.object({
 // Register path for getting a form by patient ID, case ID, consultation ID and form Id
 formRegistry.registerPath({
   method: "get",
-  summary: "Get a form by patient ID, case ID, consultation ID and form ID",
   path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}/form/{formId}",
   tags: ["form"],
+  operationId: "getFormByPatientCaseConsultationFormId",
+  description: "Get a form by patient ID, case ID, consultation ID and form ID",
+  summary: "Get a form by patient ID, case ID, consultation ID and form ID",
   request: {
     params: z.object({
       patientId: commonValidations.id,
@@ -46,7 +48,23 @@ formRegistry.registerPath({
       formId: commonValidations.id,
     }),
   },
-  responses: createApiResponse(createFormSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: createFormSchema.shape.body,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the form.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.get(
@@ -57,9 +75,11 @@ router.get(
 // Register the path for creating a form
 formRegistry.registerPath({
   method: "post",
-  summary: "Create a new form",
   path: "/form",
   tags: ["form"],
+  operationId: "createForm",
+  description: "Create a new form",
+  summary: "Create a new form",
   request: {
     body: {
       content: {
@@ -67,7 +87,23 @@ formRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(createFormSchema, "Returns the created form"),
+  responses: createApiResponses([
+    {
+      schema: createFormSchema.shape.body,
+      description: "Success",
+      statusCode: 201,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the form.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.post("/form", validateRequest(createFormSchema), formController.createForm);
@@ -75,10 +111,28 @@ router.post("/form", validateRequest(createFormSchema), formController.createFor
 // Register the path for getting all forms
 formRegistry.registerPath({
   method: "get",
-  summary: "Get all forms",
   path: "/forms",
   tags: ["form"],
-  responses: createApiResponse(z.array(createFormSchema.shape.body), "Success"),
+  operationId: "getForms",
+  description: "Get all forms",
+  summary: "Get all forms",
+  responses: createApiResponses([
+    {
+      schema: z.array(createFormSchema.shape.body),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving forms.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.get("/forms", formController.getForms);
@@ -86,11 +140,29 @@ router.get("/forms", formController.getForms);
 // Register the path for getting a form by ID
 formRegistry.registerPath({
   method: "get",
-  summary: "Get a form by ID",
   path: "/form/{formId}",
   tags: ["form"],
+  operationId: "getForm",
+  description: "Get a form by ID",
+  summary: "Get a form by ID",
   request: { params: formIdSchema.shape.params },
-  responses: createApiResponse(createFormSchema.shape.body, "Success"),
+  responses: createApiResponses([
+    {
+      schema: createFormSchema.shape.body,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the form.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.get("/form/:formId", validateRequest(formIdSchema), formController.getForm);
@@ -98,9 +170,11 @@ router.get("/form/:formId", validateRequest(formIdSchema), formController.getFor
 // Register the path for updating a form
 formRegistry.registerPath({
   method: "put",
-  summary: "Update a form",
   path: "/form/{formId}",
   tags: ["form"],
+  operationId: "updateForm",
+  description: "Update a form",
+  summary: "Update a form",
   request: {
     params: z.object({ formId: z.string() }),
     body: {
@@ -109,7 +183,23 @@ formRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(updateFormSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: createFormSchema.shape.body,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the form.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.put("/form/:formId", validateRequest(updateFormSchema), formController.updateForm);
@@ -117,15 +207,29 @@ router.put("/form/:formId", validateRequest(updateFormSchema), formController.up
 // Register the path for deleting a form
 formRegistry.registerPath({
   method: "delete",
-  summary: "Delete a form",
   path: "/form/{formId}",
   tags: ["form"],
+  operationId: "deleteForm",
+  description: "Delete a form",
+  summary: "Delete a form",
   request: { params: z.object({ formId: z.string() }) },
-  responses: {
-    [204]: {
-      description: "Form deleted successfully",
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 200,
     },
-  },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the form.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 router.delete("/form/:formId", validateRequest(formIdSchema), formController.deleteForm);

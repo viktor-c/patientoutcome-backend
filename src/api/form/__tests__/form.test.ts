@@ -35,6 +35,7 @@ describe("Form API", () => {
     const res = await request(app).get("/forms");
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
+    expect(res.body.responseObject.length).toBe(formRepository.mockForms.length);
   });
 
   it("should get a form by ID", async () => {
@@ -49,6 +50,7 @@ describe("Form API", () => {
       patientId: formRepository.mockForms[0].patientId,
       caseId: formRepository.mockForms[0].caseId,
       consultationId: formRepository.mockForms[0].consultationId,
+      formTemplateId: "67b4e612d0feb4ad99ae2e84",
       formData: { id: "test" },
       score: 0,
     };

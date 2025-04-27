@@ -39,6 +39,7 @@ export class FormRepository {
       patientId: "6771d9d410ede2552b7bba40",
       caseId: "677da5d8cb4569ad1c65515f",
       consultationId: "60d5ec49f1b2c12d88f1e8a1",
+      formTemplateId: "67b4e612d0feb4ad99ae2e83",
       formData: { question1: "answer1" },
       score: 10,
     },
@@ -47,6 +48,7 @@ export class FormRepository {
       patientId: "6771d9d410ede2552b7bba40",
       caseId: "677da5d8cb4569ad1c65515f",
       consultationId: "60d5ec49f1b2c12d88f1e8a2",
+      formTemplateId: "67b4e612d0feb4ad99ae2e83",
       formData: { question2: "answer2" },
       score: 20,
     },
@@ -55,6 +57,7 @@ export class FormRepository {
       patientId: "6771d9d410ede2552b7bba40",
       caseId: "677da5d8cb4569ad1c65515f",
       consultationId: "60d5ec49f1b2c12d88f1e8a3",
+      formTemplateId: "67b4e612d0feb4ad99ae2e83",
       formData: { question3: "answer3" },
       score: 30,
     },
@@ -63,6 +66,7 @@ export class FormRepository {
       patientId: "6771d9d410ede2552b7bba41",
       caseId: "677da5efcb4569ad1c655160",
       consultationId: "60d5ec49f1b2c12d88f1e8a3",
+      formTemplateId: "67b4e612d0feb4ad99ae2e84",
       formData: { question4: "answer4" },
       score: 40,
     },
@@ -71,21 +75,22 @@ export class FormRepository {
       patientId: "6771d9d410ede2552b7bba41",
       caseId: "677da5efcb4569ad1c655160",
       consultationId: "60d5ec49f1b2c12d88f1e8a4",
+      formTemplateId: "67b4e612d0feb4ad99ae2e84",
       formData: { question5: "answer5" },
       score: 50,
     },
   ];
 
-  async createMockData(): Promise<void> {
+  async createFormMockData(): Promise<void> {
     try {
       await FormModel.deleteMany({});
       const res = await FormModel.insertMany(this.mockForms);
       if (res) {
-        console.log("Mock data created successfully");
+        console.log("Form mock data created successfully");
         return Promise.resolve();
       }
     } catch (error) {
-      console.error("Error creating mock data", error);
+      console.error("Error creating form mock data", error);
       return Promise.reject();
     }
   }

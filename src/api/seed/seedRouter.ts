@@ -16,7 +16,7 @@ const formRepository = new FormRepository();
 
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") {
     const serviceResponse = ServiceResponse.failure("Access denied", null, StatusCodes.FORBIDDEN);
     return handleServiceResponse(serviceResponse, res);
   }
@@ -70,10 +70,14 @@ seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * seed database with mock data for forms
+ * @route GET /seed/form
+ */
 seedRouter.get("/form", async (_req: Request, res: Response) => {
   try {
-    await formRepository.createMockData();
-    const serviceResponse = ServiceResponse.success("Mock data inserted successfully", null);
+    await formRepository.createFormMockData();
+    const serviceResponse = ServiceResponse.success("Form Mock data inserted successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(
@@ -85,4 +89,11 @@ seedRouter.get("/form", async (_req: Request, res: Response) => {
   }
 });
 
-export { seedRouter, patientCaseRepository, consultationRepository, formTemplateRepository };
+export {
+  seedRouter,
+  patientRepository,
+  patientCaseRepository,
+  consultationRepository,
+  formTemplateRepository,
+  formRepository,
+};
