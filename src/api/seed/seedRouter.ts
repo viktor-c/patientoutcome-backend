@@ -55,10 +55,15 @@ seedRouter.get("/consultation", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * seed database with mock data for form templates
+ * @route GET /seed/formTemplate
+ */
 seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
   try {
-    await formTemplateRepository.createMockData();
-    const serviceResponse = ServiceResponse.success("Mock form templates inserted successfully", null);
+    await formTemplateRepository.createMockDataFormTemplate();
+    console.debug(formTemplateRepository.mockFormTemplateData);
+    const serviceResponse = ServiceResponse.success("Form Mock templates inserted successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(

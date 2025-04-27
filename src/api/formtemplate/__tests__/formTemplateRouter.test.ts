@@ -48,9 +48,11 @@ describe("FormTemplate API", () => {
     const formTemplate = {
       title: "Test Form 4",
       description: "A test form to be deleted",
-      formData: {},
-      formSchema: {},
-      formUISchema: {},
+      markdownHeader: "## Header",
+      markdownFooter: "## Footer",
+      formSchema: { foo: "bar" },
+      formSchemaUI: { foo: "bar" },
+      formData: { foo: "bar" },
     };
 
     const response1 = await request(app).post("/formtemplate").send(formTemplate);

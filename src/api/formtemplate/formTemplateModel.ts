@@ -9,9 +9,11 @@ export const FormTemplate = z
     _id: zId().optional(),
     title: z.string(),
     description: z.string(),
-    formData: z.object({}).passthrough(),
+    markdownHeader: z.string(),
+    markdownFooter: z.string(),
     formSchema: z.object({}).passthrough(),
-    formUISchema: z.object({}).passthrough(),
+    formSchemaUI: z.object({}).passthrough(),
+    formData: z.object({}).passthrough(),
   })
   .strict();
 
