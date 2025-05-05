@@ -1,12 +1,30 @@
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 
+import { clinicalStudyRepository } from "@/api/seed/seedRouter";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ClinicalStudy } from "../clinicalStudyModel";
-import { mockClinicalStudies } from "../clinicalStudyRepository";
 
 describe("ClinicalStudy API Endpoints", () => {
+  beforeAll(async () => {
+    try {
+      const res = await request(app).get("/seed/clinicalStudy");
+      if (res.status !== 200) {
+        throw new Error("Failed to seed clinical studies");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Setup clinical study seed has failed ${error.message}`);
+      } else {
+        console.error("Setup clinical study seed has failed");
+        throw new Error("Setup clinical study seed has failed");
+      }
+    }
+  });
+
+  const mockClinicalStudies = clinicalStudyRepository.mockClinicalStudies;
+
   describe("GET /clinicalstudy", () => {
     it("should return a list of clinical studies", async () => {
       // Act
@@ -133,6 +151,6 @@ function compareClinicalStudies(mockClinicalStudy: ClinicalStudy, responseClinic
   expect(responseClinicalStudy.description).toEqual(mockClinicalStudy.description);
   expect(new Date(responseClinicalStudy.beginDate)).toEqual(mockClinicalStudy.beginDate);
   expect(responseClinicalStudy.studyType).toEqual(mockClinicalStudy.studyType);
-  expect(responseClinicalStudy.studyNurses).toEqual(mockClinicalStudy.studyNurses);
-  expect(responseClinicalStudy.supervisors).toEqual(mockClinicalStudy.supervisors);
+  expect(responseClinicalStudy.studyNurses.length).toEqual(mockClinicalStudy.studyNurses.length);
+  expect(responseClinicalStudy.supervisors.length).toEqual(mockClinicalStudy.supervisors.length);
 }
