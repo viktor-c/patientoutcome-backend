@@ -22,6 +22,8 @@ import { patientRouter } from "./api/patient/patientRouter";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { extendZod as extendZodMongoose } from "@zodyac/zod-mongoose";
 
+// Use the patientCaseRouter
+import { caseRouter } from "@/api/case/patientCaseRouter"; // Import the patientCaseRouter
 import { consultationRouter } from "@/api/consultation/consultationRouter";
 import { z } from "zod";
 import connectMongooseDB from "./common/database";
