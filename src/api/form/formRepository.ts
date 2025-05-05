@@ -1,5 +1,6 @@
+import { type Form, FormModel } from "@/api/form/formModel";
+import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { faker } from "@faker-js/faker";
-import { type Form, FormModel } from "./formModel";
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
@@ -21,6 +22,33 @@ export class FormRepository {
 
   async createForm(data: Form): Promise<Form> {
     const newForm = new FormModel(data);
+    return newForm.save();
+  }
+  async createFormByTemplateId(
+    patientId: string,
+    caseId: string,
+    consultationId: string,
+    formTemplateId: string,
+  ): Promise<Form> {
+    // first get the formtemplate by id
+    const formTemplate = await FormTemplateModel.findById(formTemplateId);
+    if (!formTemplate) {
+      throw new Error("Form template not found");
+    }
+
+    const deepCopy = JSON.parse(JSON.stringify(formTemplate.toObject()));
+    deepCopy._id = undefined; // remove the _id field to create a new document
+
+    const newForm = new FormModel({
+      patientId,
+      caseId,
+      consultationId,
+      formTemplateId: formTemplateId,
+      score: null,
+      createdAt: new Date(),
+      completedAt: null,
+      ...deepCopy,
+    });
     return newForm.save();
   }
 

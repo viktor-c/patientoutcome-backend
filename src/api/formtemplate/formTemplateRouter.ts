@@ -5,13 +5,19 @@ import { z } from "zod";
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { formTemplateController } from "./formTemplateController";
-import { CreateFormTemplateSchema, FormTemplate, GetFormTemplateSchema } from "./formTemplateModel";
+import {
+  CreateFormTemplateSchema,
+  FormTemplate,
+  FormTemplateListSchema,
+  GetFormTemplateSchema,
+} from "./formTemplateModel";
 
 export const formTemplateRegistry = new OpenAPIRegistry();
 export const formTemplateRouter: Router = express.Router();
 
 /* Define schemas and paths to create openapi */
 formTemplateRegistry.register("FormTemplate", FormTemplate);
+formTemplateRegistry.register("FormTemplateList", FormTemplateListSchema);
 
 // Register the path for creating a form template
 formTemplateRegistry.registerPath({
@@ -81,7 +87,7 @@ formTemplateRouter.get("/", formTemplateController.getFormTemplates);
 // Register the path for getting a form template by ID
 formTemplateRegistry.registerPath({
   method: "get",
-  path: "/formtemplate/{templateId}",
+  path: "/formtemplate/id/{templateId}",
   tags: ["form", "form template"],
   operationId: "getFormTemplateById",
   summary: "Get a form template by ID",
@@ -112,10 +118,42 @@ formTemplateRegistry.registerPath({
 });
 
 formTemplateRouter.get(
-  "/:templateId",
+  "/id/:templateId",
   validateRequest(GetFormTemplateSchema),
   formTemplateController.getFormTemplateById,
 );
+
+/**
+ * * Register the path for getting a succint list of form templates
+ */
+// Register the path for getting all form templates
+formTemplateRegistry.registerPath({
+  method: "get",
+  path: "/formtemplate/shortlist",
+  tags: ["form", "form template"],
+  operationId: "getFormTemplatesShortlist",
+  summary: "Get all form templates in a succint list",
+  description: "Useful for displaying a list of form templates in the UI, without the full details.",
+  responses: createApiResponses([
+    {
+      schema: FormTemplateListSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving form templates.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+formTemplateRouter.get("/shortlist", formTemplateController.getFormTemplatesShortlist);
 
 // Register the path for updating a form template
 formTemplateRegistry.registerPath({

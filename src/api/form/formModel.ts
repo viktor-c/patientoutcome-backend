@@ -1,19 +1,18 @@
+import { FormTemplate } from "@/api/formtemplate/formTemplateModel";
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
 
 // Define the Form schema
-export const Form = z
-  .object({
-    _id: zId().optional(),
-    patientId: zId(),
-    caseId: zId(),
-    consultationId: zId(),
-    formTemplateId: zId(),
-    formData: z.object({}).passthrough(),
-    score: z.number(),
-  })
-  .strict();
+export const Form = FormTemplate.extend({
+  patientId: zId("Patient"),
+  caseId: zId("PatientCase"),
+  consultationId: zId("Consultation"),
+  formTemplateId: zId("FormTemplate"),
+  score: z.number().optional(),
+  createdAt: z.date().optional(),
+  completedAt: z.date().optional(),
+}).strict();
 
 // Infer TypeScript type from Zod schema
 export type Form = z.infer<typeof Form>;

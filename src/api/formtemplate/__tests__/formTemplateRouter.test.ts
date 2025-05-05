@@ -34,6 +34,22 @@ describe("FormTemplate API", () => {
     expect(response.body.responseObject.title).toBe(formTemplateRepository.mockFormTemplateData[0].title);
   });
 
+  it("should get a form template short list", async () => {
+    const response = await request(app).get("/formtemplate/shortlist");
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.body.responseObject)).toBe(true);
+    expect(response.body.responseObject.length).toBe(formTemplateRepository.mockFormTemplateData.length);
+    expect(response.body.responseObject[0]._id).toBe(formTemplateRepository.mockFormTemplateData[0]._id);
+    expect(response.body.responseObject[0].title).toBe(formTemplateRepository.mockFormTemplateData[0].title);
+    expect(response.body.responseObject[0].description).toBe(
+      formTemplateRepository.mockFormTemplateData[0].description,
+    );
+    expect(response.body.responseObject[0].markdownHeader).toBe(undefined);
+    expect(response.body.responseObject[0].formSchema).toBe(undefined);
+    expect(response.body.responseObject[0].formData).toBe(undefined);
+    expect(response.body.responseObject[0].formSchemaUI).toBe(undefined);
+  });
+
   it("should update a form template", async () => {
     const formTemplateId = formTemplateRepository.mockFormTemplateData[0]._id;
     const newFormTemplate = JSON.parse(JSON.stringify(formTemplateRepository.mockFormTemplateData[0]));

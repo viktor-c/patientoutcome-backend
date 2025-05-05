@@ -25,6 +25,17 @@ const FormTemplateSchema = zodSchema(FormTemplate.omit({ _id: true }));
 
 export const FormTemplateModel = mongoose.model("FormTemplate", FormTemplateSchema, "formtemplates");
 
+//*************
+// response schema validation only for a list of form templates
+//  */
+export const FormTemplateListSchema = z.array(
+  FormTemplate.pick({
+    _id: true,
+    title: true,
+    description: true,
+  }).strict(),
+);
+
 // ****************************************************
 // Response validation
 export const FormTemplateArray = z.array(FormTemplate);

@@ -5,6 +5,7 @@ import { clinicalStudyRegistry } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { consultationRegistry } from "@/api/consultation/consultationRouter";
 import { formRegistry } from "@/api/form/formRouter";
 import { formTemplateRegistry } from "@/api/formtemplate/formTemplateRouter";
+import { generalSchemaRegistry } from "@/api/generalSchemas";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { patientRegistry } from "@/api/patient/patientRouter";
 import { userRegistry } from "@/api/user/userRouter";
@@ -24,6 +25,7 @@ export function generateOpenAPIDocument() {
     consultationRegistry,
     formTemplateRegistry,
     formRegistry,
+    generalSchemaRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

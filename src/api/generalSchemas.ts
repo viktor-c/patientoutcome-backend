@@ -1,5 +1,8 @@
+import { OpenAPIRegistry, extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { zId } from "@zodyac/zod-mongoose";
 import { z } from "zod";
+
+extendZodWithOpenApi(z);
 
 export const dateSchema = z.coerce.date();
 // export const dateSchema = z.string().datetime().transform((str) => new Date(str).toISOString());
@@ -11,8 +14,9 @@ export const dateSchema = z.coerce.date();
 export const NoteSchema = z.object({
   _id: zId().optional(),
   dateCreated: dateSchema,
+  dateModified: dateSchema.optional(),
   createdBy: zId("User"),
-  text: z.string(),
+  note: z.string(),
 });
 
 export const AnaesthesiaSchema = z.object({
@@ -21,3 +25,7 @@ export const AnaesthesiaSchema = z.object({
 });
 
 export const AnaesthesiaTypeSchema = AnaesthesiaSchema;
+
+export const generalSchemaRegistry = new OpenAPIRegistry();
+generalSchemaRegistry.register("Note", NoteSchema);
+generalSchemaRegistry.register("AnaesthesiaType", AnaesthesiaTypeSchema);

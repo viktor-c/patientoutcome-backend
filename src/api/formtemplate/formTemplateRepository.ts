@@ -14,6 +14,10 @@ export class FormTemplateRepository {
     return formTemplate.save();
   }
 
+  async getFormTemplatesShortlist(): Promise<FormTemplate[]> {
+    return FormTemplateModel.find().select("title description").lean();
+  }
+
   async updateTemplate(templateId: string, templateData: Partial<FormTemplate>): Promise<FormTemplate | null> {
     return FormTemplateModel.findByIdAndUpdate(templateId, templateData, { new: true }).select("-__v").lean();
   }

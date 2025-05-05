@@ -2,7 +2,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
-import { FormTemplate, FormTemplateArray } from "./formTemplateModel";
+import { FormTemplate, FormTemplateArray, FormTemplateListSchema } from "./formTemplateModel";
 import { FormTemplateRepository } from "./formTemplateRepository";
 
 export class FormTemplateService {
@@ -10,6 +10,10 @@ export class FormTemplateService {
   constructor(formTemplateRepository: FormTemplateRepository = new FormTemplateRepository()) {
     this.formTemplateRepository = formTemplateRepository;
   }
+  /**
+   * get all form templates
+   * @returns
+   */
   async getFormTemplates(): Promise<ServiceResponse<FormTemplate[] | null>> {
     try {
       const formTemplates = await this.formTemplateRepository.getAllTemplates();
@@ -39,6 +43,11 @@ export class FormTemplateService {
     }
   }
 
+  /**
+   * get form template by id
+   * @param templateId
+   * @returns
+   */
   async getFormTemplateById(templateId: string): Promise<ServiceResponse<FormTemplate | null>> {
     try {
       const formTemplate = await this.formTemplateRepository.getTemplateById(templateId);
@@ -68,6 +77,44 @@ export class FormTemplateService {
     }
   }
 
+  /**
+   * return all form templates in the short list variant
+   * @description this is a short list of form templates that are used in the form template list
+   * @returns
+   */
+  async getFormTemplatesShortlist(): Promise<ServiceResponse<FormTemplate[] | null>> {
+    try {
+      const formTemplates = await this.formTemplateRepository.getFormTemplatesShortlist();
+      if (!formTemplates || formTemplates.length === 0) {
+        return ServiceResponse.failure("No form templates found", null, StatusCodes.NOT_FOUND);
+      }
+      const validationResult = FormTemplateListSchema.safeParse(formTemplates);
+      if (validationResult.success === false) {
+        console.debug("Validation error:", validationResult.error.errors);
+        return ServiceResponse.failure(
+          "Invalid form template data as response",
+          null,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return ServiceResponse.success<FormTemplate[]>("Form templates found", formTemplates);
+    } catch (ex) {
+      const errorMessage = `Error getting form templates short list: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occured while retrieving form templates",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * update form template by id
+   * @param templateId
+   * @param templateData
+   * @returns
+   */
   async updateFormTemplate(
     templateId: string,
     templateData: Partial<FormTemplate>,
@@ -101,6 +148,11 @@ export class FormTemplateService {
     }
   }
 
+  /**
+   * create form template
+   * @param templateData
+   * @returns
+   */
   async createFormTemplate(templateData: FormTemplate): Promise<ServiceResponse<FormTemplate | null>> {
     try {
       const formTemplate = await this.formTemplateRepository.createTemplate(templateData);
@@ -115,7 +167,11 @@ export class FormTemplateService {
       );
     }
   }
-
+  /**
+   * delete form template by id
+   * @param templateId
+   * @returns
+   */
   async deleteFormTemplateById(templateId: string): Promise<ServiceResponse<boolean>> {
     try {
       const isDeleted = await this.formTemplateRepository.deleteTemplate(templateId);

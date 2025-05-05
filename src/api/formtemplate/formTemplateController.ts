@@ -13,6 +13,11 @@ class FormTemplateController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public getFormTemplatesShortlist: RequestHandler = async (_req: Request, res: Response) => {
+    const serviceResponse = await formTemplateService.getFormTemplatesShortlist();
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public updateFormTemplate: RequestHandler = async (req: Request, res: Response) => {
     const serviceResponse = await formTemplateService.updateFormTemplate(req.params.templateId, req.body);
     return handleServiceResponse(serviceResponse, res);
