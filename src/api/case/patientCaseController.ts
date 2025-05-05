@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import { handleServiceResponse } from "../../../common/utils/httpHandlers";
+import { handleServiceResponse } from "../../common/utils/httpHandlers";
 import { PatientCaseService } from "./patientCaseService";
 
 const service = new PatientCaseService();

@@ -47,8 +47,9 @@ export class PatientCaseRepository {
 
   async deletePatientCaseById(patientId: string, caseId: string): Promise<boolean> {
     try {
-      const result = await PatientCaseModel.findByIdAndDelete({ patient: patientId, _id: caseId });
-      return !!result;
+      const result = await PatientCaseModel.findOneAndDelete({ patient: patientId, _id: caseId });
+      if (result.id === caseId) return Promise.resolve(true);
+      return Promise.resolve(false);
     } catch (error) {
       return Promise.reject(error);
     }
@@ -403,10 +404,10 @@ export class PatientCaseRepository {
     {
       _id: "677da5d8cb4569ad1c65515f",
       patient: "6771d9d410ede2552b7bba40",
-      MainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      StudyDiagnosis: ["Hallux valgus"],
-      MainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      StudyDiagnosisICD10: ["M20.1"],
+      mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
+      studyDiagnosis: ["Hallux valgus"],
+      mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
+      studyDiagnosisICD10: ["M20.1"],
       __v: 0,
       surgeries: [
         {
@@ -427,7 +428,7 @@ export class PatientCaseRepository {
           _id: new mongoose.Types.ObjectId().toString(),
           dateCreated: new Date().toISOString(),
           createdBy: "676336bea497301f6eff8c90",
-          text: faker.lorem.paragraph(),
+          note: faker.lorem.paragraph(),
         },
       ],
       supervisors: ["676336bea497301f6eff8c91"],
@@ -435,10 +436,10 @@ export class PatientCaseRepository {
     {
       _id: "677da5efcb4569ad1c655160",
       patient: "6771d9d410ede2552b7bba41",
-      MainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      StudyDiagnosis: ["Hallux valgus"],
-      MainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      StudyDiagnosisICD10: ["M20.1"],
+      mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
+      studyDiagnosis: ["Hallux valgus"],
+      mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
+      studyDiagnosisICD10: ["M20.1"],
       __v: 0,
       surgeries: [
         {
@@ -459,7 +460,7 @@ export class PatientCaseRepository {
           _id: new mongoose.Types.ObjectId().toString(),
           dateCreated: new Date().toISOString(),
           createdBy: "676336bea497301f6eff8c90",
-          text: faker.lorem.paragraph(),
+          note: faker.lorem.paragraph(),
         },
       ],
       supervisors: ["676336bea497301f6eff8c91"],

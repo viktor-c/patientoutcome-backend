@@ -1,6 +1,6 @@
+import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
-import { PatientCaseRepository } from "@/api/patient/case/patientCaseRepository";
 import { ConsultationRepository } from "@/api/patient/consultation/consultationRepository";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";

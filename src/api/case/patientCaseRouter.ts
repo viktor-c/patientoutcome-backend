@@ -10,13 +10,10 @@ import { StatusCodes } from "http-status-codes";
 import { patientCaseController } from "./patientCaseController";
 import { DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
 
-export const patientCaseRegistry = new OpenAPIRegistry();
-export const patientCaseRouter: Router = express.Router({ mergeParams: true });
+import { NoteSchema } from "@/api/generalSchemas";
 
-// Import the consultationRouter and add it to the patientCaseRouter
-import { consultationRouter } from "@/api/patient/consultation/consultationRouter";
-// Register the consultation router
-patientCaseRouter.use("/:caseId/consultations/", consultationRouter);
+export const patientCaseRegistry = new OpenAPIRegistry();
+export const caseRouter: Router = express.Router({ mergeParams: true });
 
 /**
  * Register the PatientCase schema
@@ -52,8 +49,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/",
+caseRouter.get(
+  "/patient/:patientId/cases",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id }) })),
   patientCaseController.getAllPatientCases,
 );
@@ -66,7 +63,7 @@ patientCaseRegistry.registerPath({
   summary: "Get a patient case by patientId and caseId",
   description: "Get a patient case by patientId and caseId",
   operationId: "getPatientCaseById",
-  path: "/patient/{patientId}/cases/{caseId}",
+  path: "/patient/{patientId}/case/{caseId}",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
@@ -92,8 +89,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/:caseId",
+caseRouter.get(
+  "/patient/:patientId/case/:caseId",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
   patientCaseController.getPatientCaseById,
 );
@@ -101,18 +98,21 @@ patientCaseRouter.get(
 /**
  * description: Create a patient case for patient with patientId
  */
+
+const CaseNoIdSchema = patientCaseRegistry.register("CreateCaseSchema", PatientCaseSchema.omit({ _id: true }));
+
 patientCaseRegistry.registerPath({
   method: "post",
   summary: "Create a patient case for patient with patientId",
   description: "Create a patient case for patient with patientId",
   operationId: "createPatientCase",
-  path: "/patient/{patientId}/cases",
+  path: "/patient/{patientId}/case",
   tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id }),
     body: {
       content: {
-        "application/json": { schema: PatientCaseSchema.omit({ _id: true }) },
+        "application/json": { schema: CaseNoIdSchema },
       },
     },
   },
@@ -144,10 +144,13 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.post(
-  "/",
+caseRouter.post(
+  "/patient/:patientId/case/",
   validateRequest(
-    z.object({ body: PatientCaseSchema.omit({ _id: true }), params: z.object({ patientId: commonValidations.id }) }),
+    z.object({
+      body: PatientCaseSchema.omit({ _id: true }),
+      params: z.object({ patientId: commonValidations.id }),
+    }),
   ),
   patientCaseController.createPatientCase,
 );
@@ -160,7 +163,7 @@ patientCaseRegistry.registerPath({
   summary: "Update a patient case by patientId and caseId",
   description: "Update a patient case by patientId and caseId",
   operationId: "updatePatientCaseById",
-  path: "/patient/{patientId}/cases/{caseId}",
+  path: "/patient/{patientId}/case/{caseId}",
   tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
@@ -203,8 +206,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.put(
-  "/:caseId",
+caseRouter.put(
+  "/patient/:patientId/case/:caseId",
   validateRequest(
     z.object({
       params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
@@ -222,7 +225,7 @@ patientCaseRegistry.registerPath({
   summary: "Delete a patient case by patientId and caseId",
   description: "Delete a patient case by patientId and caseId",
   operationId: "deletePatientCaseById",
-  path: "/patient/{patientId}/cases/{caseId}",
+  path: "/patient/{patientId}/case/{caseId}",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
@@ -253,8 +256,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.delete(
-  "/:caseId",
+caseRouter.delete(
+  "/patient/:patientId/case/:caseId",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
   patientCaseController.deletePatientCaseById,
 );
@@ -268,12 +271,12 @@ patientCaseRegistry.registerPath({
   summary: "Get all notes for a patient case by patientId and caseId",
   description: "Get all notes for a patient case by patientId and caseId",
   operationId: "getNotesByCaseId",
-  path: "/patient/{patientId}/cases/{caseId}/notes/",
+  path: "/patient/{patientId}/case/{caseId}/notes/",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseSchema.shape.notes.element),
+      schema: z.array(NoteSchema),
       description: "Returns an array of notes for the given case",
       statusCode: 200,
     },
@@ -299,8 +302,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/:caseId/notes/",
+caseRouter.get(
+  "/patient/:patientId/case/:caseId/notes/",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
   patientCaseController.getNotesByCaseId,
 );
@@ -313,13 +316,13 @@ patientCaseRegistry.registerPath({
   summary: "Add a note to a patient case by patientId and caseId.",
   description: "Add a note to a patient case by patientId and caseId.",
   operationId: "createPatientCaseNote",
-  path: "/patient/{patientId}/cases/{caseId}/notes/",
+  path: "/patient/{patientId}/case/{caseId}/note/",
   tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
     body: {
       content: {
-        "application/json": { schema: PatientCaseSchema.shape.notes.element.omit({ _id: true }) },
+        "application/json": { schema: NoteSchema.partial() },
       },
     },
   },
@@ -351,12 +354,12 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.post(
-  "/:caseId/notes/",
+caseRouter.post(
+  "/patient/:patientId/case/:caseId/note",
   validateRequest(
     z.object({
       params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
-      body: PatientCaseSchema.shape.notes.element.omit({ _id: true }),
+      body: NoteSchema.partial(),
     }),
   ),
   patientCaseController.createPatientCaseNote,
@@ -370,7 +373,7 @@ patientCaseRegistry.registerPath({
   summary: "Delete a note from a patient case by patientId, caseId and noteId",
   description: "Delete a note from a patient case by patientId, caseId and noteId",
   operationId: "deletePatientCaseNoteById",
-  path: "/patient/{patientId}/cases/{caseId}/notes/{noteId}",
+  path: "/patient/{patientId}/case/{caseId}/note/{noteId}",
   tags: ["patient case"],
   request: {
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id, noteId: commonValidations.id }),
@@ -408,8 +411,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.delete(
-  "/:caseId/notes/:noteId",
+caseRouter.delete(
+  "/patient/:patientId/case/:caseId/note/:noteId",
   validateRequest(
     z.object({
       params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id, noteId: commonValidations.id }),
@@ -426,7 +429,7 @@ patientCaseRegistry.registerPath({
   summary: "Get all cases with a specific diagnosis",
   description: "Get all cases with a specific diagnosis",
   operationId: "getCasesByDiagnosis",
-  path: "/diagnosis/{diagnosis}",
+  path: "/diagnosis/{diagnosis}/cases",
   tags: ["query"],
   request: { params: z.object({ diagnosis: z.string() }) },
   responses: createApiResponses([
@@ -452,8 +455,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/diagnosis/:diagnosis",
+caseRouter.get(
+  "/diagnosis/:diagnosis/cases",
   validateRequest(z.object({ params: z.object({ diagnosis: z.string() }) })),
   patientCaseController.getCasesByDiagnosis,
 );
@@ -466,7 +469,7 @@ patientCaseRegistry.registerPath({
   summary: "Get all cases with a diagnosisICD10",
   description: "Get all cases with a diagnosisICD10",
   operationId: "getCasesByDiagnosisICD10",
-  path: "/diagnosisICD10/{diagnosisICD10}",
+  path: "/diagnosisICD10/{diagnosisICD10}/cases",
   tags: ["query"],
   request: { params: z.object({ diagnosisICD10: z.string() }) },
   responses: createApiResponses([
@@ -492,8 +495,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/diagnosisICD10/:diagnosisICD10",
+caseRouter.get(
+  "/diagnosisICD10/:diagnosisICD10/cases",
   validateRequest(z.object({ params: z.object({ diagnosisICD10: z.string() }) })),
   patientCaseController.getCasesByDiagnosisICD10,
 );
@@ -506,7 +509,7 @@ patientCaseRegistry.registerPath({
   summary: "Get all surgeons for case with patientId and caseId",
   description: "Get all surgeons for case with patientId and caseId",
   operationId: "getSurgeonsByCaseId",
-  path: "/patient/{patientId}/cases/{caseId}/surgeons",
+  path: "/patient/{patientId}/case/{caseId}/surgeons",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
@@ -542,8 +545,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/:caseId/surgeons",
+caseRouter.get(
+  "/patient/:patientId/case/:caseId/surgeons",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
   patientCaseController.getSurgeonsByCaseId,
 );
@@ -556,7 +559,7 @@ patientCaseRegistry.registerPath({
   summary: "Get all supervisors for patientId and caseId",
   description: "Get all supervisors for patientId and caseId",
   operationId: "getSupervisorsByCaseId",
-  path: "/patient/{patientId}/cases/{caseId}/supervisors",
+  path: "/patient/{patientId}/case/{caseId}/supervisors",
   tags: ["patient case"],
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
@@ -587,8 +590,8 @@ patientCaseRegistry.registerPath({
     },
   ]),
 });
-patientCaseRouter.get(
-  "/:caseId/supervisors",
+caseRouter.get(
+  "patient/:patiendId/case/:caseId/supervisors",
   validateRequest(z.object({ params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) })),
   patientCaseController.getSupervisorsByCaseId,
 );

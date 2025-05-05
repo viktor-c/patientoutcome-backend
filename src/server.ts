@@ -48,6 +48,7 @@ app.use(requestLogger);
 
 // Routes
 app.use("/health-check", healthCheckRouter);
+app.use("", caseRouter);
 app.use("/user", userRouter);
 app.use("/patient", patientRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);

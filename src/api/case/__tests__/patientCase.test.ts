@@ -69,7 +69,7 @@ describe("PatientCase API", () => {
           _id: "680e82ae009afe565f47e432",
           dateCreated: "2025-04-27T19:17:02.977Z",
           createdBy: "676336bea497301f6eff8c90",
-          text: "Rem dignissimos quisquam impedit ut nulla. Id dignissimos rem. Dicta in perferendis neque ut ea numquam dolore minus nemo.",
+          note: "Rem dignissimos quisquam impedit ut nulla. Id dignissimos rem. Dicta in perferendis neque ut ea numquam dolore minus nemo.",
         },
       ],
       medicalHistory:
@@ -78,13 +78,13 @@ describe("PatientCase API", () => {
     };
 
     const patientId = newCase.patient;
-    const createRes = await request(app).post(`/patient/${patientId}/cases`).send(newCase);
+    const createRes = await request(app).post(`/patient/${patientId}/case`).send(newCase);
     expect(createRes.status).toBe(201);
     expect(createRes.body.responseObject).toHaveProperty("_id");
     expect(createRes.body.responseObject.patient).toEqual(patientId);
 
     const caseId = createRes.body.responseObject._id;
-    const deleteRes = await request(app).delete(`/patient/${patientId}/cases/${caseId}`);
+    const deleteRes = await request(app).delete(`/patient/${patientId}/case/${caseId}`);
     expect(deleteRes.status).toBe(204);
     expect(deleteRes.body.responseObject).toBeUndefined();
   });
@@ -92,17 +92,17 @@ describe("PatientCase API", () => {
   it("should update a case", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const updateData = { MainDiagnosis: ["Updated Diagnosis"] };
-    const res = await request(app).put(`/patient/${patientId}/cases/${caseId}`).send(updateData);
+    const updateData = { mainDiagnosis: ["Updated Diagnosis"] };
+    const res = await request(app).put(`/patient/${patientId}/case/${caseId}`).send(updateData);
     expect(res.status).toBe(200);
-    expect(res.body.responseObject).toHaveProperty("MainDiagnosis", ["Updated Diagnosis"]);
+    expect(res.body.responseObject).toHaveProperty("mainDiagnosis", ["Updated Diagnosis"]);
   });
 
   it("should get all notes for a case", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const notes = patientCaseRepository.mockPatientCases[0].notes;
-    const res = await request(app).get(`/patient/${patientId}/cases/${caseId}/notes`);
+    const res = await request(app).get(`/patient/${patientId}/case/${caseId}/notes`);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
     expect(compareObjects(res.body.responseObject[0], notes[0])).toBeTruthy();
@@ -114,15 +114,15 @@ describe("PatientCase API", () => {
     const newNote = {
       dateCreated: new Date(),
       createdBy: "676336bea497301f6eff8c90",
-      text: "New note text",
+      note: "New note text",
     };
 
-    const postRes = await request(app).post(`/patient/${patientId}/cases/${caseId}/notes`).send(newNote);
+    const postRes = await request(app).post(`/patient/${patientId}/case/${caseId}/note`).send(newNote);
     expect(postRes.status).toBe(201);
-    expect(postRes.body.responseObject.notes[1]).toHaveProperty("text", "New note text");
+    expect(postRes.body.responseObject.notes[1]).toHaveProperty("note", "New note text");
 
     const noteId = postRes.body.responseObject._id;
-    const deleteRes = await request(app).delete(`/patient/${patientId}/cases/${caseId}/notes/${noteId}`);
+    const deleteRes = await request(app).delete(`/patient/${patientId}/case/${caseId}/note/${noteId}`);
     expect(deleteRes.status).toBe(204);
   });
 

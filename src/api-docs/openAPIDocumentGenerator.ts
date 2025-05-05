@@ -1,10 +1,10 @@
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 
+import { patientCaseRegistry } from "@/api/case/patientCaseRouter";
 import { clinicalStudyRegistry } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formRegistry } from "@/api/form/formRouter";
 import { formTemplateRegistry } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
-import { patientCaseRegistry } from "@/api/patient/case/patientCaseRouter";
 import { patientCaseConsultationRegistry } from "@/api/patient/consultation/consultationRouter";
 import { patientRegistry } from "@/api/patient/patientRouter";
 import { userRegistry } from "@/api/user/userRouter";
