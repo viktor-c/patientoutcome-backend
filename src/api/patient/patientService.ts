@@ -44,10 +44,10 @@ export class PatientService {
     }
   }
 
-  async findByExternalId(externalPatientId: string): Promise<ServiceResponse<Patient[] | null>> {
+  async findByExternalId(externalPatientId: string): Promise<ServiceResponse<Patient | null>> {
     try {
       const patient = await this.patientRepository.findByExternalIdAsync(externalPatientId);
-      if (!patient || patient.length === 0) {
+      if (!patient) {
         return ServiceResponse.failure("No patient found with the given external ID", null, StatusCodes.NOT_FOUND);
       }
       return ServiceResponse.success("Patient found", patient);
@@ -61,7 +61,7 @@ export class PatientService {
     }
   }
 
-  async createPatient(patientData: Patient): Promise<ServiceResponse<Patient>> {
+  async createPatient(patientData: Patient): Promise<ServiceResponse<Patient | null>> {
     try {
       //must check if external patient id already exists
       const existingPatient = await this.patientRepository.findByExternalIdAsync(patientData.externalPatientId[0]);

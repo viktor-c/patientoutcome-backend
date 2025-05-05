@@ -7,7 +7,6 @@ import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ObjectId } from "mongoose";
 
-//TODO regenerate Database
 let newPatientId: string | ObjectId = "";
 
 const newPatient = {

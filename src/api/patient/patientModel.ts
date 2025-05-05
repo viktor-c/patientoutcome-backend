@@ -1,19 +1,14 @@
 import { commonValidations } from "@/common/utils/commonValidation";
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
-
-import { PatientCaseSchema } from "@/api/patient/case/patientCaseModel";
-
-// Extend zod with OpenAPI support
-extendZodWithOpenApi(z);
 
 // Define the Patient schema
 export const PatientSchema = z.object({
   _id: zId().optional(),
   externalPatientId: z.array(z.string()),
-  age: z.number(),
+  age: z.number({ coerce: true }),
   sex: z.string(),
   cases: z.array(zId("PatientCase")).optional(),
 });
@@ -23,7 +18,10 @@ export type Patient = z.infer<typeof PatientSchema>;
 
 /** Create Mongoose Schema and Model */
 const MongoosePatientSchema = zodSchema(PatientSchema.omit({ _id: true }));
-export const patientModel = mongoose.models.Patient || mongoose.model("Patient", MongoosePatientSchema, "patients");
+export const patientModel = mongoose.model("Patient", MongoosePatientSchema, "patients");
+
+// ****************************************************
+// Input validation
 
 // Input validation for 'GET patient/:id' endpoint
 export const GetPatientSchema = z.object({

@@ -52,6 +52,7 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Routes
+app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);
 app.use("/user", userRouter);

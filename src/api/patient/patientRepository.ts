@@ -26,10 +26,10 @@ export class PatientRepository {
     }
   }
 
-  async findByExternalIdAsync(externalId: string): Promise<Patient[]> {
+  async findByExternalIdAsync(externalId: string): Promise<Patient | null> {
     try {
       const patient = await patientModel.find({ externalPatientId: { $in: [externalId] } }).lean();
-      return patient[0];
+      return patient[0] || null;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -78,6 +78,7 @@ export class PatientRepository {
       await patientModel.deleteMany({});
       const result = await patientModel.insertMany(this.mockPatients);
     } catch (error) {
+      console.error("Error creating patient mock data:", error);
       return Promise.reject(error);
     }
   }

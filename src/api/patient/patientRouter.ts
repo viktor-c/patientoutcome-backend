@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse, createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import {
   CreatePatientSchema,
   GetPatientByExternalIdSchema,
@@ -17,10 +17,6 @@ import { patientController } from "./patientController";
 export const patientRegistry = new OpenAPIRegistry();
 // create an express router
 export const patientRouter: Router = express.Router();
-
-// Use the patientCaseRouter within the patientRouter
-import { patientCaseRouter } from "@/api/patient/case/patientCaseRouter"; // Import the patientCaseRouter
-patientRouter.use("/:patientId/cases/", patientCaseRouter);
 
 /* Define schemas and paths to create openapi */
 patientRegistry.register("Patient", PatientSchema);
