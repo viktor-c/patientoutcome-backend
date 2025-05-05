@@ -2,7 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import {
   CreateUserSchema,
   GetUserSchema,
@@ -10,7 +10,7 @@ import {
   UserNoPasswordSchema,
   UserSchema,
 } from "@/api/user/userModel";
-import { validateRequest } from "@/common/utils/httpHandlers";
+import { validateRequest, validateRequestOnlyWithBody } from "@/common/utils/httpHandlers";
 import { userController } from "./userController";
 
 // initialize the openapi registry
@@ -33,7 +33,26 @@ userRegistry.registerPath({
   method: "get",
   path: "/user",
   tags: ["User"],
-  responses: createApiResponse(z.array(UserSchema), "Success"),
+  operationId: "getUsers",
+  description: "Get all users",
+  summary: "Get all users",
+  responses: createApiResponses([
+    {
+      schema: z.array(UserSchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving users.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 // add this path with the function getUsers from userController
@@ -45,8 +64,27 @@ userRegistry.registerPath({
   method: "get",
   path: "/user/{id}",
   tags: ["User"],
+  operationId: "getUserById",
+  description: "Get a user by ID",
+  summary: "Get a user by ID",
   request: { params: GetUserSchema.shape.params },
-  responses: createApiResponse(UserSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: UserSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the user.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 userRouter.get("/:id", validateRequest(GetUserSchema), userController.getUser);
@@ -57,17 +95,36 @@ userRegistry.registerPath({
   method: "post",
   path: "/user",
   tags: ["User"],
+  operationId: "createUser",
+  description: "Create a new user",
+  summary: "Create a new user",
   request: {
     body: {
       content: {
-        "application/json": { schema: CreateUserSchema.shape.body },
+        "application/json": { schema: CreateUserSchema },
       },
     },
   },
-  responses: createApiResponse(UserSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: UserSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while creating the user.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
-userRouter.post("/", validateRequest(CreateUserSchema), userController.createUser);
+userRouter.post("/", validateRequestOnlyWithBody(CreateUserSchema), userController.createUser);
 
 //************************************** */
 // Register the path for updating a user
@@ -75,6 +132,9 @@ userRegistry.registerPath({
   method: "put",
   path: "/user/{id}",
   tags: ["User"],
+  operationId: "updateUser",
+  description: "Update a user",
+  summary: "Update a user",
   request: {
     params: UpdateUserSchema.shape.params,
     body: {
@@ -83,7 +143,28 @@ userRegistry.registerPath({
       },
     },
   },
-  responses: createApiResponse(UserSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: UserSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "User not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the user.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 userRouter.put("/:id", validateRequest(UpdateUserSchema), userController.updateUser);
@@ -93,8 +174,32 @@ userRegistry.registerPath({
   method: "delete",
   path: "/user/{id}",
   tags: ["User"],
+  operationId: "deleteUser",
+  description: "Delete a user",
+  summary: "Delete a user",
   request: { params: GetUserSchema.shape.params },
-  responses: createApiResponse(UserSchema, "Success"),
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "User not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while deleting the user.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
 });
 
 userRouter.delete("/:id", validateRequest(GetUserSchema), userController.deleteUser);

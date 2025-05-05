@@ -2,6 +2,7 @@ import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { PatientCaseRepository } from "@/api/patient/case/patientCaseRepository";
 import { ConsultationRepository } from "@/api/patient/consultation/consultationRepository";
+import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 // import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -15,6 +16,7 @@ const patientCaseRepository = new PatientCaseRepository();
 const consultationRepository = new ConsultationRepository();
 const formTemplateRepository = new FormTemplateRepository();
 const formRepository = new FormRepository();
+const userRepository = new UserRepository();
 
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
@@ -123,6 +125,25 @@ seedRouter.get("/form", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * seed database with mock data for users
+ * @route GET /seed/users
+ */
+seedRouter.get("/users", async (_req: Request, res: Response) => {
+  try {
+    await userRepository.createMockUserData();
+    const serviceResponse = ServiceResponse.success("User mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock user data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
 export {
   seedRouter,
   patientRepository,
@@ -130,4 +151,5 @@ export {
   consultationRepository,
   formTemplateRepository,
   formRepository,
+  userRepository,
 };

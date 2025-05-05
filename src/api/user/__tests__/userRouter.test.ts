@@ -2,10 +2,10 @@ import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 
 import type { User } from "@/api/user/userModel";
+import { userRepository } from "@/api/user/userRepository";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ObjectId } from "mongoose";
-import { mockUsers } from "../userRepository";
 
 //TODO regenerate Database
 let newUserId: string | ObjectId = "";
@@ -20,6 +20,20 @@ const newUser = {
 } as User;
 
 describe("User API Endpoints", () => {
+  beforeAll(async () => {
+    try {
+      const res = await request(app).get("/seed/users");
+      if (res.status !== StatusCodes.OK) {
+        throw new Error("Failed to insert user data");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Setup failed for user data: ${error.message}`);
+      } else {
+        throw new Error("Setup failed for user data: Unknown error");
+      }
+    }
+  });
   describe("GET /user", () => {
     it("should return a list of users", async () => {
       // Act
@@ -30,8 +44,8 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
-      expect(responseBody.responseObject.length).toEqual(mockUsers.length);
-      responseBody.responseObject.forEach((user, index) => compareUsers(mockUsers[index] as User, user));
+      expect(responseBody.responseObject.length).toEqual(userRepository.mockUsers.length);
+      responseBody.responseObject.forEach((user, index) => compareUsers(userRepository.mockUsers[index] as User, user));
     });
   });
 
@@ -39,8 +53,8 @@ describe("User API Endpoints", () => {
   describe("GET /user/:id", () => {
     it("should return a user for a valid ID", async () => {
       // Arrange
-      const testId = mockUsers[0]._id;
-      const expectedUser = mockUsers.find((user: User) => user._id === testId) as User;
+      const testId = userRepository.mockUsers[0]._id;
+      const expectedUser = userRepository.mockUsers.find((user: User) => user._id === testId) as User;
 
       // Act
       const response = await request(app).get(`/user/${testId}`);
@@ -185,10 +199,10 @@ describe("User API Endpoints", () => {
   describe("PUT /user/:id", () => {
     it("should update a user successfully", async () => {
       // Arrange
-      const testId = mockUsers[0]._id;
+      const testId = userRepository.mockUsers[0]._id;
       const updatedData = { name: "Updated Name" };
-      const originalData = { name: mockUsers[0].name };
-      const expectedUser = mockUsers[0] as User;
+      const originalData = { name: userRepository.mockUsers[0].name };
+      const expectedUser = userRepository.mockUsers[0] as User;
       expectedUser.name = updatedData.name;
 
       // Act
@@ -241,7 +255,7 @@ describe("User API Endpoints", () => {
   describe("DELETE /user/:id", () => {
     it("should delete a user successfully", async () => {
       // Arrange
-      const testId = newUserId;
+      const testId = userRepository.mockUsers[2]._id;
 
       // Act
       const response = await request(app).delete(`/user/${testId}`);
@@ -298,23 +312,6 @@ describe("User API Endpoints", () => {
       expect(responseBody.message).toContain("User not found");
       expect(responseBody.responseObject).toBeNull();
     });
-
-    // it("should handle errors", async () => {
-    //   // Arrange
-    //   const testId = mockUsers[0]._id;
-
-    //   vi.spyOn(userService, "deleteUser").mockRejectedValue(new Error("Database error"));
-
-    //   // Act
-    //   const response = await request(app).delete(`/user/${testId}`);
-    //   const responseBody: ServiceResponse = response.body;
-
-    //   // Assert
-    //   expect(response.statusCode).toEqual(StatusCodes.INTERNAL_SERVER_ERROR);
-    //   expect(responseBody.success).toBeFalsy();
-    //   expect(responseBody.message).toContain("An error occurred while deleting user.");
-    //   expect(responseBody.responseObject).toBeNull();
-    // });
   });
 });
 

@@ -2,9 +2,9 @@ import { StatusCodes } from "http-status-codes";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
-import { type CreateUser, type User, UserNoPassword, userModel } from "./userModel";
+import { hashPassword } from "@/utils/hashUtil";
+import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
-
 /**
  * Service class for User operations
  * this uses the UserRepository to interact with the database
@@ -20,13 +20,13 @@ export class UserService {
   }
 
   // Retrieves all users from the database
-  async findAll(): Promise<ServiceResponse<User[] | null>> {
+  async findAll(): Promise<ServiceResponse<UserNoPassword[] | null>> {
     try {
       const users = await this.userRepository.findAllAsync();
       if (!users || users.length === 0) {
         return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<User[]>("Users found", users);
+      return ServiceResponse.success<UserNoPassword[]>("Users found", users);
     } catch (ex) {
       const errorMessage = `Error finding all users: $${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -39,14 +39,14 @@ export class UserService {
   }
 
   // Retrieves a single user by their ID
-  async findById(id: string): Promise<ServiceResponse<User | null>> {
+  async findById(id: string): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
       console.debug("UserRepository.ts: Finding user with id ", id);
       const user = await this.userRepository.findByIdAsync(id);
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<User>("User found", user);
+      return ServiceResponse.success<UserNoPassword>("User found", user);
     } catch (ex) {
       if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
         logger.error(`Invalid ID: ${id}`);
@@ -59,11 +59,32 @@ export class UserService {
     }
   }
   // Create a new user
-  async createUser(userData: CreateUser): Promise<ServiceResponse<User | null>> {
+  async createUser(userData: CreateUser): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
+      // Check if the user already exists
+      const existingUser = await this.userRepository.findByQueryAsync({ username: userData.username });
+      if (existingUser) {
+        return ServiceResponse.failure("User already exists", null, StatusCodes.CONFLICT);
+      }
+      // check it the email is already in use
+      const existingEmail = await this.userRepository.findByQueryAsync({ email: userData.email });
+      if (existingEmail) {
+        return ServiceResponse.failure("Email already in use", null, StatusCodes.CONFLICT);
+      }
+      // Check if the password and confirmPassword match
+      if (userData.password !== userData.confirmPassword) {
+        return ServiceResponse.failure("Passwords do not match", null, StatusCodes.BAD_REQUEST);
+      }
+      // Hash the password before saving
+      //@ts-expect-error
+      userData.password = await hashPassword(userData.password);
+
+      userData.confirmPassword = undefined; // Remove confirmPassword from the data to be saved
+      userData.registerCode = undefined; // Remove registerCode from the data to be saved
+
       const newUser = new userModel(userData);
       await newUser.save();
-      return ServiceResponse.created<User>("User created successfully", newUser);
+      return ServiceResponse.created<UserNoPassword>("User created successfully", newUser);
     } catch (ex) {
       const errorMessage = `Error creating user: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -73,11 +94,13 @@ export class UserService {
   // Update a user by their ID
   async updateUser(id: string, userData: Partial<User>): Promise<ServiceResponse<User | null>> {
     try {
+      if (userData.password) userData.password = await hashPassword(userData.password);
+
       const updatedUser = await this.userRepository.updateByIdAsync(id, userData);
       if (!updatedUser) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<User>("User updated successfully", updatedUser);
+      return ServiceResponse.success<UserNoPassword>("User updated successfully", updatedUser);
     } catch (ex) {
       const errorMessage = `Error updating user with id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);

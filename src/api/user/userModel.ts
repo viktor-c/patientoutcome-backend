@@ -41,9 +41,10 @@ const MongooseUserSchemaRaw = zodSchemaRaw(UserSchema.omit({ _id: true }));
 // make password field not show up in the response by default; makes queries with subdocuments easier, because they don't populate the password field
 //@ts-ignore
 MongooseUserSchemaRaw.password.select = false;
+Mongoose;
 const MongooseUserSchema = new mongoose.Schema(MongooseUserSchemaRaw);
 
-export const userModel = mongoose.models.User || mongoose.model("User", MongooseUserSchema, "users");
+export const userModel = mongoose.model("User", MongooseUserSchema, "users");
 
 // ****************************************************
 // Input validation
@@ -60,14 +61,12 @@ export const UpdateUserSchema = z.object({
 });
 
 // Input Validation for 'POST user' endpoint
-export const CreateUserSchema = z.object({
-  body: UserSchema.omit({
-    _id: true,
-    lastLogin: true,
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  }),
+export const CreateUserSchema = UserSchema.omit({
+  _id: true,
+  lastLogin: true,
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 // Infer TypeScript type from the schema
