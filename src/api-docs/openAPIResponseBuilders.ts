@@ -1,20 +1,7 @@
-import { StatusCodes } from "http-status-codes";
+import type { StatusCodes } from "http-status-codes";
 import type { z } from "zod";
 
 import { ServiceResponseSchema } from "@/common/models/serviceResponse";
-
-export function createApiResponse(schema: z.ZodTypeAny, description: string, statusCode = StatusCodes.OK) {
-  return {
-    [statusCode]: {
-      description,
-      content: {
-        "application/json": {
-          schema: ServiceResponseSchema(schema),
-        },
-      },
-    },
-  };
-}
 
 // Use if you want multiple responses for a single endpoint
 
@@ -29,14 +16,22 @@ export type ApiResponseConfig = {
 export function createApiResponses(configs: ApiResponseConfig[]) {
   const responses: { [key: string]: ResponseConfig } = {};
   configs.forEach(({ schema, description, statusCode }) => {
-    responses[statusCode] = {
-      description,
-      content: {
-        "application/json": {
-          schema: ServiceResponseSchema(schema),
+    if (statusCode === 204) {
+      responses[statusCode] = {
+        description,
+        content: {},
+      };
+      return;
+    } else {
+      responses[statusCode] = {
+        description,
+        content: {
+          "application/json": {
+            schema: ServiceResponseSchema(schema),
+          },
         },
-      },
-    };
+      };
+    }
   });
   return responses;
 }
