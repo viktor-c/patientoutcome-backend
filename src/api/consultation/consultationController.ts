@@ -6,8 +6,9 @@ import { consultationService } from "./consultationService";
 class ConsultationController {
   // Create a new consultation
   public createConsultation: RequestHandler = async (req: Request, res: Response) => {
+    const { patientId, caseId } = req.params;
     const consultationData = req.body;
-    const serviceResponse = await consultationService.createConsultation(consultationData);
+    const serviceResponse = await consultationService.createConsultation(patientId, caseId, consultationData);
     return handleServiceResponse(serviceResponse, res);
   };
 

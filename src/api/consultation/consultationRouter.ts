@@ -5,17 +5,25 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 import { consultationController } from "./consultationController";
-import { PatientCaseConsultationSchema } from "./consultationModel";
+import {
+  ConsultationSchema,
+  CreateConsultationSchema,
+  GetConsultationSchema,
+  UpdateConsultationSchema,
+} from "./consultationModel";
 
-export const patientCaseConsultationRegistry = new OpenAPIRegistry();
+export const consultationRegistry = new OpenAPIRegistry();
 export const consultationRouter: Router = express.Router();
 
-patientCaseConsultationRegistry.register("PatientCaseConsultation", PatientCaseConsultationSchema);
+consultationRegistry.register("Consultation", ConsultationSchema);
+const createConsultation = consultationRegistry.register("CreateConsultation", CreateConsultationSchema);
+consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
+consultationRegistry.register("GetConsultation", GetConsultationSchema);
 
 // Register the path for creating a consultation
-patientCaseConsultationRegistry.registerPath({
+consultationRegistry.registerPath({
   method: "post",
-  path: "/patient/{patientId}/cases/{caseId}/consultation",
+  path: "/patient/{patientId}/case/{caseId}/consultation",
   tags: ["patient case consultation"],
   operationId: "createConsultation",
   summary: "Create a new consultation for a patient case",
@@ -24,13 +32,13 @@ patientCaseConsultationRegistry.registerPath({
     params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
     body: {
       content: {
-        "application/json": { schema: PatientCaseConsultationSchema.omit({ _id: true, __v: true }) },
+        "application/json": { schema: createConsultation },
       },
     },
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseConsultationSchema,
+      schema: ConsultationSchema,
       description: "Consultation created successfully",
       statusCode: 201,
     },
@@ -48,15 +56,20 @@ patientCaseConsultationRegistry.registerPath({
 });
 
 consultationRouter.post(
-  "/",
-  validateRequest(z.object({ body: PatientCaseConsultationSchema })),
+  "/patient/:patientId/case/:caseId/consultation",
+  validateRequest(
+    z.object({
+      body: CreateConsultationSchema,
+      params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
+    }),
+  ),
   consultationController.createConsultation,
 );
 
 // Register the path for getting a consultation by ID
-patientCaseConsultationRegistry.registerPath({
+consultationRegistry.registerPath({
   method: "get",
-  path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
+  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
   operationId: "getConsultationById",
   summary: "Retrieve a consultation by ID for a patientId and caseId",
@@ -70,7 +83,7 @@ patientCaseConsultationRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseConsultationSchema,
+      schema: ConsultationSchema,
       description: "Consultation retrieved successfully",
       statusCode: 200,
     },
@@ -92,12 +105,15 @@ patientCaseConsultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.get("/:consultationId", consultationController.getConsultationById);
+consultationRouter.get(
+  "/patient/:patientId/case/:caseId/consultation/:consultationId",
+  consultationController.getConsultationById,
+);
 
 // Register the path for getting all consultations for a given patientId and caseId
-patientCaseConsultationRegistry.registerPath({
+consultationRegistry.registerPath({
   method: "get",
-  path: "/patient/{patientId}/cases/{caseId}/consultations",
+  path: "/patient/{patientId}/case/{caseId}/consultations",
   tags: ["patient case consultation"],
   operationId: "getAllConsultations",
   summary: "Retrieve all consultations for a given patientId and caseId",
@@ -105,7 +121,7 @@ patientCaseConsultationRegistry.registerPath({
   request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseConsultationSchema),
+      schema: z.array(ConsultationSchema),
       description: "Consultations retrieved successfully",
       statusCode: 200,
     },
@@ -122,12 +138,12 @@ patientCaseConsultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.get("/", consultationController.getAllConsultations);
+consultationRouter.get("/patient/:patientId/case/:caseId/consultations", consultationController.getAllConsultations);
 
 // Register the path for updating a consultation by ID
-patientCaseConsultationRegistry.registerPath({
+consultationRegistry.registerPath({
   method: "put",
-  path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
+  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
   operationId: "updateConsultation",
   summary: "Update a consultation by ID for a patient case",
@@ -141,14 +157,14 @@ patientCaseConsultationRegistry.registerPath({
     body: {
       content: {
         "application/json": {
-          schema: PatientCaseConsultationSchema.partial(),
+          schema: ConsultationSchema.partial(),
         },
       },
     },
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseConsultationSchema,
+      schema: ConsultationSchema,
       description: "Consultation updated successfully",
       statusCode: 200,
     },
@@ -171,15 +187,15 @@ patientCaseConsultationRegistry.registerPath({
 });
 
 consultationRouter.put(
-  "/:consultationId",
-  validateRequest(z.object({ body: PatientCaseConsultationSchema.partial() })),
+  "/patient/:patientId/case/:caseId/consultation/:consultationId",
+  validateRequest(z.object({ body: ConsultationSchema.partial() })),
   consultationController.updateConsultation,
 );
 
 // Register the path for deleting a consultation by ID
-patientCaseConsultationRegistry.registerPath({
+consultationRegistry.registerPath({
   method: "delete",
-  path: "/patient/{patientId}/cases/{caseId}/consultation/{consultationId}",
+  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
   tags: ["patient case consultation"],
   operationId: "deleteConsultation",
   summary: "Delete a consultation by ID for a patient case",
@@ -215,9 +231,7 @@ patientCaseConsultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.delete("/:consultationId", consultationController.deleteConsultation);
-
-// Default handler for all other routes
-consultationRouter.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
+consultationRouter.delete(
+  "/patient/:patientId/case/:caseId/consultation/:consultationId",
+  consultationController.deleteConsultation,
+);

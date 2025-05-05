@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import request from "supertest";
 
 import { consultationRepository, patientCaseRepository } from "@/api/seed/seedRouter";
-import type { PatientCaseConsultation } from "../consultationModel";
+import type { Consultation } from "../consultationModel";
 import { consultationService } from "../consultationService";
 
 describe("Patient Case Consultation API", () => {
@@ -28,7 +28,7 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const consultationId = consultationRepository.mockConsultations[0]._id;
 
-    const response = await request(app).get(`/patient/${patientId}/cases/${caseId}/consultations/${consultationId}`);
+    const response = await request(app).get(`/patient/${patientId}/case/${caseId}/consultation/${consultationId}`);
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultation found");
     expect(
@@ -42,12 +42,12 @@ describe("Patient Case Consultation API", () => {
   it("should get all consultations", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const response = await request(app).get(`/patient/${patientId}/cases/${caseId}/consultations`);
+    const response = await request(app).get(`/patient/${patientId}/case/${caseId}/consultations`);
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultations retrieved successfully");
     expect(Array.isArray(response.body.responseObject)).toBe(true);
 
-    const areEqual = response.body.responseObject.every((consultation: PatientCaseConsultation, index: number) =>
+    const areEqual = response.body.responseObject.every((consultation: Consultation, index: number) =>
       consultationService.compareConsultations(consultation, consultationRepository.mockConsultations[index]),
     );
     expect(areEqual).toBe(true);
@@ -58,7 +58,7 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     // Create a new consultation
     const createResponse = await request(app)
-      .post(`/patient/${patientId}/cases/${caseId}/consultations/`)
+      .post(`/patient/${patientId}/case/${caseId}/consultation/`)
       .send({
         patientCaseId: caseId,
         dateAndTime: new Date().toISOString(),
@@ -75,7 +75,7 @@ describe("Patient Case Consultation API", () => {
 
     // Delete the created consultation
     const deleteResponse = await request(app).delete(
-      `/patient/${patientId}/cases/${caseId}/consultations/${consultationId}`,
+      `/patient/${patientId}/case/${caseId}/consultation/${consultationId}`,
     );
     expect(deleteResponse.status).toBe(StatusCodes.NO_CONTENT);
   });
@@ -85,7 +85,7 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const consultationId = consultationRepository.mockConsultations[0]._id;
     const response = await request(app)
-      .put(`/patient/${patientId}/cases/${caseId}/consultations/${consultationId}`)
+      .put(`/patient/${patientId}/case/${caseId}/consultation/${consultationId}`)
       .send({ reasonForConsultation: ["unplanned"] });
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Consultation updated successfully");
@@ -98,7 +98,7 @@ describe("Patient Case Consultation API", () => {
     const invalidConsultationId = new mongoose.Types.ObjectId().toString();
 
     const response = await request(app).get(
-      `/patient/${patientId}/cases/${caseId}/consultations/${invalidConsultationId}`,
+      `/patient/${patientId}/case/${caseId}/consultation/${invalidConsultationId}`,
     );
     expect(response.status).toBe(StatusCodes.NOT_FOUND);
     expect(response.body.message).toBe("Consultation not found");

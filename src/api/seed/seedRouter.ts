@@ -1,7 +1,7 @@
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
+import { ConsultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
-import { ConsultationRepository } from "@/api/patient/consultation/consultationRepository";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 // import { env } from "@/common/utils/envConfig";

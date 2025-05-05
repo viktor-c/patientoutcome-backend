@@ -19,11 +19,16 @@ import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import { patientRouter } from "./api/patient/patientRouter";
 
-import { extendZod } from "@zodyac/zod-mongoose";
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { extendZod as extendZodMongoose } from "@zodyac/zod-mongoose";
+
+import { consultationRouter } from "@/api/consultation/consultationRouter";
 import { z } from "zod";
 import connectMongooseDB from "./common/database";
 
-extendZod(z);
+extendZodMongoose(z);
+// Extend zod with OpenAPI support
+extendZodWithOpenApi(z);
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -50,7 +55,7 @@ app.use(requestLogger);
 app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);
 app.use("/user", userRouter);
-app.use("/patient", patientRouter);
+app.use("", consultationRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);
 app.use("/seed", seedRouter);
 app.use("/formtemplate", formTemplateRouter);
