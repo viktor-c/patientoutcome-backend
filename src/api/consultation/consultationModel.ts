@@ -21,7 +21,7 @@ export const ConsultationSchema = z.object({
   dateAndTime: dateSchema,
   reasonForConsultation: z.array(z.enum(["planned", "unplanned", "emergency", "pain", "followup"])),
   notes: z.array(NoteSchema),
-  proms: z.array(Form),
+  proms: z.array(zId("Form")),
   images: z.array(ImageSchema),
   visitedBy: z.array(zId("User")),
 });

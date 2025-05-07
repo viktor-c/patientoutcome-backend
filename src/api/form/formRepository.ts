@@ -1,6 +1,7 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { faker } from "@faker-js/faker";
+import type { ObjectId } from "mongoose";
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
@@ -29,7 +30,7 @@ export class FormRepository {
     caseId: string,
     consultationId: string,
     formTemplateId: string,
-  ): Promise<Form> {
+  ): Promise<ObjectId> {
     // first get the formtemplate by id
     const formTemplate = await FormTemplateModel.findById(formTemplateId);
     if (!formTemplate) {
@@ -49,7 +50,8 @@ export class FormRepository {
       completedAt: null,
       ...deepCopy,
     });
-    return newForm.save();
+    await newForm.save();
+    return Promise.resolve(newForm._id);
   }
 
   async updateForm(id: string, data: Partial<Form>): Promise<Form | null> {

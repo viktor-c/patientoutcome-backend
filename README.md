@@ -54,6 +54,9 @@
   * zod-mongoose https://github.com/git-zodyac/mongoose
     * to create models from zod schema
 
+# Debug Validation errors
+  - check src/common/utils/httpHandlers.ts -> "export const validateRequest"
+
 # Original template
   * [[https://codewithmatt.hashnode.dev/understanding-the-building-blocks-of-a-web-application-routes-controllers-services-repositories-and-databases|Building blocks of a web app]]
 

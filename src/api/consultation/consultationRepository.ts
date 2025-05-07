@@ -18,13 +18,13 @@ export class ConsultationRepository {
       // use the form API to create a new form
       // if there are multiple templates, create a new form for each template
       for (let i = 0; i < data.formTemplates.length; i++) {
-        const form = await formRepository.createFormByTemplateId(
+        const formId = await formRepository.createFormByTemplateId(
           patientId,
           caseId,
           newConsultation.id,
           data.formTemplates[i],
         );
-        newConsultation.proms.push(form);
+        newConsultation.proms.push(formId);
       }
     }
 
@@ -32,7 +32,7 @@ export class ConsultationRepository {
   }
 
   async getConsultationById(consultationId: string): Promise<Consultation | null> {
-    return consultationModel.findById(consultationId).lean();
+    return consultationModel.findById(consultationId).populate("proms").lean();
   }
 
   async updateConsultation(consultationId: string, data: Partial<Consultation>): Promise<Consultation | null> {

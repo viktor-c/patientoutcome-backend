@@ -24,7 +24,7 @@ consultationRegistry.register("GetConsultation", GetConsultationSchema);
 consultationRegistry.registerPath({
   method: "post",
   path: "/patient/{patientId}/case/{caseId}/consultation",
-  tags: ["patient case consultation"],
+  tags: ["consultation"],
   operationId: "createConsultation",
   summary: "Create a new consultation for a patient case",
   description: "Create a new consultation for a patient case",
@@ -70,7 +70,7 @@ consultationRouter.post(
 consultationRegistry.registerPath({
   method: "get",
   path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
-  tags: ["patient case consultation"],
+  tags: ["consultation"],
   operationId: "getConsultationById",
   summary: "Retrieve a consultation by ID for a patientId and caseId",
   description: "Retrieve a consultation by ID for a patientId and caseId",
@@ -114,7 +114,7 @@ consultationRouter.get(
 consultationRegistry.registerPath({
   method: "get",
   path: "/patient/{patientId}/case/{caseId}/consultations",
-  tags: ["patient case consultation"],
+  tags: ["consultation"],
   operationId: "getAllConsultations",
   summary: "Retrieve all consultations for a given patientId and caseId",
   description: "Retrieve all consultations for a given patientId and caseId",
@@ -144,7 +144,7 @@ consultationRouter.get("/patient/:patientId/case/:caseId/consultations", consult
 consultationRegistry.registerPath({
   method: "put",
   path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
-  tags: ["patient case consultation"],
+  tags: ["consultation"],
   operationId: "updateConsultation",
   summary: "Update a consultation by ID for a patient case",
   description: "Update a consultation by ID for a patient case",
@@ -196,7 +196,7 @@ consultationRouter.put(
 consultationRegistry.registerPath({
   method: "delete",
   path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
-  tags: ["patient case consultation"],
+  tags: ["consultation"],
   operationId: "deleteConsultation",
   summary: "Delete a consultation by ID for a patient case",
   description: "Delete a consultation by ID for a patient case",
