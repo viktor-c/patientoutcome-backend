@@ -70,6 +70,12 @@ app.use(openAPIRouter);
 // Error handlers
 app.use(errorHandler());
 
+// Default handler for all other routes
+// seems that openApiRouter catches all routes
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
 console.debug("Node env is ", env.NODE_ENV);
 
 export { app, logger };
