@@ -56,26 +56,25 @@ describe("Patient Case Consultation API", () => {
   it("should create and delete a consultation", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
+    const newConsultation = {
+      ...consultationRepository.mockConsultations[0],
+      formTemplates: ["67b4e612d0feb4ad99ae2e83"],
+    } as Consultation;
+    newConsultation._id = undefined; // Reset _id to undefined to create a new consultation
     // Create a new consultation
     const createResponse = await request(app)
       .post(`/patient/${patientId}/case/${caseId}/consultation/`)
-      .send({
-        patientCaseId: caseId,
-        dateAndTime: new Date().toISOString(),
-        reasonForConsultation: ["planned"],
-        notes: [],
-        proms: [],
-        images: [],
-        visitedBy: [new mongoose.Types.ObjectId()],
-      });
+      .send(newConsultation);
+
     expect(createResponse.status).toBe(StatusCodes.CREATED);
     expect(createResponse.body.message).toBe("Consultation created successfully");
-
-    const consultationId = createResponse.body.responseObject._id;
+    expect(createResponse.body.responseObject).toBeDefined();
+    expect(createResponse.body.responseObject._id).toBeDefined();
+    //expect(createResponse.body.responseObject._id).toEqual(newConsultation._id);
 
     // Delete the created consultation
     const deleteResponse = await request(app).delete(
-      `/patient/${patientId}/case/${caseId}/consultation/${consultationId}`,
+      `/patient/${patientId}/case/${caseId}/consultation/${createResponse.body.responseObject._id}`,
     );
     expect(deleteResponse.status).toBe(StatusCodes.NO_CONTENT);
   });

@@ -47,17 +47,14 @@ describe("Form API", () => {
 
   it("should create and delete a form", async () => {
     const newForm = {
-      patientId: formRepository.mockForms[0].patientId,
-      caseId: formRepository.mockForms[0].caseId,
-      consultationId: formRepository.mockForms[0].consultationId,
-      formTemplateId: "67b4e612d0feb4ad99ae2e84",
-      formData: { id: "test" },
-      score: 0,
+      ...formRepository.mockForms[0],
     };
+    newForm._id = new mongoose.Types.ObjectId();
 
     const createRes = await request(app).post("/form").send(newForm);
     expect(createRes.status).toBe(StatusCodes.CREATED);
     expect(createRes.body.responseObject).toHaveProperty("_id");
+    expect(createRes.body.responseObject._id).toEqual(newForm._id.toString());
 
     const formId = createRes.body.responseObject._id;
     const deleteRes = await request(app).delete(`/form/${formId}`);
