@@ -2,6 +2,7 @@ import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-open
 
 import { patientCaseRegistry } from "@/api/case/patientCaseRouter";
 import { clinicalStudyRegistry } from "@/api/clinicalStudy/clinicalStudyRouter";
+import { codeRegistry } from "@/api/code/codeRouter";
 import { consultationRegistry } from "@/api/consultation/consultationRouter";
 import { formRegistry } from "@/api/form/formRouter";
 import { formTemplateRegistry } from "@/api/formtemplate/formTemplateRouter";
@@ -17,6 +18,7 @@ import { userRegistry } from "@/api/user/userRouter";
  */
 export function generateOpenAPIDocument() {
   const registry = new OpenAPIRegistry([
+    codeRegistry,
     healthCheckRegistry,
     userRegistry,
     patientRegistry,

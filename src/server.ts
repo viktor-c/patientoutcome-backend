@@ -6,6 +6,7 @@ import { pino } from "pino";
 //****************** Routers import ****************************** */
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
+import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { formRouter } from "@/api/form/formRouter";
 import { formTemplateRouter } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
@@ -63,6 +64,7 @@ app.use("/clinicalstudy", clinicalStudyRouter);
 app.use("/seed", seedRouter);
 app.use("/formtemplate", formTemplateRouter);
 app.use("", formRouter);
+app.use("/form-access-code", formAccessCodeRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

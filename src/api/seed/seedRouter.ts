@@ -1,5 +1,6 @@
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { ClinicalStudyRepository } from "@/api/clinicalStudy/clinicalStudyRepository";
+import { CodeRepository } from "@/api/code/codeRepository";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
@@ -17,6 +18,7 @@ const patientCaseRepository = new PatientCaseRepository();
 const formTemplateRepository = new FormTemplateRepository();
 const formRepository = new FormRepository();
 const userRepository = new UserRepository();
+const codeRepository = new CodeRepository();
 
 const clinicalStudyRepository = new ClinicalStudyRepository();
 // Middleware to check if the environment is testing, if not we cannot use this route
@@ -108,13 +110,10 @@ seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
 });
 
 /**
-
-
-
  * seed database with mock data for forms
  * @route GET /seed/form
  */
-seedRouter.get("/form", async (_req: Request, res: Response) => {
+seedRouter.get("/forms", async (_req: Request, res: Response) => {
   try {
     await formRepository.createFormMockData();
     const serviceResponse = ServiceResponse.success("Form Mock data inserted successfully", null);
@@ -167,6 +166,49 @@ seedRouter.get("/clinicalStudy", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * Seed database with mock data for codes
+ * @route GET /seed/codes
+ */
+seedRouter.get("/form-access-codes", async (_req: Request, res: Response) => {
+  try {
+    // Insert mock data into the database
+    await codeRepository.createMockDataFormAccessCodes();
+    const serviceResponse = ServiceResponse.success("Code mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert code mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
+  try {
+    await patientRepository.createMockData();
+    await patientCaseRepository.createMockPatientCaseData();
+    await consultationRepository.createMockData();
+    await formTemplateRepository.createMockDataFormTemplate();
+    await formRepository.createFormMockData();
+    await userRepository.createMockUserData();
+    await clinicalStudyRepository.createMockDataClinicalStudies();
+    await codeRepository.createMockDataFormAccessCodes();
+
+    const serviceResponse = ServiceResponse.success("All mock data reset successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to reset mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
 export {
   seedRouter,
   patientRepository,
@@ -176,4 +218,5 @@ export {
   formRepository,
   userRepository,
   clinicalStudyRepository,
+  codeRepository,
 };
