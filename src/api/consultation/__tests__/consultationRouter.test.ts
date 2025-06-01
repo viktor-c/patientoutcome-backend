@@ -2,10 +2,17 @@ import { app } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
+import { describe, expect, it, vi } from "vitest";
 
-import { consultationRepository, patientCaseRepository } from "@/api/seed/seedRouter";
-import type { Consultation } from "../consultationModel";
+import { codeRepository } from "@/api/code/codeRepository";
+import type { Consultation } from "@/api/consultation/consultationModel";
+import { consultationRepository } from "@/api/consultation/consultationRepository";
+import { patientCaseRepository } from "@/api/seed/seedRouter";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { consultationService } from "../consultationService";
+
+vi.mock("@/api/consultation/consultationService");
+vi.mock("@/api/code/codeRepository");
 
 describe("Patient Case Consultation API", () => {
   beforeAll(async () => {
@@ -101,5 +108,97 @@ describe("Patient Case Consultation API", () => {
     );
     expect(response.status).toBe(StatusCodes.NOT_FOUND);
     expect(response.body.message).toBe("Consultation not found");
+  });
+
+  describe("Consultation Router", () => {
+    describe("createConsultation", () => {
+      it("should create a consultation and activate the code if valid", async () => {
+        const mockCode = { internalCode: "123", activatedOn: null };
+        const mockConsultation = { id: "1", patientId: "p1", caseId: "c1" };
+
+        vi.spyOn(codeRepository, "findByExternalCode").mockResolvedValue(mockCode);
+        vi.spyOn(codeRepository, "activateCode").mockResolvedValue(mockCode);
+        vi.spyOn(consultationRepository, "createConsultation").mockResolvedValue(mockConsultation);
+
+        const result = await consultationService.createConsultation("p1", "c1", { formAccessCode: "123" });
+
+        expect(result).toEqual(ServiceResponse.created("Consultation created successfully", mockConsultation));
+        expect(codeRepository.activateCode).toHaveBeenCalledWith("123", mockConsultation.id);
+      });
+
+      it("should fail to create a consultation if the code is already active", async () => {
+        const mockCode = { internalCode: "123", activatedOn: new Date() };
+
+        vi.spyOn(codeRepository, "findByExternalCode").mockResolvedValue(mockCode);
+
+        const result = await consultationService.createConsultation("p1", "c1", { formAccessCode: "123" });
+
+        expect(result).toEqual(ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT));
+      });
+
+      it("should deactivate the code if an error occurs during consultation creation", async () => {
+        const mockCode = { internalCode: "123", activatedOn: null };
+
+        vi.spyOn(codeRepository, "findByExternalCode").mockResolvedValue(mockCode);
+        vi.spyOn(codeRepository, "activateCode").mockResolvedValue(mockCode);
+        vi.spyOn(consultationRepository, "createConsultation").mockRejectedValue(new Error("DB Error"));
+        vi.spyOn(codeRepository, "deactivateCode").mockResolvedValue(mockCode);
+
+        const result = await consultationService.createConsultation("p1", "c1", { formAccessCode: "123" });
+
+        expect(result).toEqual(
+          ServiceResponse.failure(
+            "An error occurred while creating consultation.",
+            null,
+            StatusCodes.INTERNAL_SERVER_ERROR,
+          ),
+        );
+        expect(codeRepository.deactivateCode).toHaveBeenCalledWith("123");
+      });
+    });
+
+    describe("updateConsultation", () => {
+      it("should update a consultation and activate a new code if provided", async () => {
+        const mockCode = { internalCode: "123", activatedOn: null };
+        const mockOriginalConsultation = { id: "1", formAccessCode: "456" };
+        const mockUpdatedConsultation = { id: "1", formAccessCode: "123" };
+
+        vi.spyOn(consultationRepository, "getConsultationById").mockResolvedValue(mockOriginalConsultation);
+        vi.spyOn(codeRepository, "findByExternalCode").mockResolvedValue(mockCode);
+        vi.spyOn(codeRepository, "activateCode").mockResolvedValue(mockCode);
+        vi.spyOn(consultationRepository, "updateConsultation").mockResolvedValue(mockUpdatedConsultation);
+
+        const result = await consultationService.updateConsultation("1", { formAccessCode: "123" });
+
+        expect(result).toEqual(ServiceResponse.success("Consultation updated successfully", mockUpdatedConsultation));
+        expect(codeRepository.activateCode).toHaveBeenCalledWith("123", "1");
+      });
+
+      it("should deactivate the original code if no new code is provided", async () => {
+        const mockOriginalConsultation = { id: "1", formAccessCode: "456" };
+        const mockUpdatedConsultation = { id: "1", formAccessCode: null };
+
+        vi.spyOn(consultationRepository, "getConsultationById").mockResolvedValue(mockOriginalConsultation);
+        vi.spyOn(codeRepository, "deactivateCode").mockResolvedValue(mockOriginalConsultation);
+        vi.spyOn(consultationRepository, "updateConsultation").mockResolvedValue(mockUpdatedConsultation);
+
+        const result = await consultationService.updateConsultation("1", { formAccessCode: null });
+
+        expect(result).toEqual(ServiceResponse.success("Consultation updated successfully", mockUpdatedConsultation));
+        expect(codeRepository.deactivateCode).toHaveBeenCalledWith("456");
+      });
+
+      it("should fail to update a consultation if the new code is already active", async () => {
+        const mockCode = { internalCode: "123", activatedOn: new Date() };
+        const mockOriginalConsultation = { id: "1", formAccessCode: "456" };
+
+        vi.spyOn(consultationRepository, "getConsultationById").mockResolvedValue(mockOriginalConsultation);
+        vi.spyOn(codeRepository, "findByExternalCode").mockResolvedValue(mockCode);
+
+        const result = await consultationService.updateConsultation("1", { formAccessCode: "123" });
+
+        expect(result).toEqual(ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT));
+      });
+    });
   });
 });

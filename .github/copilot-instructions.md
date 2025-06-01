@@ -1,1 +1,3 @@
 - For testing use vitest.
+- Use zod to create mongoose schemas.
+- use openapi registry, zod-to-openapi and zod validation when setting up a router.

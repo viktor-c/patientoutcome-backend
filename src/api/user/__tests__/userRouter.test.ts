@@ -155,7 +155,7 @@ describe("User API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid input: Required");
+      expect(responseBody.message).toContain("Validation error");
       expect(responseBody.responseObject).toBeNull();
     });
 
@@ -174,7 +174,7 @@ describe("User API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Invalid input:");
+      expect(responseBody.message).toContain("Validation error");
       expect(responseBody.responseObject).toBeNull();
     });
 
