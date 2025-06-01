@@ -2,18 +2,12 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import type { Form } from "./formModel";
-import { FormRepository } from "./formRepository";
+import { formRepository } from "./formRepository";
 
 export class FormService {
-  private formRepository: FormRepository;
-
-  constructor(repository: FormRepository = new FormRepository()) {
-    this.formRepository = repository;
-  }
-
   async getAllForms(): Promise<ServiceResponse<Form[] | null>> {
     try {
-      const forms = await this.formRepository.getAllForms();
+      const forms = await formRepository.getAllForms();
       return ServiceResponse.success("Forms found", forms);
     } catch (error) {
       return ServiceResponse.failure(
@@ -31,7 +25,7 @@ export class FormService {
     formId: string,
   ): Promise<ServiceResponse<Form | null>> {
     try {
-      const form = await this.formRepository.getFormByPatientCaseConsultationFormId(
+      const form = await formRepository.getFormByPatientCaseConsultationFormId(
         patientId,
         caseId,
         consultationId,
@@ -52,7 +46,7 @@ export class FormService {
 
   async getFormById(id: string): Promise<ServiceResponse<Form | null>> {
     try {
-      const form = await this.formRepository.getFormById(id);
+      const form = await formRepository.getFormById(id);
       if (!form) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
@@ -68,7 +62,7 @@ export class FormService {
 
   async createForm(formData: Form): Promise<ServiceResponse<Form | null>> {
     try {
-      const newForm = await this.formRepository.createForm(formData);
+      const newForm = await formRepository.createForm(formData);
       return ServiceResponse.created("Form created successfully", newForm);
     } catch (error) {
       return ServiceResponse.failure(
@@ -81,11 +75,41 @@ export class FormService {
 
   async updateForm(id: string, formData: Partial<Form>): Promise<ServiceResponse<Form | null>> {
     try {
-      const updatedForm = await this.formRepository.updateForm(id, formData);
-      if (!updatedForm) {
+      // get the form by id
+      const existingForm = await formRepository.getFormById(id);
+      if (!existingForm) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Form updated successfully", updatedForm);
+      // first check if the fields in the formData are completely filled
+      const incompleteFields = [];
+      let score = 0;
+      for (const [, answerValues] of Object.entries(formData)) {
+        for (const [question, answer] of Object.entries(answerValues)) {
+          if (answer === null || answer === undefined || answer === "") {
+            incompleteFields.push(question);
+          } else {
+            const numericAnswer = Number.parseInt(answer as string, 10);
+            if (!Number.isNaN(numericAnswer)) {
+              score += numericAnswer;
+            }
+          }
+        }
+      }
+      if (incompleteFields.length > 0) {
+        logger.debug("formService.ts Form validation failed. Incomplete fields:", incompleteFields);
+        existingForm.formFillStatus = "incomplete";
+        existingForm.updatedAt = new Date(); // update updatedAt to current date
+      } else {
+        logger.debug("formService.ts Form validation passed, all fields are complete.");
+        existingForm.formFillStatus = "completed";
+        existingForm.updatedAt = new Date(); // update updatedAt to current date
+        existingForm.completedAt = new Date(); // update completedAt to current date
+      }
+      existingForm.formData = formData; // update the form data
+      // update the score
+      existingForm.score = score;
+      const response = await formRepository.updateForm(id, existingForm);
+      return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
       return ServiceResponse.failure(
         "An error occurred while updating the form.",
@@ -97,7 +121,7 @@ export class FormService {
 
   async deleteForm(id: string): Promise<ServiceResponse<Form | null>> {
     try {
-      const deletedForm = await this.formRepository.deleteForm(id);
+      const deletedForm = await formRepository.deleteForm(id);
       if (!deletedForm) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }

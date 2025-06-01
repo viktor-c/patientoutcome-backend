@@ -5,6 +5,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { Router } from "express";
 import { z } from "zod";
 import { formController } from "./formController";
+import { Form } from "./formModel";
 
 const router = Router();
 export const formRegistry = new OpenAPIRegistry();
@@ -18,19 +19,10 @@ const formIdSchema = z.object({
 const createFormSchema = z.object({
   body: z.object({
     formData: z.object({}).passthrough(),
-    score: z.number(),
   }),
 });
 
-const updateFormSchema = z.object({
-  params: z.object({
-    formId: z.string(),
-  }),
-  body: z.object({
-    formData: z.object({}).passthrough().optional(),
-    score: z.number().optional(),
-  }),
-});
+const updateFormSchema = z.object({}).passthrough().optional();
 
 // Register path for getting a form by patient ID, case ID, consultation ID and form Id
 formRegistry.registerPath({
@@ -173,10 +165,10 @@ formRegistry.registerPath({
   path: "/form/{formId}",
   tags: ["form"],
   operationId: "updateForm",
-  description: "Update a form",
-  summary: "Update a form",
+  description: "Update a form answers by its id",
+  summary: "Update a form answers by its id",
   request: {
-    params: z.object({ formId: z.string() }),
+    params: z.object({ formId: commonValidations.id }),
     body: {
       content: {
         "application/json": { schema: updateFormSchema },
@@ -185,7 +177,7 @@ formRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: createFormSchema.shape.body,
+      schema: Form,
       description: "Success",
       statusCode: 200,
     },

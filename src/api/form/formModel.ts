@@ -11,6 +11,8 @@ export const Form = FormTemplate.extend({
   formTemplateId: zId("FormTemplate"),
   score: z.number().optional(),
   createdAt: z.date().optional(),
+  formFillStatus: z.enum(["draft", "incomplete", "completed"]).default("draft"),
+  updatedAt: z.date().optional(),
   completedAt: z.date().optional(),
 }).strict();
 

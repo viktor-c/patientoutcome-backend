@@ -1,5 +1,6 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
+import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { faker } from "@faker-js/faker";
 import type { ObjectId } from "mongoose";
 
@@ -63,76 +64,10 @@ export class FormRepository {
     return !!result;
   }
 
-  public mockForms: Form[] = [
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a1",
-      patientId: "6771d9d410ede2552b7bba40",
-      caseId: "677da5d8cb4569ad1c65515f",
-      consultationId: "60d5ec49f1b2c12d88f1e8a1",
-      formTemplateId: "67b4e612d0feb4ad99ae2e83",
-      markdownFooter: "This is a footer",
-      markdownHeader: "This is a header",
-      title: "Form Title",
-      description: "Form Description",
-      formSchema: {},
-      formSchemaUI: {},
-      formData: { question1: "answer1" },
-      score: 10,
-      createdAt: new Date(),
-    },
-    {
-      _id: "60d5ec12f1b2c12d88f1e8a2",
-      patientId: "6771d9d410ede2552b7bba40",
-      caseId: "677da5d8cb4569ad1c65515f",
-      consultationId: "60d5ec49f1b2c12d88f1e8a2",
-      formTemplateId: "67b4e612d0feb4ad99ae2e83",
-      markdownFooter: "This is a footer",
-      markdownHeader: "This is a header",
-      title: "Form Title",
-      description: "Form Description",
-      formSchema: {},
-      formSchemaUI: {},
-      formData: { question1: "answer1" },
-      score: 10,
-      createdAt: new Date(),
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a3",
-      patientId: "6771d9d410ede2552b7bba40",
-      caseId: "677da5d8cb4569ad1c65515f",
-      consultationId: "60d5ec49f1b2c12d88f1e8a3",
-      formTemplateId: "67b4e612d0feb4ad99ae2e83",
-      markdownFooter: "This is a footer",
-      markdownHeader: "This is a header",
-      title: "Form Title",
-      description: "Form Description",
-      formSchema: {},
-      formSchemaUI: {},
-      formData: { question1: "answer1" },
-      score: 10,
-      createdAt: new Date(),
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a4",
-      patientId: "6771d9d410ede2552b7bba41",
-      caseId: "677da5efcb4569ad1c655160",
-      consultationId: "60d5ec49f1b2c12d88f1e8a3",
-      formTemplateId: "67b4e612d0feb4ad99ae2e84",
-      markdownFooter: "This is a footer",
-      markdownHeader: "This is a header",
-      title: "Form Title",
-      description: "Form Description",
-      formSchema: {},
-      formSchemaUI: {},
-      formData: { question1: "answer1" },
-      score: 10,
-      createdAt: new Date(),
-    },
-  ];
-
   async createFormMockData(): Promise<void> {
     try {
       await FormModel.deleteMany({});
+      this.populateMockForms();
       const res = await FormModel.insertMany(this.mockForms);
       if (res) {
         console.log("Form mock data created successfully");
@@ -143,6 +78,63 @@ export class FormRepository {
       return Promise.reject();
     }
   }
+
+  // no need to be async, just populate the mock forms
+  populateMockForms(): void {
+    try {
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d51",
+        patientId: "6771d9d410ede2552b7bba40",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a1",
+        formTemplateId: "67b4e612d0feb4ad99ae2e83",
+        score: undefined,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[0].title,
+        description: formTemplateRepository.mockFormTemplateData[0].description,
+        markdownHeader: formTemplateRepository.mockFormTemplateData[0].markdownHeader,
+        markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
+        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
+        formData: formTemplateRepository.mockFormTemplateData[0].formData,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d54",
+        patientId: "6771d9d410ede2552b7bba40",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a1",
+        formTemplateId: "67b4e612d0feb4ad99ae2e84",
+        score: undefined,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[1].title,
+        description: formTemplateRepository.mockFormTemplateData[1].description,
+        markdownHeader: formTemplateRepository.mockFormTemplateData[1].markdownHeader,
+        markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
+        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
+        formData: formTemplateRepository.mockFormTemplateData[1].formData,
+      });
+
+      console.log("Mock forms populated with template data successfully");
+    } catch (error) {
+      console.error("Error populating mock forms with template data", error);
+      throw error;
+    }
+  }
+
+  public mockForms: Form[] = [];
 }
 
-export const formRepository = new FormRepository();
+const formRepository = new FormRepository();
+if (process.env.NODE_ENV === "development") {
+  formRepository.populateMockForms();
+}
+
+export { formRepository };

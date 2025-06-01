@@ -43,25 +43,9 @@ export class FormTemplateRepository {
       _id: "67b4e612d0feb4ad99ae2e83",
       title: "EFAS Score",
       description: "A form to calculate EFAS score",
-      markdownHeader: JSON.stringify(`
-# EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score
-## Einleitung
-Auf der folgenden Seite finden Sie 6 Fragen zur Ihren Problemen am Fuß und/oder Sprunggelenk.
-
-Bitte beantworten Sie alle Fragen so, dass Sie Ihre Situation ___innerhalb der letzten Woche___ am passendsten beschreiben. Jede Frage hat 5 Antwortmöglichkeiten, d.h. eine 5-Punkte-Skala mit einer Beschreibung der Antworten bzw. Endpunkte.
-
-Falls eine Frage für Sie nicht zutrifft, kreuzen Sie bitte "n.z." an und beantworten die Frage nicht.
-
-## Sportfragen
-Im zweiten Teil des Fragenbogens geht es um Sport.
-
-Bitte beantworten Sie diese Fragen nur wenn Sie regelmäßig Sport treiben.
-
-Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bitte n.z. an und beantworten die Frage nicht.
-`),
-      markdownFooter: JSON.stringify(`
-## Sie haben den EFAS Fragebogen ausgefüllt
-## Vielen Dank für Ihre Teilnahme!`),
+      markdownHeader:
+        '# EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score\n## Einleitung\nAuf der folgenden Seite finden Sie 6 Fragen zur Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation ___innerhalb der letzten Woche___ am passendsten beschreiben. Jede Frage hat 5 Antwortmöglichkeiten, d.h. eine 5-Punkte-Skala mit einer Beschreibung der Antworten bzw. Endpunkte.\n\nFalls eine Frage für Sie nicht zutrifft, kreuzen Sie bitte "n.z." an und beantworten die Frage nicht.\n\n## Sportfragen\nIm zweiten Teil des Fragenbogens geht es um Sport.\n\nBitte beantworten Sie diese Fragen nur wenn Sie regelmäßig Sport treiben.\n\nBei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bitte n.z. an und beantworten die Frage nicht.',
+      markdownFooter: "## Sie haben den EFAS Fragebogen ausgefüllt\n##Vielen Dank für Ihre Teilnahme!",
       formSchema: {
         type: "object",
         properties: {
@@ -171,35 +155,33 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q1",
-                    options: {
-                      slider: true,
-                    },
+                    options: { slider: true, enableFilterErrorsBeforeTouch: true },
                   },
 
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q2",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enableFilterErrorsBeforeTouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q3",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q4",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q5",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/standardfragebogen/properties/q6",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                 ],
               },
@@ -215,22 +197,22 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
                   {
                     type: "Control",
                     scope: "#/properties/sportfragebogen/properties/s1",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/sportfragebogen/properties/s2",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/sportfragebogen/properties/s3",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                   {
                     type: "Control",
                     scope: "#/properties/sportfragebogen/properties/s4",
-                    options: { format: "inlineradio" },
+                    options: { format: "inlineradio", enablefiltererrorsbeforetouch: true },
                   },
                 ],
               },
@@ -239,22 +221,21 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
         ],
       },
       formData: {
-        standardfragebogen: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0 },
-        sportfragebogen: { s1: 0, s2: 0, s3: 0, s4: 0 },
+        // standardfragebogen: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0 },
+        standardfragebogen: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null },
+        // standardfragebogen: {},
+        // sportfragebogen: { s1: 0, s2: 0, s3: 0, s4: 0 },
+        sportfragebogen: { s1: null, s2: null, s3: null, s4: null },
+        // sportfragebogen: {},
       },
     },
     {
       _id: "67b4e612d0feb4ad99ae2e84",
       title: "AOFAS Vorfuß Score",
       description: "A form to calculate AOFAS score",
-      markdownHeader: JSON.stringify(`
-      # American Orthopaedic Foot and Ankle Society - AOFAS Score
-      ## Einleitung
-      Auf der folgenden Seite finden Sie 8 Fragen zur Ihren Problemen am Großzeh.
-      `),
-      markdownFooter: JSON.stringify(`
-      ## Sie haben den AOFAS Fragebogen ausgefüllt
-      ## Vielen Dank für Ihre Teilnahme!`),
+      markdownHeader:
+        "# American Orthopaedic Foot and Ankle Society - AOFAS Score\n## Einleitung\nAuf der folgenden Seite finden Sie 8 Fragen zur Ihren Problemen am Großzeh.",
+      markdownFooter: "## Sie haben den AOFAS Fragebogen ausgefüllt\n## Vielen Dank für Ihre Teilnahme!",
 
       formSchema: {
         type: "object",
@@ -265,22 +246,23 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q1: {
                 title: "Wie oft haben Sie Schmerzen bzw. wie stark ist der Schmerz am Vorfuß?",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "40",
+                    const: 40,
                     title: "kein Schmerz",
                   },
                   {
-                    const: "30",
+                    const: 30,
                     title: "leicht, gelegentlich",
                   },
                   {
-                    const: "20",
+                    const: 20,
                     title: "mittelmäßig, täglich",
                   },
                   {
-                    const: "10",
+                    const: 10,
                     title: "heftig, fast immer",
                   },
                 ],
@@ -288,23 +270,24 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q2: {
                 title: "Funktion, Einschränkung der Aktivität",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "10",
+                    const: 10,
                     title: "keine Einschränkungen, keine Stütze/ Hilfe",
                   },
                   {
-                    const: "7",
+                    const: 7,
                     title:
                       "keine Einschränkung bei den tägl. Aktivitäten, Einschränkung bei Freizeitaktivitäten, keine Hilfen",
                   },
                   {
-                    const: "4",
+                    const: 4,
                     title: "Einschränkung bei den täglichen Aktivitäten/ Freizeitaktivitäten, Stock",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title:
                       "starke Einschr. bei den täglichen Aktivitäten, Freizeitaktivitäten, Gehstütze, Krücke, Rollstuhl",
                   },
@@ -313,18 +296,19 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q3: {
                 title: "Schuhwerk",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "10",
+                    const: 10,
                     title: "modische Konfektionsschuhe ohne Einlagen",
                   },
                   {
-                    const: "5",
+                    const: 5,
                     title: "Konfektionsschuhe mit Einlagen",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "Orthopädische Schuhe",
                   },
                 ],
@@ -332,18 +316,19 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q4: {
                 title: "Beweglichkeit im Großzehengrundgelenk",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "10",
+                    const: 10,
                     title: "normal oder leichte Einschränkungen (>75% von Norm)",
                   },
                   {
-                    const: "5",
+                    const: 5,
                     title: "mäßige Einschränkungen (30%-74% von Norm)",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "massive Einschränkungen (<30% von Norm)",
                   },
                 ],
@@ -351,14 +336,15 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q5: {
                 title: "Beweglichkeit im Großzehengelenk",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "5",
+                    const: 5,
                     title: "Keine Einschränkung",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "Starke Einschränkung",
                   },
                 ],
@@ -366,14 +352,15 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q6: {
                 title: "Stabilität im Großzehengrundgelenk",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "5",
+                    const: 5,
                     title: "stabil",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "stark eingeschränkt",
                   },
                 ],
@@ -381,14 +368,15 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q7: {
                 title: "Schwiele am Hallux",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "5",
+                    const: 5,
                     title: "keine oder symptomlos",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "mit Symptomen",
                   },
                 ],
@@ -396,18 +384,19 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
               q8: {
                 title: "Achsenfehlstellung",
                 description: "",
-                type: "string",
+                type: "number",
+                xrenderinghint: "aofasRating",
                 oneOf: [
                   {
-                    const: "15",
+                    const: 15,
                     title: "gut, Zehen acshengerecht",
                   },
                   {
-                    const: "8",
+                    const: 8,
                     title: "mittelmäßig, gewisse Achsenabweichungen",
                   },
                   {
-                    const: "0",
+                    const: 0,
                     title: "schlecht , starke Achsenabweichungen",
                   },
                 ],
@@ -422,49 +411,49 @@ Bei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bi
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q1",
-            options: { format: "radio" },
+            options: { format: "radio", enableFilterErrorsBeforeTouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q2",
-            options: { format: "radio" },
+            options: { format: "radio", enableFilterErrorsBeforeTouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q3",
-            options: {
-              format: "radio",
-            },
+            options: { format: "radio", enableFilterErrorsBeforeTouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q4",
-            options: { format: "radio" },
+            options: { format: "radio", enablefiltererrorsbeforetouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q5",
-            options: { format: "radio" },
+            options: { format: "radio", enablefiltererrorsbeforetouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q6",
-            options: { format: "radio" },
+            options: { format: "radio", enablefiltererrorsbeforetouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q7",
-            options: { format: "radio" },
+            options: { format: "radio", enablefiltererrorsbeforetouch: true },
           },
           {
             type: "Control",
             scope: "#/properties/vorfußfragebogen/properties/q8",
-            options: { format: "radio" },
+            options: { format: "radio", enablefiltererrorsbeforetouch: true },
           },
         ],
       },
       formData: {
-        vorfußfragebogen: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0 },
+        // vorfußfragebogen: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0 },
+        vorfußfragebogen: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null, q8: null },
+        // vorfußfragebogen: {},
       },
     },
   ];
