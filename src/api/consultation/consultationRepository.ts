@@ -1,7 +1,6 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
 import { faker } from "@faker-js/faker";
-import { formRepository } from "../form/formRepository";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
 
 export class ConsultationRepository {
@@ -12,27 +11,16 @@ export class ConsultationRepository {
     }
 
     const newConsultation = new consultationModel(data);
-
-    if (data.formTemplates && data.formTemplates.length > 0) {
-      // based on the array of id in formTemplates, create a new form for each template
-      // use the form API to create a new form
-      // if there are multiple templates, create a new form for each template
-      for (let i = 0; i < data.formTemplates.length; i++) {
-        const formId = await formRepository.createFormByTemplateId(
-          patientId,
-          caseId,
-          newConsultation.id,
-          data.formTemplates[i],
-        );
-        newConsultation.proms.push(formId);
-      }
-    }
-
-    return newConsultation.save();
+    return newConsultation;
   }
 
   async getConsultationById(consultationId: string): Promise<Consultation | null> {
-    return consultationModel.findById(consultationId).populate("proms").lean();
+    return consultationModel.findById(consultationId).populate(["proms", "visitedBy"]).lean();
+  }
+
+  async getConsultationByFormAccessCode(formAccessCode: string): Promise<Consultation | null> {
+    // formaccessCode is the internal code of the consultation or _id
+    return consultationModel.findById(formAccessCode).populate(["proms", "visitedBy"]).lean();
   }
 
   async updateConsultation(consultationId: string, data: Partial<Consultation>): Promise<Consultation | null> {
@@ -44,8 +32,14 @@ export class ConsultationRepository {
     return !!result;
   }
 
-  async getAllConsultations(patientId: string, caseId: string): Promise<Consultation[]> {
-    return consultationModel.find({ patientCaseId: caseId, patient: patientId }).lean();
+  async getAllConsultations(caseId: string): Promise<Consultation[]> {
+    const cons = await consultationModel
+      .find({ patientCaseId: caseId })
+      .select("-__v")
+      .populate(["proms", "visitedBy"])
+      .lean();
+    // const cons = await consultationModel.find({ patientCaseId: caseId }).select("-__v").lean();
+    return cons;
   }
 
   public mockConsultations: Consultation[] = [
@@ -63,7 +57,8 @@ export class ConsultationRepository {
           note: faker.lorem.paragraph(),
         },
       ],
-      proms: [],
+      proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"],
+      formAccessCode: "682f7de54ef4eb7a14be67f6",
       images: [],
       visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
     },
@@ -133,3 +128,5 @@ export class ConsultationRepository {
     }
   }
 }
+
+export const consultationRepository = new ConsultationRepository();

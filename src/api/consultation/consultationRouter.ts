@@ -17,6 +17,7 @@ export const consultationRouter: Router = express.Router();
 
 consultationRegistry.register("Consultation", ConsultationSchema);
 const createConsultation = consultationRegistry.register("CreateConsultation", CreateConsultationSchema);
+const updateConsultation = consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
 consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
 consultationRegistry.register("GetConsultation", GetConsultationSchema);
 
@@ -69,15 +70,13 @@ consultationRouter.post(
 // Register the path for getting a consultation by ID
 consultationRegistry.registerPath({
   method: "get",
-  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
+  path: "/consultation/{consultationId}",
   tags: ["consultation"],
   operationId: "getConsultationById",
   summary: "Retrieve a consultation by ID for a patientId and caseId",
   description: "Retrieve a consultation by ID for a patientId and caseId",
   request: {
     params: z.object({
-      patientId: commonValidations.id,
-      caseId: commonValidations.id,
       consultationId: commonValidations.id,
     }),
   },
@@ -105,10 +104,7 @@ consultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.get(
-  "/patient/:patientId/case/:caseId/consultation/:consultationId",
-  consultationController.getConsultationById,
-);
+consultationRouter.get("/consultation/:consultationId", consultationController.getConsultationById);
 
 // Register the path for getting all consultations for a given patientId and caseId
 consultationRegistry.registerPath({
@@ -155,11 +151,7 @@ consultationRegistry.registerPath({
       consultationId: commonValidations.id,
     }),
     body: {
-      content: {
-        "application/json": {
-          schema: ConsultationSchema.partial(),
-        },
-      },
+      content: { "application/json": { schema: updateConsultation.partial() } },
     },
   },
   responses: createApiResponses([
@@ -188,7 +180,8 @@ consultationRegistry.registerPath({
 
 consultationRouter.put(
   "/patient/:patientId/case/:caseId/consultation/:consultationId",
-  validateRequest(z.object({ body: ConsultationSchema.partial() })),
+  // validateRequest(z.object({ body: updateConsultation.partial() })),
+  validateRequest(updateConsultation.partial()),
   consultationController.updateConsultation,
 );
 
@@ -234,4 +227,51 @@ consultationRegistry.registerPath({
 consultationRouter.delete(
   "/patient/:patientId/case/:caseId/consultation/:consultationId",
   consultationController.deleteConsultation,
+);
+
+// Register the path for getting a consultation by form access code
+consultationRegistry.registerPath({
+  method: "get",
+  path: "/consultation/code/{externalCode}",
+  tags: ["consultation"],
+  operationId: "getConsultationByExternalCode",
+  summary: "Retrieve a consultation by form access external(short) code",
+  description: "Retrieve a consultation by form access external(short) code",
+  request: {
+    params: z.object({
+      externalCode: z.string(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: ConsultationSchema,
+      description: "Consultation retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Consultation not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the consultation.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+consultationRouter.get(
+  "/consultation/code/:externalCode",
+  validateRequest(
+    z.object({
+      params: z.object({ externalCode: z.string() }),
+    }),
+  ),
+  consultationController.getConsultationByExternalCode,
 );

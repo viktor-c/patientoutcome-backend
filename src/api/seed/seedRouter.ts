@@ -1,6 +1,6 @@
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { ClinicalStudyRepository } from "@/api/clinicalStudy/clinicalStudyRepository";
-import { ConsultationRepository } from "@/api/consultation/consultationRepository";
+import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { UserRepository } from "@/api/user/userRepository";
@@ -14,7 +14,6 @@ import { PatientRepository } from "../patient/patientRepository";
 const seedRouter: Router = express.Router();
 const patientRepository = new PatientRepository();
 const patientCaseRepository = new PatientCaseRepository();
-const consultationRepository = new ConsultationRepository();
 const formTemplateRepository = new FormTemplateRepository();
 const formRepository = new FormRepository();
 const userRepository = new UserRepository();

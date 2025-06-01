@@ -22,8 +22,9 @@ class ConsultationController {
   // Update a consultation by ID
   public updateConsultation: RequestHandler = async (req: Request, res: Response) => {
     const consultationId = z.string().parse(req.params.consultationId);
+    const patientId = z.string().parse(req.params.patientId);
     const consultationData = req.body;
-    const serviceResponse = await consultationService.updateConsultation(consultationId, consultationData);
+    const serviceResponse = await consultationService.updateConsultation(patientId, consultationId, consultationData);
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -38,6 +39,13 @@ class ConsultationController {
   public getAllConsultations: RequestHandler = async (req: Request, res: Response) => {
     const { patientId, caseId } = req.params;
     const serviceResponse = await consultationService.getAllConsultations(patientId, caseId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  // Get a consultation by form access code
+  public getConsultationByExternalCode: RequestHandler = async (req: Request, res: Response) => {
+    const externalCode = z.string().parse(req.params.externalCode);
+    const serviceResponse = await consultationService.getConsultationByExternalCode(externalCode);
     return handleServiceResponse(serviceResponse, res);
   };
 }

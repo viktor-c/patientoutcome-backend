@@ -1,7 +1,7 @@
 import { Form } from "@/api/form/formModel";
 import { NoteSchema, dateSchema } from "@/api/generalSchemas";
-import { zId, zodSchema } from "@zodyac/zod-mongoose";
-import mongoose from "mongoose";
+import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
+import mongoose, { Schema } from "mongoose";
 import { z } from "zod";
 
 // Define the Image schema
@@ -24,16 +24,14 @@ export const ConsultationSchema = z.object({
   proms: z.array(zId("Form")),
   images: z.array(ImageSchema),
   visitedBy: z.array(zId("User")),
+  formAccessCode: zId("FormAccessCode").optional(),
 });
 
 export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true }).extend({
   formTemplates: z.array(zId("FormTemplate")),
 });
 
-export const UpdateConsultationSchema = z.object({
-  params: z.object({ id: zId("Consultation") }),
-  body: ConsultationSchema.partial(),
-});
+export const UpdateConsultationSchema = ConsultationSchema.partial();
 export const GetConsultationSchema = z.object({
   params: z.object({ id: zId("Consultation") }),
 });
