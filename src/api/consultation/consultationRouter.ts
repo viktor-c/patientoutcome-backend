@@ -8,9 +8,11 @@ import { consultationController } from "./consultationController";
 import {
   ConsultationSchema,
   CreateConsultationSchema,
-  GetConsultationSchema,
+  GetConsultationRequestSchema,
   UpdateConsultationSchema,
 } from "./consultationModel";
+
+import { dateSchema } from "../generalSchemas";
 
 export const consultationRegistry = new OpenAPIRegistry();
 export const consultationRouter: Router = express.Router();
@@ -19,7 +21,7 @@ consultationRegistry.register("Consultation", ConsultationSchema);
 const createConsultation = consultationRegistry.register("CreateConsultation", CreateConsultationSchema);
 const updateConsultation = consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
 consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
-consultationRegistry.register("GetConsultation", GetConsultationSchema);
+consultationRegistry.register("GetConsultation", GetConsultationRequestSchema);
 
 // Register the path for creating a consultation
 consultationRegistry.registerPath({
@@ -135,6 +137,44 @@ consultationRegistry.registerPath({
 });
 
 consultationRouter.get("/patient/:patientId/case/:caseId/consultations", consultationController.getAllConsultations);
+
+// Register the path for getting all consultations for a given day
+consultationRegistry.registerPath({
+  method: "get",
+  path: "/consultations/from/{fromDate}/to/{toDate}",
+  tags: ["consultation"],
+  operationId: "getAllConsultationsOnDay",
+  summary: "Retrieve all consultations on a given date",
+  description: "Retrieve all consultations on a given date",
+  request: { params: z.object({ fromDate: z.date(), toDate: z.date() }) },
+  responses: createApiResponses([
+    {
+      schema: z.array(ConsultationSchema),
+      description: "Consultations retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving the consultations.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+consultationRouter.get(
+  "/consultations/from/:fromDate/to/:toDate",
+  validateRequest(
+    z.object({
+      params: z.object({ fromDate: dateSchema, toDate: dateSchema }),
+    }),
+  ),
+  consultationController.getAllConsultationsOnDay,
+);
 
 // Register the path for updating a consultation by ID
 consultationRegistry.registerPath({

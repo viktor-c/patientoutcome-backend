@@ -32,7 +32,7 @@ export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v
 });
 
 export const UpdateConsultationSchema = ConsultationSchema.partial();
-export const GetConsultationSchema = z.object({
+export const GetConsultationRequestSchema = z.object({
   params: z.object({ id: zId("Consultation") }),
 });
 

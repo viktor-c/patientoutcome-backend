@@ -22,6 +22,13 @@ export class ConsultationService {
     this.codeRepository = codeRepository;
   }
 
+  /**
+   *
+   * @param patientId - The ID of the patient for whom the consultation is being created.
+   * @param caseId
+   * @param data
+   * @returns
+   */
   async createConsultation(
     patientId: string,
     caseId: string,
@@ -80,6 +87,16 @@ export class ConsultationService {
     }
   }
 
+  /**
+   *
+   * @param consultationId - The ID of the consultation to retrieve.
+   * @throws {ServiceResponse} if an error occurs while fetching the consultation.
+   * @description This method retrieves a consultation by its ID.
+   * It checks if the consultation exists in the repository, and if it does, it returns the consultation.
+   * If the consultation is not found, it returns a failure response.
+   * If an error occurs during the retrieval process, it logs the error and returns a failure response.
+   * @returns
+   */
   async getConsultationById(consultationId: string): Promise<ServiceResponse<Consultation | null>> {
     try {
       const consultation = await this.consultationRepository.getConsultationById(consultationId);
@@ -97,6 +114,17 @@ export class ConsultationService {
       );
     }
   }
+
+  /**
+   *
+   * @param patientId - The ID of the patient.
+   * @param consultationId - The ID of the consultation to update.
+   * @param data - The data to update the consultation with.
+   * @returns a ServiceResponse containing the updated consultation or an error message.
+   * @throws {ServiceResponse} if an error occurs while updating the consultation.
+   * @description This method updates a consultation by its ID and patient ID.
+   * It processes form access codes and form templates, updating them as necessary.
+   */
   async updateConsultation(
     patientId: string,
     consultationId: string,
@@ -239,6 +267,16 @@ export class ConsultationService {
     }
   }
 
+  /**
+   *
+   * @param consultationId - The ID of the consultation to delete.
+   * @throws {ServiceResponse} if an error occurs while deleting the consultation.
+   * @description This method deletes a consultation by its ID.
+   * It first checks if the consultation exists, and if it does, it deletes it from the repository.
+   * If the consultation is not found, it returns a failure response.
+   * If an error occurs during the deletion process, it logs the error and returns a failure response.
+   * @returns
+   */
   async deleteConsultation(consultationId: string): Promise<ServiceResponse<null>> {
     try {
       const deleted = await this.consultationRepository.deleteConsultation(consultationId);
@@ -257,6 +295,15 @@ export class ConsultationService {
     }
   }
 
+  /**
+   *
+   * @param patientId - The ID of the patient.
+   * @param caseId - The ID of the patient case.
+   * @returns an array of consultations for the specified patient and case.
+   * @throws {ServiceResponse} if an error occurs while fetching consultations.
+   * @description This method retrieves all consultations for a given patient and case.
+   * It queries the consultation repository for consultations that match the provided patientId and caseId.
+   */
   async getAllConsultations(patientId: string, caseId: string): Promise<ServiceResponse<Consultation[]>> {
     try {
       // TODO do we need checking for patientId
@@ -273,6 +320,40 @@ export class ConsultationService {
     }
   }
 
+  /**
+   *
+   * @param date - The date in iso format to fetch consultations for that day.
+   * @returns an array of consultations for the specified date.
+   * @throws {ServiceResponse} if an error occurs while fetching consultations.
+   * @description This method retrieves all consultations scheduled for a specific day.
+   * It queries the consultation repository for consultations that match the provided date.
+   * The date should be in iso format
+   */
+  async getAllConsultationsOnDay(fromDate: string, toDate: string): Promise<ServiceResponse<Consultation[]>> {
+    try {
+      const consultations = await this.consultationRepository.getAllConsultationsOnDay(fromDate, toDate);
+      return ServiceResponse.success("Consultations retrieved successfully", consultations);
+    } catch (ex) {
+      const errorMessage = `Error fetching consultations on day: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while fetching consultations on day.",
+        [],
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   *
+   * @param externalCode - The external code to fetch the consultation by.
+   * @throws {ServiceResponse} if an error occurs while fetching the consultation.
+   * @description This method retrieves a consultation by its external code.
+   * It first checks if the code exists in the code repository, and if it does, it retrieves the associated consultation.
+   * If the code is not found or is not associated with any consultation, it returns a failure response.
+   * If an error occurs during the retrieval process, it logs the error and returns a failure response.
+   * @returns {Promise<ServiceResponse<Consultation | null>>} - A promise that resolves to a ServiceResponse containing the consultation or an error message.
+   */
   async getConsultationByExternalCode(externalCode: string): Promise<ServiceResponse<Consultation | null>> {
     try {
       const code = await this.codeRepository.findByExternalCode(externalCode);

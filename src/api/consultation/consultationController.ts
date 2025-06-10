@@ -42,6 +42,13 @@ class ConsultationController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public getAllConsultationsOnDay: RequestHandler = async (req: Request, res: Response) => {
+    const fromDate = z.string().parse(req.params.fromDate);
+    const toDate = z.string().parse(req.params.toDate);
+    const serviceResponse = await consultationService.getAllConsultationsOnDay(fromDate, toDate);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   // Get a consultation by form access code
   public getConsultationByExternalCode: RequestHandler = async (req: Request, res: Response) => {
     const externalCode = z.string().parse(req.params.externalCode);
