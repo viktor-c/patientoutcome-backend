@@ -81,6 +81,7 @@ export class FormRepository {
 
   // no need to be async, just populate the mock forms
   populateMockForms(): void {
+    this.mockForms = [];
     try {
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
