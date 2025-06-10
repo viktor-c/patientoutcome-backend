@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { consultationModel } from "../consultation/consultationModel";
 import { type Code, codeModel } from "./codeModel";
 
 export class CodeRepository {
@@ -92,10 +93,10 @@ export class CodeRepository {
   }
 
   async activateCode(internalCode: string, consultationId: string): Promise<Code | string> {
-    // const consultation = await consultationModel.findById(consultationId).lean();
-    // if (!consultation) {
-    //   return Promise.resolve("consultation not found");
-    // }
+    const consultation = await consultationModel.findById(consultationId).lean();
+    if (!consultation) {
+      return Promise.resolve("Consultation not found");
+    }
 
     const codeExists = await codeModel.findById(internalCode);
     if (!codeExists) {
@@ -151,11 +152,31 @@ export class CodeRepository {
    *  //BUG only deactivate the code if the scores were completed
    */
   async deactivateCode(internalCode: string) {
-    return await codeModel.findOneAndUpdate(
-      { internalCode },
-      { activatedOn: undefined, expiresOn: undefined, consultationId: undefined },
-      { new: true },
-    );
+    try {
+      const existingCode = await codeModel.findById(internalCode);
+      if (!existingCode) {
+        return Promise.reject("Internal code not found");
+      }
+      // Check if the code is already deactivated
+      if (!existingCode.activatedOn) {
+        return Promise.reject("Code already deactivated");
+      }
+      // Deactivate the code by setting activatedOn, expiresOn, and consultationId to undefined
+      // Note: This will not delete the code, just reset its activation status
+      // If the code is already expired, we can still deactivate it
+      if (existingCode.expiresOn && existingCode.expiresOn < new Date()) {
+        console.warn("Code is already expired, deactivating it.");
+      }
+      // If the code is expired, we can still deactivate it
+      existingCode.activatedOn = undefined;
+      existingCode.expiresOn = undefined;
+      existingCode.consultationId = undefined;
+      await existingCode.save();
+      return existingCode;
+    } catch (error) {
+      console.error("Error deactivating code:", error);
+      return Promise.reject("An error occurred while deactivating the code.");
+    }
   }
 }
 

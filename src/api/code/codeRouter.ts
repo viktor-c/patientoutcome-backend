@@ -1,10 +1,18 @@
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { Router } from "express";
 import { z } from "zod";
 import { codeController } from "./codeController";
-import { ActivateCodeSchema, CodeSchema, CreateCodeSchema, DeleteCodeSchema, GetCodeSchema } from "./codeModel";
+import {
+  ActivateCodeSchema,
+  CodeSchema,
+  CreateCodeSchema,
+  DeleteCodeSchema,
+  ExternalCodeSchema,
+  GetCodeSchema,
+} from "./codeModel";
 
 // Initialize OpenAPI registry
 export const codeRegistry = new OpenAPIRegistry();
@@ -51,7 +59,7 @@ codeRegistry.registerPath({
   operationId: "activateCode",
   summary: "Activate a code",
   description: "Activate a code by its internal code.",
-  request: { params: ActivateCodeSchema },
+  request: { params: ActivateCodeSchema.shape.params },
   responses: createApiResponses([
     { schema: CodeSchema, description: "Code activated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
@@ -75,7 +83,7 @@ codeRegistry.registerPath({
   operationId: "deactivateCode",
   summary: "Deactivate a code",
   description: "Deactivate a code by its internal code.",
-  request: { params: z.object({ internalCode: z.string() }) },
+  request: { params: z.object({ internalCode: commonValidations.id }) },
   responses: createApiResponses([
     { schema: CodeSchema, description: "Code deactivated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
@@ -116,6 +124,28 @@ codeRegistry.registerPath({
   ]),
 });
 formAccessCodeRouter.delete("/:code", validateRequest(DeleteCodeSchema), codeController.deleteCode);
+
+// Route to check if external code is valid
+codeRegistry.registerPath({
+  method: "get",
+  path: "/form-access-code/is-valid-external-code/{externalCode}",
+  tags: ["Code"],
+  operationId: "isValidExternalCode",
+  summary: "Check if external code is valid",
+  description: "Check if an external code is valid and not already used.",
+  request: { params: ExternalCodeSchema.shape.params },
+  responses: createApiResponses([
+    { schema: z.object({ message: z.string() }), description: "Code is valid", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code invalid", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 400 },
+    { schema: z.object({ message: z.string() }), description: "Internal server error", statusCode: 500 },
+  ]),
+});
+formAccessCodeRouter.get(
+  "/is-valid-external-code/:externalCode",
+  validateRequest(ExternalCodeSchema),
+  codeController.isValidExternalCode,
+);
 
 // Route to get a code by internalCode
 codeRegistry.registerPath({

@@ -64,7 +64,9 @@ export const GetCodeSchema = z.object({
 });
 
 // Input validation for 'PUT code/:code/consultation/:consultationId' endpoint
-export const ActivateCodeSchema = z.object({ internalCode: z.string(), consultationId: commonValidations.id });
+export const ActivateCodeSchema = z.object({
+  params: z.object({ internalCode: commonValidations.id, consultationId: commonValidations.id }),
+});
 
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
@@ -74,3 +76,5 @@ export const CreateCodeSchema = z.object({
 
 // Input validation for 'DELETE code/:code' endpoint
 export const DeleteCodeSchema = z.object({ code: z.string() });
+
+export const ExternalCodeSchema = z.object({ params: z.object({ externalCode: z.string() }) });

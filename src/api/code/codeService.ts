@@ -42,7 +42,7 @@ class CodeService {
           return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
         } else if (code === "code already activated") {
           return ServiceResponse.failure("Code already activated", null, StatusCodes.CONFLICT);
-        } else if (code === "consultation not found") {
+        } else if (code === "Consultation not found") {
           return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
         } else if (code === "Consultation already has an active code") {
           return ServiceResponse.failure("Consultation already has an active code", null, StatusCodes.CONFLICT);
@@ -55,6 +55,7 @@ class CodeService {
       }
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
+      console.error("Error activating code:", error);
       return ServiceResponse.failure(
         "An error occurred while activating the code.",
         null,
@@ -66,10 +67,19 @@ class CodeService {
   async deactivateCode(internalCode: string): Promise<ServiceResponse<Code | null>> {
     try {
       const code = await this.codeRepository.deactivateCode(internalCode);
-      if (!code) {
-        return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+      if (typeof code === "string") {
+        if (code === "Internal code not found") {
+          return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
+        } else if (code === "Code already deactivated") {
+          return ServiceResponse.failure("Code already deactivated", null, StatusCodes.CONFLICT);
+        }
+      } else if (code === null) {
+        return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Code deactivated successfully", code);
+      if (typeof code === "object" && code !== null) {
+        return ServiceResponse.success("Code deactivated successfully", code);
+      }
+      return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
       return ServiceResponse.failure(
         "An error occurred while deactivating the code.",
@@ -146,6 +156,26 @@ class CodeService {
       return ServiceResponse.failure(
         "An error occurred while retrieving the codes.",
         null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async isValidExternalCode(externalCode: string): Promise<ServiceResponse<boolean>> {
+    try {
+      const code = await this.codeRepository.findByExternalCode(externalCode);
+      if (!code) {
+        return ServiceResponse.failure("Code not found", false, StatusCodes.NOT_FOUND);
+      }
+      if (code.activatedOn && code.expiresOn && code.expiresOn > new Date()) {
+        return ServiceResponse.success("Code is valid", true);
+      } else {
+        return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);
+      }
+    } catch (error) {
+      return ServiceResponse.failure(
+        "An error occurred while checking the external code.",
+        false,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }

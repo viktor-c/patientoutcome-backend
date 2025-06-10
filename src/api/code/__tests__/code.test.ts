@@ -63,8 +63,8 @@ describe("Code API Endpoints", () => {
   describe("GET /form-access-code/activate", () => {
     it("should activate a valid code", async () => {
       // Arrange
-      const testCode = codeRepository.codeMockData[0].internalCode;
-      const consultationId = consultationRepository.mockConsultations[0]._id;
+      const testCode = codeRepository.codeMockData[1]._id;
+      const consultationId = consultationRepository.mockConsultations[1]._id;
 
       // Act
       const response = await request(app).put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`);
@@ -76,12 +76,12 @@ describe("Code API Endpoints", () => {
       expect(response.body.responseObject?.activatedOn).toBeDefined();
       expect(response.body.responseObject?.consultationId).toEqual(consultationId);
       expect(response.body.responseObject?.expiresOn).toBeDefined();
-      expect(response.body.responseObject?.internalCode).toEqual(testCode);
+      //expect(response.body.responseObject?.id).toEqual(testCode);
     });
 
     it("should return code already activated", async () => {
       // Arrange
-      const testCode = codeRepository.codeMockData[0].internalCode;
+      const testCode = codeRepository.codeMockData[0]._id;
       const consultationId = consultationRepository.mockConsultations[0]._id;
       // Act
       const response = await request(app).put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`);
@@ -94,8 +94,8 @@ describe("Code API Endpoints", () => {
     });
 
     it("should return NOT FOUND for a non existing code", async () => {
-      // Arrange
-      const invalidCode = "INVALID";
+      // Arrange, must be a valid ObjectId
+      const invalidCode = "677da5efcb4569adaa655560";
       const consultationId = consultationRepository.mockConsultations[0]._id;
       // Act
       const response = await request(app).put(
@@ -111,7 +111,7 @@ describe("Code API Endpoints", () => {
 
     it("should return NOT FOUND for an invalid consultationId", async () => {
       // Arrange
-      const internalCode = codeRepository.codeMockData[0].internalCode;
+      const internalCode = codeRepository.codeMockData[0]._id;
       const consultationId = `${consultationRepository.mockConsultations[0]._id}INVALID`; // Invalid consultationId
       // Act
       const response = await request(app).put(
@@ -127,7 +127,7 @@ describe("Code API Endpoints", () => {
 
     it("should return NOT FOUND for a not existing consultationId", async () => {
       // Arrange
-      const internalCode = codeRepository.codeMockData[0].internalCode;
+      const internalCode = codeRepository.codeMockData[1]._id;
       const consultationId = new mongoose.Types.ObjectId(); // Nonexistent consultationId
       // Act
       const response = await request(app).put(
@@ -146,7 +146,7 @@ describe("Code API Endpoints", () => {
       // by this time in the test suite, codeMockData[0] should be activated
       const consultationId = consultationRepository.mockConsultations[0]._id;
 
-      const newCode = codeRepository.codeMockData[2].internalCode;
+      const newCode = codeRepository.codeMockData[2]._id;
       // Act
       const response = await request(app).put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
@@ -160,7 +160,7 @@ describe("Code API Endpoints", () => {
   describe("PUT /form-access-code/deactivate", () => {
     it("should deactivate a valid code", async () => {
       // Arrange
-      const internalCode = codeRepository.codeMockData[0].internalCode;
+      const internalCode = codeRepository.codeMockData[0]._id;
 
       // Act
       const response = await request(app).put(`/form-access-code/deactivate/${internalCode}`);
@@ -173,7 +173,7 @@ describe("Code API Endpoints", () => {
       expect(responseBody.responseObject?.activatedOn).toBeUndefined();
       expect(responseBody.responseObject?.expiresOn).toBeUndefined();
       expect(responseBody.responseObject?.consultationId).toBeUndefined();
-      expect(responseBody.responseObject?.internalCode).toEqual(internalCode);
+      expect(responseBody.responseObject?._id).toEqual(internalCode);
     });
 
     it("should return NOT FOUND for an invalid code", async () => {

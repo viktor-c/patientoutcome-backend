@@ -1,10 +1,12 @@
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
+import { logger } from "@/server";
 import type { Request, RequestHandler, Response } from "express";
 import { codeService } from "./codeService";
 
 class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
     const { internalCode, consultationId } = req.params;
+    logger.debug("Activating code:", internalCode, "for consultation:", consultationId);
     const serviceResponse = await codeService.activateCode(internalCode, consultationId);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -41,6 +43,12 @@ class CodeController {
 
   async getAllAvailableCodes(req: Request, res: Response): Promise<Response> {
     const serviceResponse = await codeService.getAllAvailableCodes();
+    return handleServiceResponse(serviceResponse, res);
+  }
+
+  async isValidExternalCode(req: Request, res: Response): Promise<Response> {
+    const { externalCode } = req.params;
+    const serviceResponse = await codeService.isValidExternalCode(externalCode);
     return handleServiceResponse(serviceResponse, res);
   }
 }
