@@ -13,6 +13,11 @@ export const env = cleanEnv(process.env, {
   MONGO_URI: str({
     devDefault: testOnly("mongodb://patientmanager:1234Test@localhost:27017/clinical-patientoutcome?authSource=admin"),
   }),
+  SESSION_SECRET: str({
+    devDefault: testOnly(
+      "b07cb0c05d9f3d0a9a0e72daa52e6fcd37f50cc3bc370c1898aa16b5d5e2ba930546a04b32ad57970a820b9e6fdfe6e4",
+    ),
+  }),
 });
 
 //only show debug info when node env is development

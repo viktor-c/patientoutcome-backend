@@ -10,7 +10,9 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import express, { type Router, type Request, type Response, type NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
+import mongoose from "mongoose";
 import { PatientRepository } from "../patient/patientRepository";
+import { UserRegistrationRepository } from "../user/userRegistrationRepository";
 
 const seedRouter: Router = express.Router();
 const patientRepository = new PatientRepository();
@@ -19,7 +21,7 @@ const formTemplateRepository = new FormTemplateRepository();
 const formRepository = new FormRepository();
 const userRepository = new UserRepository();
 const codeRepository = new CodeRepository();
-
+const userRegistrationRepository = new UserRegistrationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
@@ -179,6 +181,37 @@ seedRouter.get("/form-access-codes", async (_req: Request, res: Response) => {
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(
       "Failed to insert code mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+seedRouter.get("/user-registration-codes", async (req, res) => {
+  try {
+    await userRegistrationRepository.createMockUserRegistrationCodes();
+    const serviceResponse = ServiceResponse.success("User registration codes mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert user registration codes mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+seedRouter.get("/clear-all-sessions", async (_req, res) => {
+  try {
+    // Remove all documents from the MongoDB 'sessions' collection
+    await mongoose.connection.collection("sessions").deleteMany({});
+    const serviceResponse = ServiceResponse.success("All session data cleared successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to clear all session data",
       null,
       StatusCodes.INTERNAL_SERVER_ERROR,
     );

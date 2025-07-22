@@ -313,6 +313,145 @@ describe("User API Endpoints", () => {
       expect(responseBody.responseObject).toBeNull();
     });
   });
+
+  describe("POST /user/login", () => {
+    it("should login a user successfully", async () => {
+      // Arrange
+      const loginData = {
+        username: userRepository.mockUsers[0].username,
+        password: "password123#124",
+      };
+
+      // Act
+      const response = await request(app).post("/user/login").send(loginData);
+      const responseBody: ServiceResponse<{ sessionId: string }> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Login successful");
+      expect(responseBody.responseObject).toHaveProperty("sessionId");
+    });
+
+    it("should return an error for invalid credentials", async () => {
+      // Arrange
+      const loginData = {
+        username: "invaliduser",
+        password: "wrongpassword",
+      };
+
+      // Act
+      const response = await request(app).post("/user/login").send(loginData);
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid username or password");
+      expect(responseBody.responseObject).toBeNull();
+    });
+  });
+
+  describe("POST /user/logout", () => {
+    it("should logout a user successfully", async () => {
+      // Arrange
+      const sessionId = "valid-session-id"; // Replace with a valid session ID from a login test
+
+      // Act
+      const response = await request(app).post("/user/logout").send({ sessionId });
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Logout successful");
+    });
+
+    it("should return an error for invalid session", async () => {
+      // Arrange
+      const sessionId = "invalid-session-id";
+
+      // Act
+      const response = await request(app).post("/user/logout").send({ sessionId });
+      const responseBody: ServiceResponse = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Invalid session");
+      expect(responseBody.responseObject).toBeNull();
+    });
+  });
+
+  describe("PUT /user/change-password", () => {
+    const mockUser = userRepository.mockUsers[0];
+    let agent: any;
+    let sessionCookie: string;
+
+    beforeAll(async () => {
+      agent = request.agent(app);
+      // Login to get session
+      const loginRes = await agent.post("/user/login").send({
+        username: mockUser.username,
+        password: "password123#124", // plaintext for first user
+      });
+      expect(loginRes.status).toBe(StatusCodes.OK);
+      sessionCookie = loginRes.headers["set-cookie"]?.[0];
+    });
+
+    it("should fail if current password is incorrect", async () => {
+      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+        userId: mockUser._id,
+        currentPassword: "wrongPassword",
+        newPassword: "newPassword!456",
+        confirmPassword: "newPassword!456",
+      });
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.message).toContain("Current password is incorrect");
+    });
+
+    it("should fail if newPassword and confirmPassword do not match", async () => {
+      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+        userId: mockUser._id,
+        currentPassword: "password123#124",
+        newPassword: "newPassword!456",
+        confirmPassword: "differentPassword",
+      });
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.message).toContain("New password and confirm password do not match");
+    });
+
+    it("should fail if not logged in", async () => {
+      const res = await request(app).put("/user/change-password").send({
+        userId: mockUser._id,
+        currentPassword: "password123#124",
+        newPassword: "newPassword!456",
+        confirmPassword: "newPassword!456",
+      });
+      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(res.body.message).toContain("Unauthorized");
+    });
+    it("should change password successfully for logged in user", async () => {
+      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+        userId: mockUser._id,
+        currentPassword: "password123#124",
+        newPassword: "newPassword!456",
+        confirmPassword: "newPassword!456",
+      });
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.message).toContain("Password changed successfully");
+
+      // revert password to original value
+      await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+        userId: mockUser._id,
+        currentPassword: "newPassword!456",
+        newPassword: "password123#124",
+        confirmPassword: "password123#124",
+      });
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.message).toContain("Password changed successfully");
+    });
+  });
 });
 
 function compareUsers(mockUser: User, responseUser: User) {

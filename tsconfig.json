@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS",
+    "module": "NodeNext",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
-    "moduleResolution": "Node",
+    // "typeRoots": [
+    //   "./node_modules/@types",
+    //   "./src/@custom_types"
+    // ],
+    "moduleResolution": "nodenext",
     "outDir": "dist",
     "importsNotUsedAsValues": "remove",
     "strict": true,

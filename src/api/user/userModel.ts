@@ -54,12 +54,14 @@ export const GetUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
-// Input Validation for 'PUT user/:id' endpoint
+// Input Validation for 'PUT user' endpoint (no id param)
 export const UpdateUserSchema = z.object({
-  params: z.object({ id: commonValidations.id }),
-  body: UserSchema.partial(),
+  username: z.string().min(3).max(50).optional(),
+  name: z.string().min(3).max(50).optional(),
+  department: z.string().min(3).max(50).optional(),
+  email: z.string().email().optional(),
+  belongsToCenter: z.array(z.string()).optional(),
 });
-
 // Input Validation for 'POST user' endpoint
 export const CreateUserSchema = UserSchema.omit({
   _id: true,
@@ -67,6 +69,15 @@ export const CreateUserSchema = UserSchema.omit({
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
+});
+
+// Input Validation for 'PUT user/change-password' endpoint
+export const ChangePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+    confirmPassword: z.string().min(6),
+  }),
 });
 
 // Infer TypeScript type from the schema

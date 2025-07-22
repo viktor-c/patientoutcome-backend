@@ -1,5 +1,7 @@
+import MongoStore from "connect-mongo";
 import cors from "cors";
 import express, { type Express } from "express";
+import session from "express-session";
 import helmet from "helmet";
 import { pino } from "pino";
 
@@ -50,6 +52,24 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(helmet());
 app.use(rateLimiter);
+
+// Configure session middleware
+app.use(
+  session({
+    secret: env.SESSION_SECRET, // Add SESSION_SECRET to your environment variables
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: env.MONGO_URI, // Use the existing MongoDB connection URI
+      collectionName: "sessions",
+    }),
+    cookie: {
+      secure: env.NODE_ENV === "production", // Use secure cookies in production
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  }),
+);
 
 // Request logging
 app.use(requestLogger);
