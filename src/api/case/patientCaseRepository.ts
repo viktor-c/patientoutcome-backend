@@ -1,12 +1,37 @@
 import type { User } from "@/api/user/userModel";
-import { fa, fakerDE as faker } from "@faker-js/faker";
+// import { fakerDE as faker } from "@faker-js/faker";
+import { faker } from "@faker-js/faker";
 import mongoose from "mongoose";
+import { uuid } from "zod/v4";
+import { Patient } from "../patient/patientModel";
 import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 
 export class PatientCaseRepository {
+  async searchCasesByExternalId(searchCasesById: string): Promise<PatientCase[]> {
+    try {
+      return PatientCaseModel.find({
+        externalId: { $regex: searchCasesById, $options: "i" },
+      }).lean() as unknown as Promise<PatientCase[]>;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  // find case by externalId
+  async getPatientCaseByExternalId(externalId: string): Promise<PatientCase | null> {
+    try {
+      return PatientCaseModel.find({ externalId: externalId }).lean() as unknown as Promise<PatientCase>;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  // find all cases for a patient id
   async getAllPatientCases(patientId: string): Promise<PatientCase[]> {
     try {
-      return PatientCaseModel.find({ patient: patientId }).lean() as unknown as Promise<PatientCase[]>;
+      return PatientCaseModel.find({
+        patient: patientId,
+      }).lean() as unknown as Promise<PatientCase[]>;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -27,6 +52,17 @@ export class PatientCaseRepository {
     try {
       const newCase = new PatientCaseModel(data);
       newCase.patient = patientId;
+      // create a random sensitive external Id with this pattern xxx-xxx-xxx, where x a letter or number
+      // check if it already exists, if yes, create a new one
+      const randomBlock = () =>
+        Array.from({ length: 3 }, () => Math.random().toString(36)[2 + Math.floor(Math.random() * 24)]).join("");
+      let NewPatientCaseResponse: PatientCase | null = null;
+      do {
+        newCase.externalId = [randomBlock(), randomBlock(), randomBlock()].join("-");
+        NewPatientCaseResponse = await this.getPatientCaseByExternalId(newCase.externalId);
+        // while the externalId of the new case was found when searching byExternalId, try again
+      } while (NewPatientCaseResponse !== null);
+      newCase.createdAt = new Date();
       return newCase.save();
     } catch (error) {
       return Promise.reject(error);
@@ -223,6 +259,8 @@ export class PatientCaseRepository {
   public mockPatientCases = [
     {
       _id: "677da5d8cb4569ad1c65515f",
+      externalId: "123456789",
+      createdAt: faker.date.past().toISOString(),
       patient: "6771d9d410ede2552b7bba40",
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       studyDiagnosis: ["Hallux valgus"],
@@ -256,6 +294,8 @@ export class PatientCaseRepository {
     {
       _id: "677da5efcb4569ad1c655160",
       patient: "6771d9d410ede2552b7bba41",
+      externalId: "12345678a",
+      createdAt: faker.date.past().toISOString(),
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       studyDiagnosis: ["Hallux valgus"],
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),

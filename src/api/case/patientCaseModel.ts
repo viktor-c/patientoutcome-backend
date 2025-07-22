@@ -29,6 +29,9 @@ export const SurgerySchema = z.object({
 
 export const PatientCaseSchema = z.object({
   _id: zId(),
+  externalId: z.string().optional(),
+  createdAt: dateSchema.optional(),
+  updatedAt: dateSchema.optional(),
   patient: zId("Patient"),
   mainDiagnosis: z.array(DiagnosisSchema).optional(),
   studyDiagnosis: z.array(DiagnosisSchema).optional(),

@@ -66,6 +66,28 @@ export class PatientCaseService {
   }
 
   /**
+   *
+   * @param searchQuery
+   */
+  async searchCasesByExternalId(searchQuery: string): Promise<ServiceResponse<PatientCase[] | null>> {
+    try {
+      const cases = await this.repository.searchCasesByExternalId(searchQuery);
+      if (!cases || !cases.length) {
+        return ServiceResponse.failure("No cases match query", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Cases found", cases);
+    } catch (ex) {
+      const errorMessage = `Error searching for cases: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while searching for cases.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
    * @description Create a new patient case
    * @param patientId the ID of the patient
    * @param caseData the data for the new case

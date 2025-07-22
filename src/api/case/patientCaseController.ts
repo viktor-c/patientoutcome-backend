@@ -1,4 +1,4 @@
-import type { Request, RequestHandler, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { handleServiceResponse } from "../../common/utils/httpHandlers";
@@ -15,6 +15,14 @@ class PatientCaseController {
 
   public getPatientCaseById: RequestHandler = async (req: Request, res: Response) => {
     const serviceResponse = await service.getPatientCaseById(req.params.patientId, req.params.caseId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public searchCasesByExternalId: RequestHandler = async (req: Request, res: Response) => {
+    const searchQuery = req.params.searchQuery;
+    //remove all special characters from the search query
+    const sanitizedSearchQuery = searchQuery.replace(/[^a-zA-Z0-9]/g, "");
+    const serviceResponse = await service.searchCasesByExternalId(sanitizedSearchQuery);
     return handleServiceResponse(serviceResponse, res);
   };
 
