@@ -18,32 +18,6 @@ export class FormService {
     }
   }
 
-  async getFormByPatientCaseConsultationFormId(
-    patientId: string,
-    caseId: string,
-    consultationId: string,
-    formId: string,
-  ): Promise<ServiceResponse<Form | null>> {
-    try {
-      const form = await formRepository.getFormByPatientCaseConsultationFormId(
-        patientId,
-        caseId,
-        consultationId,
-        formId,
-      );
-      if (!form) {
-        return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Form found", form);
-    } catch (error) {
-      return ServiceResponse.failure(
-        "An error occurred while retrieving the form.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
   async getFormById(id: string): Promise<ServiceResponse<Form | null>> {
     try {
       const form = await formRepository.getFormById(id);

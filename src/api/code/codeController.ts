@@ -5,29 +5,30 @@ import { codeService } from "./codeService";
 
 class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
-    const { internalCode, consultationId } = req.params;
-    logger.debug("Activating code:", internalCode, "for consultation:", consultationId);
-    const serviceResponse = await codeService.activateCode(internalCode, consultationId);
+    const { externalCode, consultationId } = req.params;
+    logger.debug("Activating code:", externalCode, "for consultation:", consultationId);
+    const serviceResponse = await codeService.activateCode(externalCode, consultationId);
     return handleServiceResponse(serviceResponse, res);
   };
   public deactivateCode: RequestHandler = async (req: Request, res: Response) => {
-    const { internalCode } = req.params;
-    const serviceResponse = await codeService.deactivateCode(internalCode);
+    const { externalCode } = req.params;
+    const serviceResponse = await codeService.deactivateCode(externalCode);
     return handleServiceResponse(serviceResponse, res);
   };
-  public addCode: RequestHandler = async (req: Request, res: Response) => {
-    const serviceResponse = await codeService.addCode(req.body);
+  public addCodes: RequestHandler = async (req: Request, res: Response) => {
+    const { numberOfCodes } = req.params;
+    const serviceResponse = await codeService.addCodes(numberOfCodes);
     return handleServiceResponse(serviceResponse, res);
   };
   public deleteCode: RequestHandler = async (req: Request, res: Response) => {
-    const { internalCode } = req.params;
-    const serviceResponse = await codeService.deleteCode(internalCode);
+    const { externalCode } = req.params;
+    const serviceResponse = await codeService.deleteCode(externalCode);
     return handleServiceResponse(serviceResponse, res);
   };
 
-  public getCodeById: RequestHandler = async (req: Request, res: Response) => {
+  public getCodeByInternalCode: RequestHandler = async (req: Request, res: Response) => {
     const { internalCode } = req.params;
-    const serviceResponse = await codeService.getCodeById(internalCode);
+    const serviceResponse = await codeService.getCodeByInternalCode(internalCode);
     return handleServiceResponse(serviceResponse, res);
   };
   public getCodeByExternalCode: RequestHandler = async (req: Request, res: Response) => {

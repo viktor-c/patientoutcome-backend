@@ -2,8 +2,6 @@ import type { User } from "@/api/user/userModel";
 // import { fakerDE as faker } from "@faker-js/faker";
 import { faker } from "@faker-js/faker";
 import mongoose from "mongoose";
-import { uuid } from "zod/v4";
-import { Patient } from "../patient/patientModel";
 import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 
 export class PatientCaseRepository {
@@ -18,7 +16,7 @@ export class PatientCaseRepository {
   }
 
   // find case by externalId
-  async getPatientCaseByExternalId(externalId: string): Promise<PatientCase | null> {
+  async getPatientCaseByExternalId(externalId: string): Promise<PatientCase[] | null> {
     try {
       return PatientCaseModel.find({ externalId: externalId }).lean() as unknown as Promise<PatientCase>;
     } catch (error) {
@@ -55,13 +53,16 @@ export class PatientCaseRepository {
       // create a random sensitive external Id with this pattern xxx-xxx-xxx, where x a letter or number
       // check if it already exists, if yes, create a new one
       const randomBlock = () =>
-        Array.from({ length: 3 }, () => Math.random().toString(36)[2 + Math.floor(Math.random() * 24)]).join("");
-      let NewPatientCaseResponse: PatientCase | null = null;
+        Array.from({ length: 3 }, () => {
+          const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+          return chars.charAt(Math.floor(Math.random() * chars.length));
+        }).join("");
+      let NewPatientCaseResponse: PatientCase[] | null = null;
       do {
         newCase.externalId = [randomBlock(), randomBlock(), randomBlock()].join("-");
         NewPatientCaseResponse = await this.getPatientCaseByExternalId(newCase.externalId);
         // while the externalId of the new case was found when searching byExternalId, try again
-      } while (NewPatientCaseResponse !== null);
+      } while (NewPatientCaseResponse === null || NewPatientCaseResponse.length > 0);
       newCase.createdAt = new Date();
       return newCase.save();
     } catch (error) {
@@ -330,7 +331,7 @@ export class PatientCaseRepository {
     try {
       // Add code to save mockPatientCases to the database
       await PatientCaseModel.deleteMany({});
-      const result = await PatientCaseModel.insertMany(this.mockPatientCases);
+      await PatientCaseModel.insertMany(this.mockPatientCases);
     } catch (error) {
       return Promise.reject(error);
     }

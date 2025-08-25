@@ -9,14 +9,16 @@ export interface UserSessionField {
   username?: string;
   user?: string;
   userId?: string;
-  role?: string;
+  roles?: string[];
+  permissions?: string[];
 }
 
 declare module "express-session" {
   interface SessionData {
     userId?: string;
     sessionId?: string;
-    role?: string;
+    roles: string[];
+    permissions?: string[];
     lastLogin?: Date;
     loggedIn?: boolean;
     username?: string;

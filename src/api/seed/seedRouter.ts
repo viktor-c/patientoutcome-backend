@@ -1,10 +1,10 @@
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { ClinicalStudyRepository } from "@/api/clinicalStudy/clinicalStudyRepository";
 import { CodeRepository } from "@/api/code/codeRepository";
-import { consultationRepository } from "@/api/consultation/consultationRepository";
+import { type ConsultationRepository, consultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
-import { UserRepository } from "@/api/user/userRepository";
+import { userRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 // import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -19,9 +19,10 @@ const patientRepository = new PatientRepository();
 const patientCaseRepository = new PatientCaseRepository();
 const formTemplateRepository = new FormTemplateRepository();
 const formRepository = new FormRepository();
-const userRepository = new UserRepository();
+// const userRepository = new UserRepository();
 const codeRepository = new CodeRepository();
 const userRegistrationRepository = new UserRegistrationRepository();
+// const consultationRepository = new ConsultationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
@@ -246,7 +247,7 @@ export {
   seedRouter,
   patientRepository,
   patientCaseRepository,
-  consultationRepository,
+  // consultationRepository,
   formTemplateRepository,
   formRepository,
   userRepository,

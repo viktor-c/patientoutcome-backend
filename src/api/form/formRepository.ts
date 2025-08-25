@@ -26,12 +26,7 @@ export class FormRepository {
     const newForm = new FormModel(data);
     return newForm.save();
   }
-  async createFormByTemplateId(
-    patientId: string,
-    caseId: string,
-    consultationId: string,
-    formTemplateId: string,
-  ): Promise<ObjectId> {
+  async createFormByTemplateId(caseId: string, consultationId: string, formTemplateId: string): Promise<ObjectId> {
     // first get the formtemplate by id
     const formTemplate = await FormTemplateModel.findById(formTemplateId);
     if (!formTemplate) {
@@ -42,7 +37,6 @@ export class FormRepository {
     deepCopy._id = undefined; // remove the _id field to create a new document
 
     const newForm = new FormModel({
-      patientId,
       caseId,
       consultationId,
       formTemplateId: formTemplateId,
@@ -85,7 +79,7 @@ export class FormRepository {
     try {
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
-        patientId: "6771d9d410ede2552b7bba40",
+        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
@@ -105,7 +99,7 @@ export class FormRepository {
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
-        patientId: "6771d9d410ede2552b7bba40",
+        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
@@ -134,7 +128,7 @@ export class FormRepository {
 }
 
 const formRepository = new FormRepository();
-if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "test") {
   formRepository.populateMockForms();
 }
 

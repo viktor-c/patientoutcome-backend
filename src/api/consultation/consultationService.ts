@@ -6,7 +6,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import type { Consultation, CreateConsultation } from "./consultationModel";
-import { ConsultationRepository } from "./consultationRepository";
+import { type ConsultationRepository, consultationRepository } from "./consultationRepository";
 
 export class ConsultationService {
   private consultationRepository: ConsultationRepository;
@@ -18,24 +18,20 @@ export class ConsultationService {
    * @param {typeof codeRepository} codeRepository - The repository for managing codes.
    */
   constructor() {
-    this.consultationRepository = new ConsultationRepository();
+    // this.consultationRepository = new ConsultationRepository();
+    this.consultationRepository = consultationRepository;
     this.codeRepository = codeRepository;
   }
 
   /**
    *
-   * @param patientId - The ID of the patient for whom the consultation is being created.
    * @param caseId
    * @param data
    * @returns
    */
-  async createConsultation(
-    patientId: string,
-    caseId: string,
-    data: CreateConsultation,
-  ): Promise<ServiceResponse<Consultation | null>> {
+  async createConsultation(caseId: string, data: CreateConsultation): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const newConsultation = await this.consultationRepository.createConsultation(patientId, caseId, data);
+      const newConsultation = await this.consultationRepository.createConsultation(caseId, data);
       if (!newConsultation) {
         return ServiceResponse.failure("Failed to create consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
@@ -63,15 +59,14 @@ export class ConsultationService {
         // if there are multiple templates, create a new form for each template
         for (let i = 0; i < data.formTemplates.length; i++) {
           const formId = await formRepository.createFormByTemplateId(
-            patientId,
             caseId,
-            newConsultation.id,
+            newConsultation._id,
             data.formTemplates[i],
           );
           newConsultation.proms.push(formId);
         }
       }
-      //BGU why do we need to save the consultation again? Why this error?
+      //BUG why do we need to save the consultation again? Why this error?
       await newConsultation.save();
 
       return ServiceResponse.created("Consultation created successfully", newConsultation);
@@ -126,7 +121,6 @@ export class ConsultationService {
    * It processes form access codes and form templates, updating them as necessary.
    */
   async updateConsultation(
-    patientId: string,
     consultationId: string,
     data: Partial<Consultation>,
   ): Promise<ServiceResponse<Consultation | null>> {
@@ -141,7 +135,10 @@ export class ConsultationService {
        * process form access code
        */
       if (!data.formAccessCode && originalConsultation.formAccessCode) {
-        await this.codeRepository.deactivateCode(originalConsultation.formAccessCode.toString());
+        //BUG if we deactivate the code on first update, then saving a consultation twice would not work;
+        // so do not deactivate the code for now, maybe move this to another API call
+        // second call throws an error, so use try catch
+        // await this.codeRepository.deactivateCode(originalConsultation.formAccessCode.toString());
       } else if (data.formAccessCode && originalConsultation.formAccessCode?.toString() !== data.formAccessCode) {
         // If a new formAccessCode is provided, check if it exists and is not already activated
         const code = await this.codeRepository.findByInternalCode(data.formAccessCode.toString());
@@ -190,7 +187,6 @@ export class ConsultationService {
         // for each newProms create a new form by template id
         for (const templateId of newPromsByTemplateId) {
           const formId = await formRepository.createFormByTemplateId(
-            patientId,
             originalConsultation.patientCaseId.toString(),
             consultationId,
             templateId.toString(),
@@ -269,6 +265,37 @@ export class ConsultationService {
 
   /**
    *
+   * @param consultationId - The ID of the consultation to retrieve the form access code for.
+   * @throws {ServiceResponse} if an error occurs while fetching the form access code.
+   * @description This method retrieves the form access code for a given consultation.
+   * It first checks if the consultation exists in the repository, and if it does, it returns the form access code.
+   * If the consultation is not found, it returns a failure response.
+   * If an error occurs during the retrieval process, it logs the error and returns a failure response.
+   * @returns
+   */
+  async getFormAccessCode(consultationId: string): Promise<ServiceResponse<string | null>> {
+    try {
+      const consultation = await this.consultationRepository.getConsultationById(consultationId);
+      if (!consultation) {
+        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success(
+        "Form access code retrieved successfully",
+        consultation.formAccessCode?.toString() || null,
+      );
+    } catch (ex) {
+      const errorMessage = `Error fetching form access code: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while fetching form access code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   *
    * @param consultationId - The ID of the consultation to delete.
    * @throws {ServiceResponse} if an error occurs while deleting the consultation.
    * @description This method deletes a consultation by its ID.
@@ -297,16 +324,14 @@ export class ConsultationService {
 
   /**
    *
-   * @param patientId - The ID of the patient.
    * @param caseId - The ID of the patient case.
    * @returns an array of consultations for the specified patient and case.
    * @throws {ServiceResponse} if an error occurs while fetching consultations.
-   * @description This method retrieves all consultations for a given patient and case.
-   * It queries the consultation repository for consultations that match the provided patientId and caseId.
+   * @description This method retrieves all consultations for a given case.
+   * It queries the consultation repository for consultations that match the provided caseId.
    */
-  async getAllConsultations(patientId: string, caseId: string): Promise<ServiceResponse<Consultation[]>> {
+  async getAllConsultations(caseId: string): Promise<ServiceResponse<Consultation[]>> {
     try {
-      // TODO do we need checking for patientId
       const consultations = await this.consultationRepository.getAllConsultations(caseId);
       return ServiceResponse.success("Consultations retrieved successfully", consultations);
     } catch (ex) {
@@ -382,7 +407,14 @@ export class ConsultationService {
   }
 
   compareConsultations(consultation1: Consultation, consultation2: Consultation): boolean {
-    return JSON.stringify(consultation1) === JSON.stringify(consultation2);
+    if (
+      consultation1.__v === consultation2.__v &&
+      consultation1._id?.toString() === consultation2._id?.toString() &&
+      consultation1.reasonForConsultation[0] === consultation2.reasonForConsultation[0] &&
+      consultation1.patientCaseId?.toString() === consultation2.patientCaseId?.toString()
+    )
+      return true;
+    return false;
   }
 }
 

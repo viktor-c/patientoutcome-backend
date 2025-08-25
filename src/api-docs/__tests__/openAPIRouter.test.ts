@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
+import { describe, expect, it } from "vitest";
 
 import { app } from "@/server";
 
@@ -12,7 +13,7 @@ describe("OpenAPI Router", () => {
       const expectedResponse = generateOpenAPIDocument();
 
       // Act
-      const response = await request(app).get("/swagger.json");
+      const response = await request(app).get("/openapi/v1/swagger.json");
 
       // Assert
       expect(response.status).toBe(StatusCodes.OK);
@@ -20,13 +21,13 @@ describe("OpenAPI Router", () => {
       expect(response.body).toEqual(expectedResponse);
     });
 
-    it("should serve the Swagger UI", async () => {
+    it("should serve the Swagger UIopenapi", async () => {
       // Act
-      const response = await request(app).get("/");
+      const response = await request(app).get("/openapi/v1/");
 
       // Assert
       expect(response.status).toBe(StatusCodes.OK);
-      expect(response.text).toContain("swagger-ui");
+      expect(response.text).toContain("Swagger UI");
     });
   });
 });

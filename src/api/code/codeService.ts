@@ -1,5 +1,6 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { StatusCodes } from "http-status-codes";
+import { string } from "zod/v4";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
 
@@ -34,12 +35,12 @@ class CodeService {
     }
   }
 
-  async activateCode(internalCode: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
+  async activateCode(externalCode: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.activateCode(internalCode, consultationId);
+      const code = await this.codeRepository.activateCode(externalCode, consultationId);
       if (typeof code === "string") {
-        if (code === "Internal code not found") {
-          return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
+        if (code === "External code not found") {
+          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
         } else if (code === "code already activated") {
           return ServiceResponse.failure("Code already activated", null, StatusCodes.CONFLICT);
         } else if (code === "Consultation not found") {
@@ -64,52 +65,61 @@ class CodeService {
     }
   }
 
-  async deactivateCode(internalCode: string): Promise<ServiceResponse<Code | null>> {
+  async deactivateCode(externalCode: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.deactivateCode(internalCode);
-      if (typeof code === "string") {
-        if (code === "Internal code not found") {
-          return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
-        } else if (code === "Code already deactivated") {
-          return ServiceResponse.failure("Code already deactivated", null, StatusCodes.CONFLICT);
-        }
-      } else if (code === null) {
-        return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
-      }
+      const code = await this.codeRepository.deactivateCode(externalCode);
       if (typeof code === "object" && code !== null) {
         return ServiceResponse.success("Code deactivated successfully", code);
       }
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
-      return ServiceResponse.failure(
-        "An error occurred while deactivating the code.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async addCode(code: Code): Promise<ServiceResponse<Code | null>> {
-    try {
-      const newCode = await this.codeRepository.saveCode(code);
-      return ServiceResponse.created("Code added successfully", newCode);
-    } catch (error) {
-      return ServiceResponse.failure(
-        "An error occurred while adding the code.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async deleteCode(internalCode: string): Promise<ServiceResponse<null>> {
-    try {
-      const result = await this.codeRepository.deleteCode(internalCode);
-      if (!result) {
-        return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+      if (typeof error === "string") {
+        if (error === "External code not found") {
+          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
+        } else if (error === "Code already deactivated") {
+          return ServiceResponse.failure("Code already deactivated", null, StatusCodes.CONFLICT);
+        }
+      } else if (error === null) {
+        return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
       }
+
+      return ServiceResponse.failure(
+        "An unknown error occurred while deactivating the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async addCodes(numberOfCodes: string): Promise<ServiceResponse<Code[] | null>> {
+    try {
+      const numCodes = Number.parseInt(numberOfCodes, 10);
+      // this should not happen, because zod already validates the input
+      // but we keep it here just in case
+      // to ensure that we do not try to create an invalid number of codes
+      if (Number.isNaN(numCodes) || numCodes <= 0 || numCodes > 10) {
+        return ServiceResponse.failure("Invalid number of codes specified", null, StatusCodes.BAD_REQUEST);
+      }
+      const codes = await this.codeRepository.createMultipleCodes(numCodes);
+      if (codes.length === 0) {
+        return ServiceResponse.failure("No codes were created", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+      return ServiceResponse.created("Codes created successfully", codes);
+    } catch (error) {
+      console.error("Error adding codes:", error);
+      return ServiceResponse.failure("An error occurred while adding codes.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async deleteCode(externalCode: string): Promise<ServiceResponse<null>> {
+    try {
+      const result = await this.codeRepository.deleteCode(externalCode);
       return ServiceResponse.noContent("Code deleted successfully", null);
     } catch (error) {
+      if (typeof error === "string") {
+        if (error === "External code not found")
+          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
+      }
       return ServiceResponse.failure(
         "An error occurred while deleting the code.",
         null,
@@ -118,21 +128,6 @@ class CodeService {
     }
   }
 
-  async getCodeById(internalCode: string): Promise<ServiceResponse<Code | null>> {
-    try {
-      const code = await this.codeRepository.findByInternalCode(internalCode);
-      if (!code) {
-        return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Code retrieved successfully", code);
-    } catch (error) {
-      return ServiceResponse.failure(
-        "An error occurred while retrieving the code.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
   async getCodeByExternalCode(externalCode: string): Promise<ServiceResponse<Code | null>> {
     try {
       const code = await this.codeRepository.findByExternalCode(externalCode);
@@ -148,7 +143,29 @@ class CodeService {
       );
     }
   }
-  async getAllCodes(): Promise<ServiceResponse<Code[]>> {
+
+  /**
+   *
+   * @param internalCode
+   * @returns
+   */
+  async getCodeByInternalCode(internalCode: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const code = await this.codeRepository.findByInternalCode(internalCode);
+      if (!code) {
+        return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Code retrieved successfully", code);
+    } catch (error) {
+      return ServiceResponse.failure(
+        "An error occurred while retrieving the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getAllCodes(): Promise<ServiceResponse<Code[] | null>> {
     try {
       const codes = await this.codeRepository.findAll();
       return ServiceResponse.success("Codes retrieved successfully", codes);

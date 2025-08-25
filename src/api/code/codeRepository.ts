@@ -1,3 +1,4 @@
+import { isPast } from "date-fns";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
 import { type Code, codeModel } from "./codeModel";
@@ -43,7 +44,7 @@ export class CodeRepository {
 
   /**
    * Populates the `codeMockData` array with 20 mock codes.
-   * Each code has a 3-letter and 2-number externalCode and a unique UUID as internalCode.
+   * Each code has a 3-letter and 2-number externalCode and a unique mongodb ID
    */
   async createMockDataFormAccessCodes(): Promise<void> {
     try {
@@ -70,7 +71,8 @@ export class CodeRepository {
    */
   async getAllAvailableCodes(): Promise<Code[]> {
     try {
-      return await codeModel.find({ activatedOn: null }).lean();
+      // Find codes where activatedOn is either null or undefined
+      return await codeModel.find({ $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] }).lean();
     } catch (error) {
       return Promise.reject(error);
     }
@@ -79,69 +81,107 @@ export class CodeRepository {
   async findByExternalCode(externalCode: string) {
     return await codeModel.findOne({ externalCode });
   }
-  // this function will return the code with the internalCode; internalCode is the id of the code
-  async findByInternalCode(internalCode: string) {
-    return await codeModel.findById(internalCode);
+
+  async findByInternalCode(internalCode: string): Promise<Code | null> {
+    return codeModel.findById(internalCode);
   }
 
-  async saveCode(internalCode: Code) {
-    return await codeModel.create(internalCode);
+  async saveCode(code: Code) {
+    return await codeModel.create(code);
   }
 
-  async deleteCode(internalCode: string) {
-    return await codeModel.deleteOne({ internalCode });
+  async createMultipleCodes(numberOfCodes: number): Promise<Code[]> {
+    const codes: Code[] = [];
+    for (let i = 0; i < numberOfCodes; i++) {
+      const externalCode = generateRandomString(3) + generateRandomNumber(2);
+      const code: Code = {
+        externalCode,
+        activatedOn: undefined,
+        expiresOn: undefined,
+        consultationId: undefined,
+      };
+      codes.push(code);
+    }
+    return await codeModel.insertMany(codes);
   }
 
-  async activateCode(internalCode: string, consultationId: string): Promise<Code | string> {
-    const consultation = await consultationModel.findById(consultationId).lean();
-    if (!consultation) {
-      return Promise.resolve("Consultation not found");
-    }
-
-    const codeExists = await codeModel.findById(internalCode);
-    if (!codeExists) {
-      return Promise.resolve("Internal code not found");
-    }
-
-    const codeAlreadyActivated = await codeModel.exists({ _id: internalCode, activatedOn: { $ne: null } });
-
-    if (codeAlreadyActivated) {
-      return Promise.resolve("code already activated");
-    }
-
-    const activeCodeForConsultation = await codeModel.findOne({ consultationId, activatedOn: { $ne: null } });
-    if (activeCodeForConsultation) {
-      return Promise.resolve("Consultation already has an active code");
-    }
-
-    // if a code had the consultationId, but is expired or inactive, remove the consultationId
-    // and set activatedOn and expiresOn to undefined
-    // this is to allow the code to be reused for another consultation
-    const expiredOrInactiveCode = await codeModel.findOne({
-      consultationId,
-      $or: [{ expiresOn: { $lt: new Date() } }, { activatedOn: undefined }],
-    });
-    if (expiredOrInactiveCode) {
-      expiredOrInactiveCode.consultationId = undefined;
-      expiredOrInactiveCode.activatedOn = undefined;
-      expiredOrInactiveCode.expiresOn = undefined;
-      await expiredOrInactiveCode.save();
-    }
-
-    // code should exist, because we just checked earlier
-    const code = await codeModel
-      .findOneAndUpdate(
-        { _id: internalCode },
-        { activatedOn: new Date(), expiresOn: dayjs().add(4, "hours"), consultationId },
-        { new: true },
-      )
-      .select("-__v -_id")
-      .lean();
-
+  async deleteCode(externalCode: string) {
+    //get code by externalCode, delete the corresponding entry in consultation, then delete it
+    const code = await codeModel.findOne({ externalCode }).populate(["consultationId"]);
     if (!code) {
-      return Promise.resolve("Internal code not found");
+      return Promise.reject("External code not found");
     }
-    return Promise.resolve(code);
+    // if the code has a consultationId, remove the formAccessCode from the consultation
+    if (code.consultationId) {
+      //@ts-ignore
+      code.consultationId.formAccessCode = undefined;
+      code.consultationId = undefined;
+      // should be saved, so that the formAccessCode is removed from the consultation
+      //@ts-ignore
+      await code.consultationId.save();
+    }
+    return await codeModel.deleteOne({ externalCode });
+  }
+
+  async activateCode(internalCodeId: string, consultationId: string): Promise<Code | string> {
+    try {
+      const consultation = await consultationModel.findById(consultationId);
+      if (!consultation) {
+        return Promise.resolve("Consultation not found");
+      }
+      // check if there is already an active code for this consultation
+      if (consultation.formAccessCode && internalCodeId !== consultation.formAccessCode._id.toString()) {
+        // if the consultation already has an active code, return a message
+        // this is to prevent activating a new code for the same consultation
+        // if you want to change the code, you need to deactivate the old one first
+        console.warn("Consultation already has an active code, please deactivate it first.");
+        return Promise.resolve("Consultation already has an active code");
+      }
+      // if the consultation has an active code, this must be first inactivated or deleted
+
+      // check if the external code exists, return this code and use it
+      //BUG if we populate consultationId, we will get no code, why ?
+      const code = await codeModel.findById(internalCodeId); //.populate(["consultationId"]);
+      if (!code) {
+        return Promise.resolve("Internal code not found");
+      }
+
+      // check if the code is already activated
+      const codeAlreadyActivated = code.activatedOn !== undefined;
+      if (codeAlreadyActivated) {
+        return Promise.resolve("Code already activated");
+      }
+
+      // if a code had the consultationId, but is expired or inactive, remove the consultationId
+      // and set activatedOn and expiresOn to undefined
+      // this is to allow the code to be reused for another consultation
+      //BUG if we populate consultationId, we will get no code, why ?
+      if (code.consultationId && code.activatedOn && code.expiresOn && isPast(code.expiresOn)) {
+        //@ts-ignore
+        code.consultationId.formAccessCode = undefined;
+        code.consultationId = undefined;
+        code.activatedOn = undefined;
+        code.expiresOn = undefined;
+        await code.save();
+      }
+
+      // code should exist, because we just checked earlier
+      code.activatedOn = new Date();
+      code.expiresOn = dayjs().add(4, "hours").toDate();
+      code.consultationId = consultationId;
+      await code.save();
+
+      consultation.formAccessCode = code._id;
+      await consultation.save();
+
+      const codeToReturnWithoutId = await codeModel.findById(code._id).select("-_id -__v").lean();
+      if (!codeToReturnWithoutId) {
+        return Promise.resolve("Internal code not found");
+      }
+      return Promise.resolve(codeToReturnWithoutId);
+    } catch (error) {
+      return Promise.reject("An unknown error occurred while activating the code.");
+    }
   }
 
   /*
@@ -151,11 +191,11 @@ export class CodeRepository {
    * //BUG: if the code is already expired, it will not be deactivated; deactivate a code only if long time has passed since the expiration;
    *  //BUG only deactivate the code if the scores were completed
    */
-  async deactivateCode(internalCode: string) {
+  async deactivateCode(externalCode: string) {
     try {
-      const existingCode = await codeModel.findById(internalCode);
+      const existingCode = await codeModel.findOne({ externalCode }).populate(["consultationId"]);
       if (!existingCode) {
-        return Promise.reject("Internal code not found");
+        return Promise.reject("External code not found");
       }
       // Check if the code is already deactivated
       if (!existingCode.activatedOn) {
@@ -170,9 +210,16 @@ export class CodeRepository {
       // If the code is expired, we can still deactivate it
       existingCode.activatedOn = undefined;
       existingCode.expiresOn = undefined;
+      //unlink code in consultation, the formAccessCode
+      //@ts-ignore
+      existingCode.consultationId.formAccessCode = undefined;
       existingCode.consultationId = undefined;
       await existingCode.save();
-      return existingCode;
+
+      console.log("Code deactivated successfully:", existingCode);
+      // remove _id before returnin existing code
+      // search again for the code and deselct id
+      return codeModel.findById(existingCode.id).select("-_id -__v").lean();
     } catch (error) {
       console.error("Error deactivating code:", error);
       return Promise.reject("An error occurred while deactivating the code.");
@@ -183,7 +230,7 @@ export class CodeRepository {
 export const codeRepository = new CodeRepository();
 
 function generateRandomString(length: number): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 

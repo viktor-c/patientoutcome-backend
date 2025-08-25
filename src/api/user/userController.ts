@@ -2,7 +2,9 @@ import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import { userService } from "@/api/user/userService";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
+import { StatusCodes } from "http-status-codes";
 import { userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
 
@@ -19,11 +21,12 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
-  public createUser: RequestHandler = async (req: Request, res: Response) => {
-    const userData = req.body;
-    const serviceResponse = await userService.createUser(userData);
-    return handleServiceResponse(serviceResponse, res);
-  };
+  //TODO users should be created using the register code, but in future we could allow this path, for example just for some roles
+  // public createUser: RequestHandler = async (req: Request, res: Response) => {
+  //   const userData = req.body;
+  //   const serviceResponse = await userService.createUser(userData);
+  //   return handleServiceResponse(serviceResponse, res);
+  // };
 
   public updateUser: RequestHandler = async (req: Request, res: Response) => {
     // Get user id from session (or JWT, adjust as needed)
@@ -37,41 +40,46 @@ class UserController {
   };
 
   public deleteUser: RequestHandler = async (req: Request, res: Response) => {
-    const id = z.string().parse(req.params.id);
-    const serviceResponse = await userService.deleteUser(id);
+    const username = z.string().parse(req.params.username);
+    const serviceResponse = await userService.deleteUser(username);
     return handleServiceResponse(serviceResponse, res);
   };
 
   public loginUser: RequestHandler = async (req: Request, res: Response) => {
     const { username, password } = req.body;
     const serviceResponse = await userService.login(username, password);
-    if (
-      serviceResponse.statusCode === 200 &&
-      serviceResponse.responseObject //&&
-      // serviceResponse.responseObject.sessionId
-    ) {
-      // Fetch userId by username and store in session
-      //TODO findByUsername is probably not needed, because we already have userId in serviceResponse
-      // const user = await userService.findByUsername(username);
-      // if (user && user._id) {
-      // }
-      req.session.userId = serviceResponse.responseObject.userId; // Store userId in the session
-      req.session.role = "admin";
+    if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
+      req.session.userId = serviceResponse.responseObject.id; // Store userId in the session
+      req.session.roles = serviceResponse.responseObject.roles; // Store user roles in the session
+      req.session.permissions = serviceResponse.responseObject.permissions; // Store user permissions in the session
       req.session.lastLogin = new Date(); // Store last login time
       req.session.loggedIn = true; // Mark the user as logged in
       req.session.username = username;
-      // req.session.sessionId = serviceResponse.responseObject.sessionId;
-
-      const result = await req.session.save(); // Save the session
-      console.debug("Session saved:", result);
+      //@ts-ignore-next-line
+      serviceResponse.responseObject._id = undefined;
+      await req.session.save(); // Save the session
     }
     return handleServiceResponse(serviceResponse, res);
   };
 
   public logoutUser: RequestHandler = async (req: Request, res: Response) => {
-    const { sessionId } = req.body;
-    const serviceResponse = await userService.logout(sessionId);
-    return handleServiceResponse(serviceResponse, res);
+    if (!req.session || !req.session.userId) {
+      return handleServiceResponse(
+        ServiceResponse.failure("Unauthorized: Not logged in.", null, StatusCodes.UNAUTHORIZED),
+        res,
+      );
+    }
+    req.session.destroy((error) => {
+      if (error) {
+        console.error("Error destroying session:", error);
+        return handleServiceResponse(
+          ServiceResponse.failure("An error occurred while logging out.", null, StatusCodes.INTERNAL_SERVER_ERROR),
+          res,
+        );
+      }
+      res.clearCookie("connect.sid"); // Clear the session cookie
+      return handleServiceResponse(ServiceResponse.success("Logout successful", null), res);
+    });
   };
 
   public registerUser: RequestHandler = async (req: Request, res: Response) => {
@@ -82,6 +90,8 @@ class UserController {
       });
     }
     const serviceResponse = await userRegistrationService.registerUser(parseResult.data);
+
+    // even if we had errors, return them together
     return handleServiceResponse(serviceResponse, res);
   };
 

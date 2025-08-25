@@ -29,7 +29,7 @@ describe("FormTemplate API", () => {
 
   it("should get a form template by ID", async () => {
     const id = formTemplateRepository.mockFormTemplateData[0]._id;
-    const response = await request(app).get(`/formtemplate/${id}`);
+    const response = await request(app).get(`/formtemplate/id/${id}`);
     expect(response.status).toBe(200);
     //expect(response.body.responseObject.title).toBe(formTemplateRepository.mockFormTemplateData[0].title);
   });

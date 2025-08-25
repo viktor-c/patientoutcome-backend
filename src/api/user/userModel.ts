@@ -15,7 +15,8 @@ export const UserNoPasswordSchema = z.object({
   username: z.string(),
   name: z.string(),
   department: z.string(),
-  role: z.number().min(0),
+  roles: z.array(z.string()),
+  permissions: z.array(z.string()).optional(),
   email: z.string().email(),
   lastLogin: z.string().datetime().optional(),
   belongsToCenter: z.array(z.string()),
@@ -55,13 +56,15 @@ export const GetUserSchema = z.object({
 });
 
 // Input Validation for 'PUT user' endpoint (no id param)
-export const UpdateUserSchema = z.object({
-  username: z.string().min(3).max(50).optional(),
-  name: z.string().min(3).max(50).optional(),
-  department: z.string().min(3).max(50).optional(),
-  email: z.string().email().optional(),
-  belongsToCenter: z.array(z.string()).optional(),
-});
+export const UpdateUserSchema = z
+  .object({
+    username: z.string().min(3).max(50).optional(),
+    name: z.string().min(3).max(50).optional(),
+    department: z.string().min(3).max(50).optional(),
+    email: z.string().email().optional(),
+    belongsToCenter: z.array(z.string()).optional(),
+  })
+  .strict();
 // Input Validation for 'POST user' endpoint
 export const CreateUserSchema = UserSchema.omit({
   _id: true,

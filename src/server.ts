@@ -31,9 +31,9 @@ import { consultationRouter } from "@/api/consultation/consultationRouter";
 import { z } from "zod";
 import connectMongooseDB from "./common/database";
 
-extendZodMongoose(z);
 // Extend zod with OpenAPI support
 extendZodWithOpenApi(z);
+extendZodMongoose(z);
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -87,7 +87,7 @@ app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);
 
 // Swagger UI
-app.use(openAPIRouter);
+app.use("/openapi", openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());

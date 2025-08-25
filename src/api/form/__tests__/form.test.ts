@@ -2,6 +2,7 @@ import { app } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { type Form, FormModel } from "../formModel";
 import { formRepository } from "../formRepository";
 
@@ -22,11 +23,9 @@ describe("Form API", () => {
     }
   });
 
-  it("should get a form by patientId, caseId, consultationId and formId", async () => {
+  it("should get a form by formId", async () => {
     const form = formRepository.mockForms[0];
-    const res = await request(app).get(
-      `/patient/${form.patientId}/case/${form.caseId}/consultation/${form.consultationId}/form/${form._id}`,
-    );
+    const res = await request(app).get(`/form/${form._id}`);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toHaveProperty("_id", form._id);
   });

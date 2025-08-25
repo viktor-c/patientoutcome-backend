@@ -27,16 +27,13 @@ const updateFormSchema = z.object({}).passthrough().optional();
 // Register path for getting a form by patient ID, case ID, consultation ID and form Id
 formRegistry.registerPath({
   method: "get",
-  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}/form/{formId}",
+  path: "/form/{formId}",
   tags: ["form"],
-  operationId: "getFormByPatientCaseConsultationFormId",
-  description: "Get a form by patient ID, case ID, consultation ID and form ID",
-  summary: "Get a form by patient ID, case ID, consultation ID and form ID",
+  operationId: "getFormById",
+  description: "Get a form by ID",
+  summary: "Get a form by ID",
   request: {
     params: z.object({
-      patientId: commonValidations.id,
-      caseId: commonValidations.id,
-      consultationId: commonValidations.id,
       formId: commonValidations.id,
     }),
   },
@@ -59,10 +56,7 @@ formRegistry.registerPath({
   ]),
 });
 
-router.get(
-  "/patient/:patientId/case/:caseId/consultation/:consultationId/form/:formId",
-  formController.getFormByPatientCaseConsultationFormId,
-);
+router.get("/form/:formId", formController.getFormById);
 
 // Register the path for creating a form
 formRegistry.registerPath({

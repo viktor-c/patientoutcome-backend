@@ -3,8 +3,9 @@ import { userRepository } from "@/api/user/userRepository";
 import { faker, fakerDA } from "@faker-js/faker";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
 
+// export class not instance
 export class ConsultationRepository {
-  async createConsultation(patientId: string, caseId: string, data: CreateConsultation): Promise<Consultation> {
+  async createConsultation(caseId: string, data: CreateConsultation): Promise<Consultation> {
     const patientCase = await PatientCaseModel.findById(caseId);
     if (!patientCase) {
       throw new Error("Patient case not found");
@@ -73,11 +74,7 @@ export class ConsultationRepository {
    * @returns
    */
   async getAllConsultations(caseId: string): Promise<Consultation[]> {
-    const cons = consultationModel
-      .find({ patientCaseId: caseId })
-      .select("-__v")
-      .populate(["proms", "visitedBy"])
-      .lean();
+    const cons = consultationModel.find({ patientCaseId: caseId }).populate(["proms", "visitedBy"]).lean();
     return cons;
   }
 

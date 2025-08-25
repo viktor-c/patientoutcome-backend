@@ -3,14 +3,9 @@ import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import type { Request, RequestHandler, Response } from "express";
 
 class FormController {
-  public getFormByPatientCaseConsultationFormId: RequestHandler = async (req: Request, res: Response) => {
-    const { patientId, caseId, consultationId, formId } = req.params;
-    const serviceResponse = await formService.getFormByPatientCaseConsultationFormId(
-      patientId,
-      caseId,
-      consultationId,
-      formId,
-    );
+  public getFormById: RequestHandler = async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const serviceResponse = await formService.getFormById(formId);
     return handleServiceResponse(serviceResponse, res);
   };
 

@@ -24,6 +24,7 @@ import { extendZod, zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
 import { extend } from "dayjs";
 import mongoose from "mongoose";
 import { z } from "zod";
+import { string } from "zod/v4";
 extendZod(z);
 // Define the Patient schema
 export const CodeSchema = z.object({
@@ -60,21 +61,26 @@ export const codeModel = mongoose.model("Code", MongooseCodeSchema, "form-access
 
 // Input validation for 'GET code/:code' endpoint
 export const GetCodeSchema = z.object({
-  params: z.object({ internalCode: z.string() }),
+  params: z.object({ externalCode: z.string() }),
 });
 
 // Input validation for 'PUT code/:code/consultation/:consultationId' endpoint
 export const ActivateCodeSchema = z.object({
-  params: z.object({ internalCode: commonValidations.id, consultationId: commonValidations.id }),
+  params: z.object({ externalCode: z.string(), consultationId: commonValidations.id }),
 });
 
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
-  params: z.object({ numberOfCodes: z.number() }),
+  params: z.object({
+    numberOfCodes: z.preprocess(
+      Number,
+      z.number().min(1, "At least 1 code must be created").max(10, "No more than 10 codes can be created"),
+    ),
+  }),
   // body: CodeSchema.omit({ _id: true, activatedOn: true, expiresOn: true }),
 });
 
 // Input validation for 'DELETE code/:code' endpoint
-export const DeleteCodeSchema = z.object({ code: z.string() });
+export const DeleteCodeSchema = z.object({ externalCode: z.string() });
 
 export const ExternalCodeSchema = z.object({ params: z.object({ externalCode: z.string() }) });

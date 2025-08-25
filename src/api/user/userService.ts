@@ -3,7 +3,6 @@ import { StatusCodes } from "http-status-codes";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { comparePasswords, hashPassword } from "@/utils/hashUtil";
-import { v4 as uuidv4 } from "uuid";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
 /**
@@ -60,43 +59,60 @@ export class UserService {
     }
   }
   // Create a new user
-  async createUser(userData: CreateUser): Promise<ServiceResponse<UserNoPassword | null>> {
+  async createUser(userData: CreateUser): Promise<ServiceResponse<UserNoPassword | string[] | null>> {
     try {
+      const errors = [];
       // Check if the user already exists
       const existingUser = await this.userRepository.findByQueryAsync({
         username: userData.username,
       });
       if (existingUser) {
-        return ServiceResponse.failure("User already exists", null, StatusCodes.CONFLICT);
+        errors.push("Username already exists");
       }
       // check it the email is already in use
       const existingEmail = await this.userRepository.findByQueryAsync({
         email: userData.email,
       });
       if (existingEmail) {
-        return ServiceResponse.failure("Email already in use", null, StatusCodes.CONFLICT);
+        errors.push("Email already in use");
       }
       // Check if the password and confirmPassword match
       if (userData.password !== userData.confirmPassword) {
-        return ServiceResponse.failure("Passwords do not match", null, StatusCodes.BAD_REQUEST);
+        errors.push("Passwords do not match");
       }
+      if (errors.length > 0) {
+        // if there are errors, return them
+        return ServiceResponse.failure("Error creating user", errors, StatusCodes.CONFLICT);
+      }
+
       // Hash the password before saving
       userData.password = await hashPassword(userData.password);
-
       userData.confirmPassword = undefined; // Remove confirmPassword from the data to be saved
-      userData.registerCode = undefined; // Remove registerCode from the data to be saved
+
+      //register code was processed in userController, fields were filled out correspondingly
 
       const newUser = new userModel(userData);
       await newUser.save();
-      return ServiceResponse.created<UserNoPassword>("User created successfully", newUser);
+      // now get newUser without password and return it
+      const newUserWithoutPassword: UserNoPassword | null = await this.userRepository.findByIdAsync(
+        newUser._id.toString(),
+      );
+      if (!newUserWithoutPassword) {
+        return ServiceResponse.failure("User not found after creation", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+      return ServiceResponse.created<UserNoPassword>("User created successfully", newUserWithoutPassword);
     } catch (ex) {
       const errorMessage = `Error creating user: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while creating user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure(
+        `An error occurred while creating user. ${errorMessage}`,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
     }
   }
   // Update a user by their ID
-  async updateUser(id: string, userData: Partial<User>): Promise<ServiceResponse<User | null>> {
+  async updateUser(id: string, userData: Partial<User>): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
       if (userData.password) userData.password = await hashPassword(userData.password);
 
@@ -113,18 +129,18 @@ export class UserService {
   }
 
   // Delete a user by their ID
-  async deleteUser(id: string): Promise<ServiceResponse<User | null>> {
+  async deleteUser(username: string): Promise<ServiceResponse<User | null>> {
     try {
-      const deletedUser = await this.userRepository.deleteByIdAsync(id);
+      const deletedUser = await this.userRepository.deleteByUsernameAsync(username);
       if (!deletedUser) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
       return ServiceResponse.success<null>("User deleted successfully", null);
     } catch (ex) {
-      const errorMessage = `Error deleting user with id ${id}: ${(ex as Error).message}`;
+      const errorMessage = `Error deleting user with username ${username}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
-        logger.error(`Invalid ID: ${id}`);
+        logger.error(`Invalid ID: ${username}`);
         return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
       }
       return ServiceResponse.failure("An error occurred while deleting user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -132,12 +148,7 @@ export class UserService {
   }
 
   // Login a user
-  async login(
-    username: string,
-    password: string,
-  ): Promise<
-    ServiceResponse<{ userId: string; role: string; department: string; belongsToCenter: string; email: string } | null>
-  > {
+  async login(username: string, password: string): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
       const user = await this.userRepository.getCompleteUserForLogin(username);
       if (!user) {
@@ -153,17 +164,16 @@ export class UserService {
       if (!isPasswordValid) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);
       }
-
-      // const sessionId = uuidv4();
-      // await this.userRepository.updateByIdAsync(user._id, { sessionId });
-
-      return ServiceResponse.success("Login successful", {
-        // sessionId,
-        department: user.department,
-        belongsToCenter: user.belongsToCenter,
-        email: user.email,
-        userId: user._id.toString(), // dont send internal user ID
-      });
+      // Update last login time
+      user.lastLogin = new Date().toISOString();
+      //@ts-ignore-next-line
+      await user.save(); // Save the last login time
+      // Remove sensitive information from the user object before returning
+      //@ts-ignore
+      user.password = undefined; // Remove password from the response
+      user.confirmPassword = undefined; // Remove confirmPassword from the response
+      // return the user without password
+      return ServiceResponse.success("Login successful", user, StatusCodes.OK);
     } catch (ex) {
       const errorMessage = `Error logging in user: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -171,22 +181,17 @@ export class UserService {
     }
   }
 
-  // Logout a user
-  async logout(sessionId: string): Promise<ServiceResponse<null>> {
-    try {
-      const user = await this.userRepository.findByQueryAsync({ sessionId });
-      if (!user) {
-        return ServiceResponse.failure("Invalid session", null, StatusCodes.UNAUTHORIZED);
-      }
-
-      await this.userRepository.updateByIdAsync(user._id, { sessionId: null });
-      return ServiceResponse.success("Logout successful", null);
-    } catch (ex) {
-      const errorMessage = `Error logging out user: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while logging out.", null, StatusCodes.INTERNAL_SERVER_ERROR);
-    }
-  }
+  // // Logout a user
+  // async logout(userId: string): Promise<ServiceResponse<null>> {
+  //   try {
+  //     await this.userRepository.updateByIdAsync(user._id, { sessionId: null });
+  //     return ServiceResponse.success("Logout successful", null);
+  //   } catch (ex) {
+  //     const errorMessage = `Error logging out user: ${(ex as Error).message}`;
+  //     logger.error(errorMessage);
+  //     return ServiceResponse.failure("An error occurred while logging out.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+  //   }
+  // }
 
   // Fetch user by ID including password
   async findByIdWithPassword(id: string) {

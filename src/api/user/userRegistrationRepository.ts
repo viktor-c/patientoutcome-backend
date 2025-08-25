@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
-import { type RegistrationCode, RegistrationCodeModel } from "../registrationCodeModel";
+import { type RegistrationCode, RegistrationCodeModel } from "./registrationCodeModel";
 
 /**
  * UserRegistrationRepository handles operations related to user registration codes.
@@ -87,9 +87,10 @@ export class UserRegistrationRepository {
       activatedAt: null,
       validUntil: faker.date.soon({ days: 90 }),
       userCreatedWith: null,
-      userRole: 10,
+      roles: ["doctor"],
+      permissions: ["read", "write"],
       userDepartment: "IT",
-      userDelongsToCenter: ["center1", "center2"],
+      userBelongsToCenter: ["center1", "center2"],
       active: true,
     },
     {
@@ -98,9 +99,9 @@ export class UserRegistrationRepository {
       activatedAt: null,
       validUntil: faker.date.soon({ days: 90 }),
       userCreatedWith: null,
-      userRole: 1000,
+      roles: ["nurse"],
       userDepartment: "HR",
-      userDelongsToCenter: ["center3"],
+      userBelongsToCenter: ["center3"],
       active: true,
     },
     {
@@ -109,9 +110,9 @@ export class UserRegistrationRepository {
       activatedAt: null,
       validUntil: faker.date.soon({ days: 90 }),
       userCreatedWith: null,
-      userRole: 10,
+      roles: ["admin"],
       userDepartment: "Finance",
-      userDelongsToCenter: ["center4", "center5"],
+      userBelongsToCenter: ["center4", "center5"],
       active: true,
     },
   ];

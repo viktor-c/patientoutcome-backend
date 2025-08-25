@@ -9,13 +9,27 @@ import { faker } from "@faker-js/faker";
 export class UserRepository {
   public mockUsers: User[] = [
     {
+      _id: "676336bea497301f6eff8c8d",
+      belongsToCenter: ["1"],
+      department: "UnitTesting",
+      email: "student@example.com",
+      lastLogin: faker.date.recent().toISOString(),
+      name: "PJ Student",
+      roles: ["student"],
+      permissions: [],
+      username: "student",
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+    },
+
+    {
       _id: "676336bea497301f6eff8c8e",
       belongsToCenter: ["1"],
       department: "Neurology",
       email: "asmith@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Alice Smith",
-      role: 2,
+      roles: ["mfa"],
+      permissions: [],
       username: "asmith",
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
@@ -26,9 +40,10 @@ export class UserRepository {
       email: "bwhite@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Bob White",
-      role: 1,
+      roles: ["doctor"],
+      permissions: [],
       username: "bwhite",
-      password: "$2b$10$pwcxQAJP18D9bsPESBxodea5r9Cde9PQfhj775LtYqHUD7ATlUXDK", // plaintext password123#125
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
     {
       _id: "676336bea497301f6eff8c90",
@@ -37,9 +52,10 @@ export class UserRepository {
       email: "cjones@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Carol Jones",
-      role: 2,
+      roles: ["study-nurse"],
+      permissions: [],
       username: "cjones",
-      password: "$2b$10$2I0qmUwqE8gGi8ET93KITOEAFa6LdxVltH1ILZtxzCOlhv47g.nHW", // plaintext password123#126
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
     {
       _id: "676336bea497301f6eff8c91",
@@ -48,9 +64,10 @@ export class UserRepository {
       email: "dlee@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "David Lee",
-      role: 1,
+      roles: ["project-manager"],
+      permissions: [],
       username: "dlee",
-      password: "$2b$10$fp.9cJTu03oR9BrKcun.h.wNfV5whuKL/5dbNVh9Ivl5TedcYSaUq", // plaintext password123#127
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
     {
       _id: "676336bea497301f6eff8c92",
@@ -59,9 +76,10 @@ export class UserRepository {
       email: "ewilson@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Emma Wilson",
-      role: 2,
+      roles: ["admin"],
+      permissions: [],
       username: "ewilson",
-      password: "$2b$10$3I1MNP2Up9dg46iph9DSbO85a9bVRqw4UwGsHhoz/5ExvSE/mo4se", // password123#128
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
     {
       _id: "676336bea497301f6eff8c94",
@@ -69,16 +87,18 @@ export class UserRepository {
       department: "Orthopädie",
       email: "victor@example.com",
       lastLogin: faker.date.recent().toISOString(),
-      name: "Victor Cov",
-      role: 2,
+      name: "Victor C",
+      roles: ["developer"],
+      permissions: [],
       username: "victor",
-      password: "$2b$10$EsE/ZP4QOWd4cHAnctAGm.MqjkS5spI9TVk22qZu9tGG2MMiFey8u", // plaintext
+      // password: "$2b$10$EsE/ZP4QOWd4cHAnctAGm.MqjkS5spI9TVk22qZu9tGG2MMiFey8u", // plaintext
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
   ];
 
   async findAllAsync(): Promise<UserNoPassword[]> {
     try {
-      const users = await userModel.find().select("-password").lean();
+      const users = (await userModel.find().select("-password").lean()) as unknown as UserNoPassword[];
       return users;
     } catch (error) {
       return Promise.reject(error);
@@ -105,7 +125,7 @@ export class UserRepository {
 
   async getCompleteUserForLogin(user: string): Promise<User | null> {
     try {
-      const foundUser = await userModel.findOne({ username: user }).select("+password").lean();
+      const foundUser = await userModel.findOne({ username: user }).select("+password"); //dont lean, we want to be able to save last login
       if (!foundUser) {
         console.debug("UserRepository.ts: No user found for username", user);
         return null;
@@ -139,9 +159,9 @@ export class UserRepository {
     }
   }
 
-  async deleteByIdAsync(id: string): Promise<User | null> {
+  async deleteByUsernameAsync(username: string): Promise<User | null> {
     try {
-      const deletedUser = await userModel.findByIdAndDelete(id).lean();
+      const deletedUser = await userModel.findOneAndDelete({ username }).lean();
       return deletedUser;
     } catch (error: any) {
       return Promise.reject(error);
