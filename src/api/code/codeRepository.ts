@@ -1,3 +1,4 @@
+import { logger } from "@/common/utils/logger";
 import { isPast } from "date-fns";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
@@ -50,9 +51,9 @@ export class CodeRepository {
     try {
       const result = await codeModel.deleteMany();
       await codeModel.insertMany(this.codeMockData);
-      console.log("Mock code data seeded successfully");
+      logger.info("Mock code data seeded successfully");
     } catch (error) {
-      console.error("Error seeding mock code data:", error);
+      logger.error({ error }, "Error seeding mock code data");
       return Promise.reject(error);
     }
   }
@@ -137,7 +138,7 @@ export class CodeRepository {
           // if the consultation already has an active code, return a message
           // this is to prevent activating a new code for the same consultation
           // if you want to change the code, you need to deactivate the old one first
-          console.warn("Consultation already has an active code, please deactivate it first.");
+          logger.warn("Consultation already has an active code, please deactivate it first.");
           return Promise.resolve("Consultation already has an active code");
         }
       }
@@ -209,7 +210,7 @@ export class CodeRepository {
       // Note: This will not delete the code, just reset its activation status
       // If the code is already expired, we can still deactivate it
       if (existingCode.expiresOn && existingCode.expiresOn < new Date()) {
-        console.warn("Code is already expired, deactivating it.");
+        logger.warn("Code is already expired, deactivating it.");
       }
       // If the code is expired, we can still deactivate it
       existingCode.activatedOn = undefined;
@@ -220,12 +221,12 @@ export class CodeRepository {
       existingCode.consultationId = undefined;
       await existingCode.save();
 
-      console.log("Code deactivated successfully:", existingCode);
+      logger.info({ codeId: existingCode.id }, "Code deactivated successfully");
       // remove _id before returnin existing code
       // search again for the code and deselct id
       return codeModel.findById(existingCode.id).select("-_id -__v").lean();
     } catch (error) {
-      console.error("Error deactivating code:", error);
+      logger.error({ error }, "Error deactivating code");
       return Promise.reject("An error occurred while deactivating the code.");
     }
   }

@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
+import { logger } from "@/common/utils/logger";
 import { comparePasswords, hashPassword } from "@/utils/hashUtil";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
@@ -41,7 +41,7 @@ export class UserService {
   // Retrieves a single user by their ID
   async findById(id: string): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
-      console.debug("UserRepository.ts: Finding user with id ", id);
+      logger.debug({ id }, "UserRepository.ts: Finding user with id");
       const user = await this.userRepository.findByIdAsync(id);
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
@@ -158,8 +158,8 @@ export class UserService {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);
       }
       const hashedPassword = await hashPassword(password);
-      console.debug("UserService.ts: Logging in user with username", username);
-      console.debug("UserService.ts: Hashed password", hashedPassword);
+      logger.debug({ username }, "UserService.ts: Logging in user with username");
+      logger.debug({ hashedPassword }, "UserService.ts: Hashed password");
       const isPasswordValid = await comparePasswords(password, user.password);
       if (!isPasswordValid) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);

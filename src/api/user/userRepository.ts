@@ -1,4 +1,5 @@
 import { type User, type UserNoPassword, userModel } from "@/api/user/userModel";
+import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 
 /**
@@ -109,16 +110,16 @@ export class UserRepository {
     try {
       const user = await userModel.find(field).select("-password").lean();
       if (!user || user.length === 0) {
-        console.debug("UserRepository.ts: No user found for query", field);
+        logger.debug({ field }, "UserRepository.ts: No user found for query");
         return null;
       }
       return user[0];
     } catch (error: any) {
       if (error.name === "CastError") {
-        console.error("Invalid ID format:", error.message);
+        logger.error({ error: error.message }, "Invalid ID format");
         return null;
       }
-      console.error("Error finding user by username:", error.message);
+      logger.error({ error: error.message }, "Error finding user by username");
       return Promise.reject(error);
     }
   }
@@ -127,19 +128,19 @@ export class UserRepository {
     try {
       const foundUser = await userModel.findOne({ username: user }).select("+password"); //dont lean, we want to be able to save last login
       if (!foundUser) {
-        console.debug("UserRepository.ts: No user found for username", user);
+        logger.debug({ user }, "UserRepository.ts: No user found for username");
         return null;
       }
       return foundUser;
     } catch (error: any) {
-      console.error("Error finding user by username:", error.message);
+      logger.error({ error: error.message }, "Error finding user by username");
       return Promise.reject(error);
     }
   }
 
   async findByIdAsync(id: string): Promise<UserNoPassword | null> {
     try {
-      console.debug("UserRepository.ts: Finding user with id ", id);
+      logger.debug({ id }, "UserRepository.ts: Finding user with id");
       return userModel.findById(id).select("-password").lean();
     } catch (error: any) {
       return Promise.reject(error);
@@ -172,9 +173,9 @@ export class UserRepository {
     try {
       await userModel.deleteMany({});
       const result = await userModel.insertMany(this.mockUsers);
-      console.log("Mock user data seeded successfully:", result);
+      logger.info({ count: result.length }, "Mock user data seeded successfully");
     } catch (error) {
-      console.error("Error seeding mock user data:", error);
+      logger.error({ error }, "Error seeding mock user data");
       return Promise.reject(error);
     }
   }

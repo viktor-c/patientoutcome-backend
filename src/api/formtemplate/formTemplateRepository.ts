@@ -1,3 +1,4 @@
+import { logger } from "@/common/utils/logger";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export class FormTemplateRepository {
@@ -31,7 +32,7 @@ export class FormTemplateRepository {
     try {
       await FormTemplateModel.deleteMany({});
       const result = await FormTemplateModel.insertMany(this.mockFormTemplateData);
-      console.debug("Form template mock data created:", result);
+      logger.debug({ count: result.length }, "Form template mock data created");
     } catch (error) {
       return Promise.reject(error);
     }

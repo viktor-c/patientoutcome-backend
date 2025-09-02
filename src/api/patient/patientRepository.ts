@@ -1,3 +1,4 @@
+import { logger } from "@/common/utils/logger";
 import mongoose from "mongoose";
 import { patientModel } from "./patientModel";
 import type { Patient } from "./patientModel";
@@ -78,7 +79,7 @@ export class PatientRepository {
       await patientModel.deleteMany({});
       const result = await patientModel.insertMany(this.mockPatients);
     } catch (error) {
-      console.error("Error creating patient mock data:", error);
+      logger.error({ error }, "Error creating patient mock data");
       return Promise.reject(error);
     }
   }

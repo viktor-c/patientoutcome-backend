@@ -1,9 +1,9 @@
+import { logger } from "@/common/utils/logger";
 import MongoStore from "connect-mongo";
 import cors from "cors";
 import express, { type Express } from "express";
 import session from "express-session";
 import helmet from "helmet";
-import { pino } from "pino";
 
 //****************** Routers import ****************************** */
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
@@ -35,13 +35,12 @@ import connectMongooseDB from "./common/database";
 extendZodWithOpenApi(z);
 extendZodMongoose(z);
 
-const logger = pino({ name: "server start" });
 const app: Express = express();
 
 //initialize the database connection
 connectMongooseDB()
-  .then(() => console.log("server.ts: Mongoose connected successfully"))
-  .catch((error) => console.log("server.ts: Mongoose failed to connect", error));
+  .then(() => logger.info("server.ts: Mongoose connected successfully"))
+  .catch((error) => logger.error({ error }, "server.ts: Mongoose failed to connect"));
 
 // Set the application to trust the reverse proxy
 app.set("trust proxy", true);
@@ -98,6 +97,6 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-logger.debug("Node env is ", env.NODE_ENV);
+logger.debug({ NODE_ENV: env.NODE_ENV }, "Node environment configuration");
 
 export { app, logger };

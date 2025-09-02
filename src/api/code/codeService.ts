@@ -1,4 +1,5 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { string } from "zod/v4";
 import type { Code } from "./codeModel";
@@ -56,7 +57,7 @@ class CodeService {
       }
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
-      console.error("Error activating code:", error);
+      logger.error({ error }, "Error activating code");
       return ServiceResponse.failure(
         "An error occurred while activating the code.",
         null,
@@ -106,7 +107,7 @@ class CodeService {
       }
       return ServiceResponse.created("Codes created successfully", codes);
     } catch (error) {
-      console.error("Error adding codes:", error);
+      logger.error({ error }, "Error adding codes");
       return ServiceResponse.failure("An error occurred while adding codes.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }

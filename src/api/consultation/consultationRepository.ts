@@ -1,5 +1,6 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
+import { logger } from "@/common/utils/logger";
 import { faker, fakerDA } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
@@ -204,7 +205,7 @@ export class ConsultationRepository {
       await consultationModel.deleteMany({});
       await consultationModel.insertMany(this.mockConsultations);
     } catch (error) {
-      console.error("Error seeding mock consultation data:", error);
+      logger.error({ error }, "Error seeding mock consultation data");
       return Promise.reject(error);
     }
   }

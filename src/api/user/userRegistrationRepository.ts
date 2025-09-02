@@ -1,3 +1,4 @@
+import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
 import { type RegistrationCode, RegistrationCodeModel } from "./registrationCodeModel";
@@ -69,9 +70,9 @@ export class UserRegistrationRepository {
     try {
       await RegistrationCodeModel.deleteMany({});
       const result = await RegistrationCodeModel.insertMany(this.userCodeMockData);
-      console.debug("Mock user registration codes created:", result);
+      logger.debug({ count: result.length }, "Mock user registration codes created");
     } catch (error) {
-      console.error("Error creating mock user registration codes:", error);
+      logger.error({ error }, "Error creating mock user registration codes");
       return Promise.reject(error);
     }
   }

@@ -1,6 +1,7 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
+import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import type { ObjectId } from "mongoose";
 
@@ -64,11 +65,11 @@ export class FormRepository {
       this.populateMockForms();
       const res = await FormModel.insertMany(this.mockForms);
       if (res) {
-        console.log("Form mock data created successfully");
+        logger.info("Form mock data created successfully");
         return Promise.resolve();
       }
     } catch (error) {
-      console.error("Error creating form mock data", error);
+      logger.error({ error }, "Error creating form mock data");
       return Promise.reject();
     }
   }
@@ -117,9 +118,9 @@ export class FormRepository {
         formData: formTemplateRepository.mockFormTemplateData[1].formData,
       });
 
-      console.log("Mock forms populated with template data successfully");
+      logger.info("Mock forms populated with template data successfully");
     } catch (error) {
-      console.error("Error populating mock forms with template data", error);
+      logger.error({ error }, "Error populating mock forms with template data");
       throw error;
     }
   }

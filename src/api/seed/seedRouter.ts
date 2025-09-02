@@ -6,8 +6,9 @@ import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { userRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-// import { env } from "@/common/utils/envConfig";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
+// import { env } from "@/common/utils/envConfig";
+import { logger } from "@/common/utils/logger";
 import express, { type Router, type Request, type Response, type NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
@@ -99,7 +100,7 @@ seedRouter.get("/consultation", async (_req: Request, res: Response) => {
 seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
   try {
     await formTemplateRepository.createMockDataFormTemplate();
-    console.debug(formTemplateRepository.mockFormTemplateData);
+    logger.debug({ mockTemplates: formTemplateRepository.mockFormTemplateData }, "Form template mock data");
     const serviceResponse = ServiceResponse.success("Form Mock templates inserted successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {

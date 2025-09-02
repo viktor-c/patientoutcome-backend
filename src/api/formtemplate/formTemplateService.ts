@@ -1,5 +1,5 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
+import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { FormTemplate, FormTemplateArray, FormTemplateListSchema } from "./formTemplateModel";
@@ -23,7 +23,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplateArray.safeParse(formTemplates);
       if (validationResult.success === false) {
-        console.debug("Validation error:", validationResult.error.errors);
+        logger.debug({ errors: validationResult.error.errors }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -57,7 +57,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplate.safeParse(formTemplate);
       if (validationResult.success === false) {
-        console.debug("Validation error:", validationResult.error.errors);
+        logger.debug({ errors: validationResult.error.errors }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -90,7 +90,7 @@ export class FormTemplateService {
       }
       const validationResult = FormTemplateListSchema.safeParse(formTemplates);
       if (validationResult.success === false) {
-        console.debug("Validation error:", validationResult.error.errors);
+        logger.debug({ errors: validationResult.error.errors }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -128,7 +128,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplate.safeParse(updatedTemplate);
       if (validationResult.success === false) {
-        console.debug("Validation error:", validationResult.error.errors);
+        logger.debug({ errors: validationResult.error.errors }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,

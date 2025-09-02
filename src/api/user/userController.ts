@@ -4,6 +4,7 @@ import { z } from "zod";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
+import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
@@ -71,7 +72,7 @@ class UserController {
     }
     req.session.destroy((error) => {
       if (error) {
-        console.error("Error destroying session:", error);
+        logger.error({ error }, "Error destroying session");
         return handleServiceResponse(
           ServiceResponse.failure("An error occurred while logging out.", null, StatusCodes.INTERNAL_SERVER_ERROR),
           res,
