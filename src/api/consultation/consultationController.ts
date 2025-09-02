@@ -1,14 +1,42 @@
 import { codeService } from "@/api/code/codeService";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import type { Request, RequestHandler, Response } from "express";
+import mongoose from "mongoose";
 import { z } from "zod";
 import { consultationService } from "./consultationService";
 
 class ConsultationController {
+  // Helper method to populate createdBy field for notes
+  private populateNotesCreatedBy(notes: any[], userId: string): void {
+    if (Array.isArray(notes)) {
+      notes.forEach((note) => {
+        if (!note.createdBy) {
+          // Ensure the userId is converted to a proper ObjectId if needed
+          note.createdBy = new mongoose.Types.ObjectId(userId);
+        }
+      });
+    }
+  }
+
   // Create a new consultation
   public createConsultation: RequestHandler = async (req: Request, res: Response) => {
     const { caseId } = req.params;
     const consultationData = req.body;
+
+    // If consultation has notes and createdBy is empty, use the logged-in user's ID
+    if (consultationData.notes && req.session?.userId) {
+      this.populateNotesCreatedBy(consultationData.notes, req.session.userId);
+    }
+
+    // Also check images for notes
+    if (consultationData.images && req.session?.userId) {
+      consultationData.images.forEach((image: any) => {
+        if (image.notes) {
+          this.populateNotesCreatedBy(image.notes, req.session.userId!);
+        }
+      });
+    }
+
     const serviceResponse = await consultationService.createConsultation(caseId, consultationData);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -24,6 +52,21 @@ class ConsultationController {
   public updateConsultation: RequestHandler = async (req: Request, res: Response) => {
     const consultationId = z.string().parse(req.params.consultationId);
     const consultationData = req.body;
+
+    // If consultation has notes and createdBy is empty, use the logged-in user's ID
+    if (consultationData.notes && req.session?.userId) {
+      this.populateNotesCreatedBy(consultationData.notes, req.session.userId);
+    }
+
+    // Also check images for notes
+    if (consultationData.images && req.session?.userId) {
+      consultationData.images.forEach((image: any) => {
+        if (image.notes) {
+          this.populateNotesCreatedBy(image.notes, req.session.userId!);
+        }
+      });
+    }
+
     const serviceResponse = await consultationService.updateConsultation(consultationId, consultationData);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -61,9 +104,9 @@ class ConsultationController {
   };
 
   // Get a consultation by form access code
-  public getConsultationByExternalCode: RequestHandler = async (req: Request, res: Response) => {
-    const externalCode = z.string().parse(req.params.externalCode);
-    const serviceResponse = await consultationService.getConsultationByExternalCode(externalCode);
+  public getConsultationByCode: RequestHandler = async (req: Request, res: Response) => {
+    const code = z.string().parse(req.params.code);
+    const serviceResponse = await consultationService.getConsultationByCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
 }

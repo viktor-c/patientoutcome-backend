@@ -1,6 +1,7 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
 import { faker, fakerDA } from "@faker-js/faker";
+import mongoose from "mongoose";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
 
 // export class not instance
@@ -56,7 +57,33 @@ export class ConsultationRepository {
    * @returns the updated consultation object
    */
   async updateConsultation(consultationId: string, data: Partial<Consultation>): Promise<Consultation | null> {
-    return consultationModel.findByIdAndUpdate(consultationId, data, { new: true }).lean();
+    // Convert string createdBy fields to ObjectIds if notes are being updated
+    const processedData = { ...data };
+
+    // Process notes array if present
+    if (processedData.notes && Array.isArray(processedData.notes)) {
+      processedData.notes = processedData.notes.map((note: any) => ({
+        ...note,
+        createdBy: typeof note.createdBy === "string" ? new mongoose.Types.ObjectId(note.createdBy) : note.createdBy,
+      }));
+    }
+
+    // Process images array and their notes if present
+    if (processedData.images && Array.isArray(processedData.images)) {
+      processedData.images = processedData.images.map((image: any) => ({
+        ...image,
+        addedBy: typeof image.addedBy === "string" ? new mongoose.Types.ObjectId(image.addedBy) : image.addedBy,
+        notes: image.notes
+          ? image.notes.map((note: any) => ({
+              ...note,
+              createdBy:
+                typeof note.createdBy === "string" ? new mongoose.Types.ObjectId(note.createdBy) : note.createdBy,
+            }))
+          : [],
+      }));
+    }
+
+    return consultationModel.findByIdAndUpdate(consultationId, processedData, { new: true }).lean();
   }
 
   /**

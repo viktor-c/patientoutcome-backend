@@ -8,9 +8,9 @@ import { UserSchema } from "@/api/user/userModel";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";
 import { patientCaseController } from "./patientCaseController";
-import { DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
+import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
 
-import { NoteSchema } from "@/api/generalSchemas";
+import { CreateNoteSchema, NoteSchema } from "@/api/generalSchemas";
 
 export const patientCaseRegistry = new OpenAPIRegistry();
 export const caseRouter: Router = express.Router({ mergeParams: true });
@@ -146,7 +146,7 @@ caseRouter.get(
  * description: Create a patient case for patient with patientId
  */
 
-const CaseNoIdSchema = patientCaseRegistry.register("CreateCaseSchema", PatientCaseSchema.omit({ _id: true }));
+const CaseNoIdSchema = patientCaseRegistry.register("CreateCaseSchema", CreatePatientCaseSchema.omit({ _id: true }));
 
 patientCaseRegistry.registerPath({
   method: "post",
@@ -195,7 +195,7 @@ caseRouter.post(
   "/patient/:patientId/case/",
   validateRequest(
     z.object({
-      body: PatientCaseSchema.omit({ _id: true }),
+      body: CreatePatientCaseSchema.omit({ _id: true }),
       params: z.object({ patientId: commonValidations.id }),
     }),
   ),
@@ -219,7 +219,7 @@ patientCaseRegistry.registerPath({
     }),
     body: {
       content: {
-        "application/json": { schema: PatientCaseSchema.partial() },
+        "application/json": { schema: CreatePatientCaseSchema.partial() },
       },
     },
   },
@@ -264,7 +264,7 @@ caseRouter.put(
         patientId: commonValidations.id,
         caseId: commonValidations.id,
       }),
-      body: PatientCaseSchema.partial(),
+      body: CreatePatientCaseSchema.partial(),
     }),
   ),
   patientCaseController.updatePatientCaseById,
@@ -402,7 +402,7 @@ patientCaseRegistry.registerPath({
     }),
     body: {
       content: {
-        "application/json": { schema: NoteSchema.partial() },
+        "application/json": { schema: CreateNoteSchema },
       },
     },
   },
@@ -442,7 +442,7 @@ caseRouter.post(
         patientId: commonValidations.id,
         caseId: commonValidations.id,
       }),
-      body: NoteSchema.partial(),
+      body: CreateNoteSchema,
     }),
   ),
   patientCaseController.createPatientCaseNote,

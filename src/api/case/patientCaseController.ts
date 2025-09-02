@@ -7,6 +7,18 @@ import { PatientCaseService } from "./patientCaseService";
 const service = new PatientCaseService();
 
 class PatientCaseController {
+  // Helper method to populate createdBy field for notes
+  private populateNotesCreatedBy(notes: any[], userId: string): void {
+    if (Array.isArray(notes)) {
+      notes.forEach((note) => {
+        if (!note.createdBy) {
+          // Ensure the userId is converted to a proper ObjectId if needed
+          note.createdBy = new mongoose.Types.ObjectId(userId);
+        }
+      });
+    }
+  }
+
   public getAllPatientCases: RequestHandler = async (req: Request, res: Response) => {
     const patientId = req.params.patientId;
     const serviceResponse = await service.getAllPatientCases(patientId);
@@ -29,6 +41,17 @@ class PatientCaseController {
   public createPatientCase: RequestHandler = async (req: Request, res: Response) => {
     const patientId = req.params.patientId;
     const caseData = req.body;
+
+    // If case has notes and createdBy is empty, use the logged-in user's ID
+    if (caseData.notes && req.session?.userId) {
+      this.populateNotesCreatedBy(caseData.notes, req.session.userId);
+    }
+
+    // If case has additionalData (which are also notes) and createdBy is empty, use the logged-in user's ID
+    if (caseData.additionalData && req.session?.userId) {
+      this.populateNotesCreatedBy(caseData.additionalData, req.session.userId);
+    }
+
     const serviceResponse = await service.createPatientCase(patientId, caseData);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -37,6 +60,17 @@ class PatientCaseController {
     const patientId = z.string().parse(req.params.patientId);
     const caseId = z.string().parse(req.params.caseId);
     const caseData = req.body;
+
+    // If case has notes and createdBy is empty, use the logged-in user's ID
+    if (caseData.notes && req.session?.userId) {
+      this.populateNotesCreatedBy(caseData.notes, req.session.userId);
+    }
+
+    // If case has additionalData (which are also notes) and createdBy is empty, use the logged-in user's ID
+    if (caseData.additionalData && req.session?.userId) {
+      this.populateNotesCreatedBy(caseData.additionalData, req.session.userId);
+    }
+
     const serviceResponse = await service.updatePatientCaseById(patientId, caseId, caseData);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -57,7 +91,17 @@ class PatientCaseController {
   public createPatientCaseNote: RequestHandler = async (req: Request, res: Response) => {
     const caseId = z.string().parse(req.params.caseId);
     const noteData = req.body;
-    noteData._id = new mongoose.Types.ObjectId();
+
+    // Generate a new ObjectId for the note if not provided
+    if (!noteData._id) {
+      noteData._id = new mongoose.Types.ObjectId();
+    }
+
+    // If createdBy is empty or not provided, use the logged-in user's ID
+    if (!noteData.createdBy && req.session?.userId) {
+      noteData.createdBy = new mongoose.Types.ObjectId(req.session.userId);
+    }
+
     const serviceResponse = await service.createPatientCaseNote(caseId, noteData);
     return handleServiceResponse(serviceResponse, res);
   };
