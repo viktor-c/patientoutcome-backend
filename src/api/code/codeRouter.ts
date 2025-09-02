@@ -51,14 +51,14 @@ codeRegistry.registerPath({
 });
 formAccessCodeRouter.get("/all-available", codeController.getAllAvailableCodes);
 
-// Route to activate a code by its external code and link it to a consultation id
+// Route to activate a code by its code and link it to a consultation id
 codeRegistry.registerPath({
   method: "put",
   path: "/form-access-code/activate/{code}/consultation/{consultationId}",
   tags: ["Code"],
   operationId: "activateCode",
   summary: "Activate a code",
-  description: "Activate a code by its external code.",
+  description: "Activate a code by its code.",
   request: { params: ActivateCodeSchema.shape.params },
   responses: createApiResponses([
     { schema: CodeSchema, description: "Code activated successfully", statusCode: 200 },
@@ -82,7 +82,7 @@ codeRegistry.registerPath({
   tags: ["Code"],
   operationId: "deactivateCode",
   summary: "Deactivate a code",
-  description: "Deactivate a code by its external code.",
+  description: "Deactivate a code by its code.",
   request: { params: GetCodeSchema.shape.params },
   responses: createApiResponses([
     { schema: CodeSchema, description: "Code deactivated successfully", statusCode: 200 },
@@ -109,14 +109,14 @@ codeRegistry.registerPath({
 });
 formAccessCodeRouter.post("/addCodes/:numberOfCodes", validateRequest(CreateCodeSchema), codeController.addCodes);
 
-// Route to delete a code by code, can be external or internal code
+// Route to delete a code by code, can be code or internal code
 codeRegistry.registerPath({
   method: "delete",
   path: "/form-access-code/{code}",
   tags: ["Code"],
   operationId: "deleteCode",
   summary: "Delete a code",
-  description: "Delete a code by its external code.",
+  description: "Delete a code by its code.",
   request: { params: DeleteCodeSchema },
   responses: createApiResponses([
     { schema: z.object({ message: z.string() }), description: "Code deleted successfully", statusCode: 200 },
@@ -147,7 +147,7 @@ codeRegistry.registerPath({
 });
 formAccessCodeRouter.get("/validate/:code", validateRequest(ExternalCodeSchema), codeController.validateCode);
 
-// Route to get a code by externalCode
+// Route to get a code by code
 codeRegistry.registerPath({
   method: "get",
   path: "/form-access-code/{code}",
@@ -171,7 +171,7 @@ codeRegistry.registerPath({
   operationId: "getCodeByInternalCode",
   summary: "Get a code by internalCode",
   description: "Retrieve a code by its internal code, same as the id of the code.",
-  request: { params: z.object({ internalCode: commonValidations.id }) },
+  request: { params: z.object({ id: commonValidations.id }) },
   responses: createApiResponses([
     { schema: CodeSchema, description: "Code retrieved successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },

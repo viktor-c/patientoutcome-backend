@@ -105,7 +105,7 @@ describe("Code API Endpoints", () => {
       // Assert/
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("External code not found");
+      expect(responseBody.message).toContain("Code not found");
     });
 
     it("should return NOT FOUND for an invalid consultationId", async () => {
@@ -230,7 +230,7 @@ describe("Code API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
       expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("External code not found");
+      expect(responseBody.message).toContain("Code not found");
     });
 
     it("cannot deactivate an non existent code", async () => {
@@ -241,7 +241,7 @@ describe("Code API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.responseObject).toBeNull();
-      expect(responseBody.message).toContain("External code not found");
+      expect(responseBody.message).toContain("Code not found");
     });
   });
 

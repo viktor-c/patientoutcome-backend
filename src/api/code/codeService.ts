@@ -40,8 +40,8 @@ class CodeService {
     try {
       const foundCode = await this.codeRepository.activateCode(code, consultationId);
       if (typeof foundCode === "string") {
-        if (foundCode === "External code not found") {
-          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
+        if (foundCode === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
         } else if (foundCode === "Code already activated") {
           return ServiceResponse.failure("Code already activated", null, StatusCodes.CONFLICT);
         } else if (foundCode === "Consultation not found") {
@@ -75,8 +75,8 @@ class CodeService {
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
       if (typeof error === "string") {
-        if (error === "External code not found") {
-          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
+        if (error === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
         } else if (error === "Code already deactivated") {
           return ServiceResponse.failure("Code already deactivated", null, StatusCodes.CONFLICT);
         }
@@ -118,8 +118,7 @@ class CodeService {
       return ServiceResponse.noContent("Code deleted successfully", null);
     } catch (error) {
       if (typeof error === "string") {
-        if (error === "External code not found")
-          return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
+        if (error === "Code not found") return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }
       return ServiceResponse.failure(
         "An error occurred while deleting the code.",

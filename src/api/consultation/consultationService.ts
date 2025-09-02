@@ -395,9 +395,9 @@ export class ConsultationService {
 
   /**
    *
-   * @param externalCode - The external code to fetch the consultation by.
+   * @param code - The code to fetch the consultation by.
    * @throws {ServiceResponse} if an error occurs while fetching the consultation.
-   * @description This method retrieves a consultation by its external code.
+   * @description This method retrieves a consultation by its code.
    * It first checks if the code exists in the code repository, and if it does, it retrieves the associated consultation.
    * If the code is not found or is not associated with any consultation, it returns a failure response.
    * If an error occurs during the retrieval process, it logs the error and returns a failure response.

@@ -110,7 +110,7 @@ export class CodeRepository {
     //get code by code, delete the corresponding entry in consultation, then delete it
     const code = await codeModel.findOne({ code: codeString }).populate(["consultationId"]);
     if (!code) {
-      return Promise.reject("External code not found");
+      return Promise.reject("Code not found");
     }
     // if the code has a consultationId, remove the formAccessCode from the consultation
     if (code.consultationId) {
@@ -124,7 +124,7 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
-  async activateCode(externalCode: string, consultationId: string): Promise<Code | string> {
+  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -132,9 +132,9 @@ export class CodeRepository {
       }
       // check if there is already an active code for this consultation
       if (consultation.formAccessCode) {
-        // Find the current active code to compare with the incoming external code
+        // Find the current active code to compare with the incoming code
         const currentActiveCode = await codeModel.findById(consultation.formAccessCode);
-        if (currentActiveCode && currentActiveCode.code !== externalCode) {
+        if (currentActiveCode && currentActiveCode.code !== codeString) {
           // if the consultation already has an active code, return a message
           // this is to prevent activating a new code for the same consultation
           // if you want to change the code, you need to deactivate the old one first
@@ -144,11 +144,11 @@ export class CodeRepository {
       }
       // if the consultation has an active code, this must be first inactivated or deleted
 
-      // check if the external code exists, return this code and use it
+      // check if the code exists, return this code and use it
       //BUG if we populate consultationId, we will get no code, why ?
-      const code = await codeModel.findOne({ code: externalCode }); //.populate(["consultationId"]);
+      const code = await codeModel.findOne({ code: codeString }); //.populate(["consultationId"]);
       if (!code) {
-        return Promise.resolve("External code not found");
+        return Promise.resolve("Code not found");
       }
 
       // check if the code is already activated
@@ -200,7 +200,7 @@ export class CodeRepository {
     try {
       const existingCode = await codeModel.findOne({ code: codeString }).populate(["consultationId"]);
       if (!existingCode) {
-        return Promise.reject("External code not found");
+        return Promise.reject("Code not found");
       }
       // Check if the code is already deactivated
       if (!existingCode.activatedOn) {
