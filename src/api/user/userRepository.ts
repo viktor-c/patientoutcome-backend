@@ -113,7 +113,7 @@ export class UserRepository {
         logger.debug({ field }, "UserRepository.ts: No user found for query");
         return null;
       }
-      return user[0];
+      return user[0] as unknown as UserNoPassword;
     } catch (error: any) {
       if (error.name === "CastError") {
         logger.error({ error: error.message }, "Invalid ID format");
@@ -131,7 +131,7 @@ export class UserRepository {
         logger.debug({ user }, "UserRepository.ts: No user found for username");
         return null;
       }
-      return foundUser;
+      return foundUser as unknown as User;
     } catch (error: any) {
       logger.error({ error: error.message }, "Error finding user by username");
       return Promise.reject(error);
@@ -141,7 +141,7 @@ export class UserRepository {
   async findByIdAsync(id: string): Promise<UserNoPassword | null> {
     try {
       logger.debug({ id }, "UserRepository.ts: Finding user with id");
-      return userModel.findById(id).select("-password").lean();
+      return userModel.findById(id).select("-password").lean() as unknown as UserNoPassword;
     } catch (error: any) {
       return Promise.reject(error);
     }
@@ -154,7 +154,7 @@ export class UserRepository {
         lean: true,
         select: { password: 0 },
       });
-      return updatedUser;
+      return updatedUser as unknown as UserNoPassword;
     } catch (error: any) {
       return Promise.reject(error);
     }
@@ -163,7 +163,7 @@ export class UserRepository {
   async deleteByUsernameAsync(username: string): Promise<User | null> {
     try {
       const deletedUser = await userModel.findOneAndDelete({ username }).lean();
-      return deletedUser;
+      return deletedUser as unknown as User;
     } catch (error: any) {
       return Promise.reject(error);
     }
@@ -183,7 +183,7 @@ export class UserRepository {
   // Find user by ID including password
   async findByIdWithPasswordAsync(id: string): Promise<User | null> {
     try {
-      return userModel.findById(id).select("+password").lean();
+      return userModel.findById(id).select("+password").lean() as unknown as User;
     } catch (error: any) {
       return Promise.reject(error);
     }

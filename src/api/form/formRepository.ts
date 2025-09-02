@@ -27,11 +27,11 @@ export class FormRepository {
     const newForm = new FormModel(data);
     return newForm.save();
   }
-  async createFormByTemplateId(caseId: string, consultationId: string, formTemplateId: string): Promise<ObjectId> {
+  async createFormByTemplateId(caseId: string, consultationId: string, formTemplateId: string): Promise<Form | null> {
     // first get the formtemplate by id
     const formTemplate = await FormTemplateModel.findById(formTemplateId);
     if (!formTemplate) {
-      throw new Error("Form template not found");
+      return Promise.reject("Form template not found");
     }
 
     const deepCopy = JSON.parse(JSON.stringify(formTemplate.toObject()));
@@ -47,7 +47,7 @@ export class FormRepository {
       ...deepCopy,
     });
     await newForm.save();
-    return Promise.resolve(newForm._id);
+    return Promise.resolve(newForm);
   }
 
   async updateForm(id: string, data: Partial<Form>): Promise<Form | null> {

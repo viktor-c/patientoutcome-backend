@@ -73,14 +73,14 @@ export class CodeRepository {
   async getAllAvailableCodes(): Promise<Code[]> {
     try {
       // Find codes where activatedOn is either null or undefined
-      return await codeModel.find({ $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] }).lean();
+      return codeModel.find({ $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] }).lean();
     } catch (error) {
       return Promise.reject(error);
     }
   }
 
-  async findByCode(code: string) {
-    return await codeModel.findOne({ code });
+  async findByCode(code: string): Promise<Code | null> {
+    return codeModel.findOne({ code });
   }
 
   async findById(id: string): Promise<Code | null> {
@@ -88,7 +88,7 @@ export class CodeRepository {
   }
 
   async saveCode(code: Code) {
-    return await codeModel.create(code);
+    return codeModel.create(code);
   }
 
   async createMultipleCodes(numberOfCodes: number): Promise<Code[]> {

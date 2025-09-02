@@ -7,7 +7,7 @@
       "@/*": ["src/*"]
     },
     // enable custom types directory
-    "typeRoots": ["./node_modules/@types", "./src/@custom_types"],
+    "typeRoots": ["./node_modules", "./node_modules/@types", "./src/@custom_types"],
     "moduleResolution": "nodenext",
     "outDir": "dist",
     "importsNotUsedAsValues": "remove",

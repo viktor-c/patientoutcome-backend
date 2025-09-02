@@ -6,6 +6,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
+import { isValidObjectId } from "mongoose";
 import { userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
 
@@ -50,7 +51,17 @@ class UserController {
     const { username, password } = req.body;
     const serviceResponse = await userService.login(username, password);
     if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
-      req.session.userId = serviceResponse.responseObject.id; // Store userId in the session
+      if (serviceResponse.responseObject._id === undefined) {
+        req.session.userId = undefined;
+        // do we need to destroy session?
+        await req.session.destroy(() => {});
+        // do not allow login
+        return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
+      } else {
+        req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
+          ? serviceResponse.responseObject._id.toString()
+          : undefined; // Store userId in the session
+      }
       req.session.roles = serviceResponse.responseObject.roles; // Store user roles in the session
       req.session.permissions = serviceResponse.responseObject.permissions; // Store user permissions in the session
       req.session.lastLogin = new Date(); // Store last login time

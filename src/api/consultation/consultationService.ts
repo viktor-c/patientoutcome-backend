@@ -5,6 +5,7 @@ import { formRepository } from "@/api/form/formRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import { isValidObjectId } from "mongoose";
 import type { Consultation, CreateConsultation } from "./consultationModel";
 import { type ConsultationRepository, consultationRepository } from "./consultationRepository";
 
@@ -37,7 +38,7 @@ export class ConsultationService {
       }
       //after creating the consultation, we can check if the code is valid
       if (data.formAccessCode) {
-        const code = await this.codeRepository.findByInternalCode(data.formAccessCode.toString());
+        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
 
         if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
@@ -53,20 +54,31 @@ export class ConsultationService {
       }
 
       //** process form creation based on given form templates */
-      if (data.formTemplates && data.formTemplates.length > 0) {
+      if (data.formTemplates && data.formTemplates.length > 0 && newConsultation._id) {
         // based on the array of id in formTemplates, create a new form for each template
         // use the form API to create a new form
         // if there are multiple templates, create a new form for each template
         for (let i = 0; i < data.formTemplates.length; i++) {
-          const formId = await formRepository.createFormByTemplateId(
+          let formTemplateId = "";
+          if (typeof data.formTemplates[i] === "string") {
+            formTemplateId = data.formTemplates[i] as string;
+          } else if (isValidObjectId(data.formTemplates[i])) {
+            formTemplateId = data.formTemplates[i].toString();
+          }
+
+          const newCreatedForm = await formRepository.createFormByTemplateId(
             caseId,
-            newConsultation._id,
-            data.formTemplates[i],
+            newConsultation._id.toString(),
+            formTemplateId,
           );
-          newConsultation.proms.push(formId);
+          if (newCreatedForm?._id) {
+            newConsultation.proms.push(newCreatedForm._id.toString());
+          }
         }
       }
       //BUG why do we need to save the consultation again? Why this error?
+      // we get a consultation document, which has save()
+      //@ts-expect-error newConsultation is a mongoose document
       await newConsultation.save();
 
       return ServiceResponse.created("Consultation created successfully", newConsultation);
@@ -141,14 +153,18 @@ export class ConsultationService {
         // await this.codeRepository.deactivateCode(originalConsultation.formAccessCode.toString());
       } else if (data.formAccessCode && originalConsultation.formAccessCode?.toString() !== data.formAccessCode) {
         // If a new formAccessCode is provided, check if it exists and is not already activated
-        const code = await this.codeRepository.findByInternalCode(data.formAccessCode.toString());
-        if (!code) {
+        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
+        if (!code || !code._id) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
         if (code.activatedOn) {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
-        await this.codeRepository.activateCode(code.id, consultationId);
+
+        await this.codeRepository.activateCode(
+          typeof code._id === "string" ? code._id : code._id.toString(),
+          consultationId,
+        );
       }
 
       /**
@@ -164,23 +180,29 @@ export class ConsultationService {
         }
 
         //first intersect the originalConsultation.proms.formTemplateId with the ids from data.proms
-        // @ts-expect-error originalConsultation.proms will be populated with the forms and not the ids
+        // BUG originalConsultation.proms will be populated with the forms and not the ids
         const remainingFormsById = originalConsultation.proms
+          //@ts-ignore
           .filter((template: Form) =>
-            // @ts-expect-error data.proms already checked if empty
+            //@ts-ignore
             data.proms.includes(template.formTemplateId.toString()),
           )
+          //@ts-ignore
           .map((template: Form) => template._id.toString());
 
         const excludedFormsById = originalConsultation.proms
+          //@ts-ignore
           .filter((template) => !data.proms.includes(template.formTemplateId.toString()))
+          //@ts-ignore
           .map((template) => template._id);
         // delete the excluded forms from the database, but only consultation was successfully updated
 
         // then filter the data.proms to get the new templates that are not in the originalConsultation.proms
-        // @ts-expect-error data.proms will be populated with the forms and not the ids
+        // BUG data.proms will be populated with the forms and not the ids
         const newPromsByTemplateId = data.proms.filter(
+          //@ts-ignore
           (templateId: string) =>
+            //@ts-ignore
             !originalConsultation.proms.some((template: Form) => template.formTemplateId.toString() === templateId),
         );
         const newPromsById: string[] = [...remainingFormsById];
@@ -191,7 +213,9 @@ export class ConsultationService {
             consultationId,
             templateId.toString(),
           );
-          newPromsById.push(formId.toString());
+          if (formId) {
+            newPromsById.push(formId.toString());
+          }
         }
         // now we have the newPromsById which contains the ids of the new forms and the existing forms
         // we can now save the new forms to the future consultation, which is data.
@@ -231,7 +255,7 @@ export class ConsultationService {
       ) {
         // if data.proms is empty, it means that the user wants to remove all forms from the consultation
         // so we need to delete all forms from the consultation
-        const excludedFormsById = originalConsultation.proms.map((form: Form) => form._id);
+        const excludedFormsById = originalConsultation.proms.map((formId) => formId);
         // delete the excluded forms from the database, but only consultation was successfully updated
         const deletePromises = excludedFormsById.map((formId) => formRepository.deleteForm(formId.toString()));
         await Promise.all(deletePromises);
@@ -381,7 +405,7 @@ export class ConsultationService {
    */
   async getConsultationByCode(code: string): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const foundCode = await this.codeRepository.findByInternalCode(code);
+      const foundCode = await this.codeRepository.findByCode(code);
       if (!foundCode) {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }
@@ -390,7 +414,9 @@ export class ConsultationService {
         return ServiceResponse.failure("Code is not associated with any consultation", null, StatusCodes.BAD_REQUEST);
       }
 
-      const consultation = await this.consultationRepository.getConsultationById(foundCode.consultationId);
+      const consultation = await this.consultationRepository.getConsultationById(
+        typeof foundCode.consultationId === "string" ? foundCode.consultationId : foundCode.consultationId.toString(),
+      );
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
