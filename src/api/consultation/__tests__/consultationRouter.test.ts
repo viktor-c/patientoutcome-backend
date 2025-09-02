@@ -17,8 +17,11 @@ describe("Patient Case Consultation API", () => {
   let sessionCookie: string;
 
   beforeAll(async () => {
+    //login first user
+    agent = request.agent(app);
+
     try {
-      const res = await request(app).get("/seed/consultation");
+      const res = await agent.get("/seed/consultation");
       if (res.status !== StatusCodes.OK) {
         throw new Error("Failed to insert consultation data");
       }
@@ -30,8 +33,6 @@ describe("Patient Case Consultation API", () => {
       }
     }
 
-    //login first user
-    agent = request.agent(app);
     // Login to get session
     const loginRes = await agent.post("/user/login").send({
       username: mockUser.username,
@@ -58,7 +59,7 @@ describe("Patient Case Consultation API", () => {
 
   it("should get all consultations", async () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const response = await request(app).get(`/case/${caseId}/consultations`);
+    const response = await agent.get(`/consultations/case/${caseId}`).set("Cookie", sessionCookie);
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultations retrieved successfully");
     expect(Array.isArray(response.body.responseObject)).toBe(true);
@@ -70,7 +71,6 @@ describe("Patient Case Consultation API", () => {
   });
 
   it("should create and delete a consultation", async () => {
-    const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const newConsultation = {
       ...consultationRepository.mockConsultations[0],
@@ -79,7 +79,7 @@ describe("Patient Case Consultation API", () => {
     newConsultation._id = undefined; // Reset _id to undefined to create a new consultation
 
     // create a new form access code
-    const createCodeResponse = await request(app).post("/form-access-code/addCodes/1").set("Cookie", sessionCookie);
+    const createCodeResponse = await agent.post("/form-access-code/addCodes/1").set("Cookie", sessionCookie);
     expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
     expect(createCodeResponse.body.message).toBe("Codes created successfully");
     expect(createCodeResponse.body.responseObject).toBeDefined();
@@ -89,7 +89,7 @@ describe("Patient Case Consultation API", () => {
     newConsultation.formAccessCode = newCode._id;
 
     // Create a new consultation
-    const createResponse = await request(app).post(`/case/${caseId}/consultation/`).send(newConsultation);
+    const createResponse = await agent.post(`/consultation/case/${caseId}`).send(newConsultation);
 
     expect(createResponse.status).toBe(StatusCodes.CREATED);
     expect(createResponse.body.message).toBe("Consultation created successfully");
@@ -98,13 +98,11 @@ describe("Patient Case Consultation API", () => {
     //expect(createResponse.body.responseObject._id).toEqual(newConsultation._id);
 
     // Delete the created consultation
-    const deleteResponse = await request(app).delete(
-      `/case/${caseId}/consultation/${createResponse.body.responseObject._id}`,
-    );
+    const deleteResponse = await agent.delete(`/consultation/${createResponse.body.responseObject._id}`);
     expect(deleteResponse.status).toBe(StatusCodes.NO_CONTENT);
 
     // also check the the form access code is deleted
-    const codeResponse = await request(app).get(`/code/${newCode._id}`);
+    const codeResponse = await agent.get(`/code/${newCode._id}`);
     expect(codeResponse.status).toBe(StatusCodes.NOT_FOUND);
   });
 
@@ -113,16 +111,14 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const consultationId = consultationRepository.mockConsultations[0]._id;
     const originalReasonForConsultation = consultationRepository.mockConsultations[0].reasonForConsultation;
-    const response = await request(app)
-      .put(`/consultation/${consultationId}`)
-      .send({ reasonForConsultation: ["unplanned"] });
+    const response = await agent.put(`/consultation/${consultationId}`).send({ reasonForConsultation: ["unplanned"] });
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Consultation updated successfully");
     expect(response.body.responseObject.reasonForConsultation).toEqual(["unplanned"]);
 
     // update back to original reason for consultation
     // This is to ensure the test is idempotent and can run multiple times without issues
-    const response2 = await request(app)
+    const response2 = await agent
       .put(`/consultation/${consultationId}`)
       .send({ reasonForConsultation: originalReasonForConsultation });
     expect(response2.status).toBe(200);
@@ -135,7 +131,7 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const invalidConsultationId = new mongoose.Types.ObjectId().toString();
 
-    const response = await request(app).get(`/consultation/${invalidConsultationId}`);
+    const response = await agent.get(`/consultation/${invalidConsultationId}`);
     expect(response.status).toBe(StatusCodes.NOT_FOUND);
     expect(response.body.message).toBe("Consultation not found");
   });

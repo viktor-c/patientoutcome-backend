@@ -1,15 +1,32 @@
 import { patientCaseRepository } from "@/api/seed/seedRouter";
+import { userRepository } from "@/api/seed/seedRouter";
 import { app } from "@/server";
+import { StatusCodes } from "http-status-codes";
 import request from "supertest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { type PatientCase, PatientCaseSchema } from "../patientCaseModel";
 
 describe("PatientCase API", () => {
+  const mockUser = userRepository.mockUsers[0];
+  let agent: any;
+  let sessionCookie: string;
+
   // seed the mongodb table "patientcases"; if it fails, then fail all tests
   beforeAll(async () => {
     try {
       const res = await request(app).get("/seed/patientCase");
       if (res.status !== 200) {
         throw new Error("Failed to insert mock data");
+      }
+
+      // Login first user to get session
+      agent = request.agent(app);
+      const loginRes = await agent.post("/user/login").send({
+        username: mockUser.username,
+        password: "password123#124", // plaintext for first user
+      });
+      if (loginRes.status === StatusCodes.OK) {
+        sessionCookie = loginRes.headers["set-cookie"]?.[0];
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -34,7 +51,7 @@ describe("PatientCase API", () => {
   it("should get a case by ID", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const res = await request(app).get(`/patient/${patientId}/cases/${caseId}`);
+    const res = await request(app).get(`/patient/${patientId}/case/${caseId}`);
     expect(res.status).toBe(200);
     comparePatientCases(res.body.responseObject, patientCaseRepository.mockPatientCases[0] as unknown as PatientCase);
   });
@@ -78,13 +95,13 @@ describe("PatientCase API", () => {
     };
 
     const patientId = newCase.patient;
-    const createRes = await request(app).post(`/patient/${patientId}/case`).send(newCase);
+    const createRes = await agent.post(`/patient/${patientId}/case`).set("Cookie", sessionCookie).send(newCase);
     expect(createRes.status).toBe(201);
     expect(createRes.body.responseObject).toHaveProperty("_id");
     expect(createRes.body.responseObject.patient).toEqual(patientId);
 
     const caseId = createRes.body.responseObject._id;
-    const deleteRes = await request(app).delete(`/patient/${patientId}/case/${caseId}`);
+    const deleteRes = await agent.delete(`/patient/${patientId}/case/${caseId}`).set("Cookie", sessionCookie);
     expect(deleteRes.status).toBe(204);
     expect(deleteRes.body.responseObject).toBeUndefined();
   });
@@ -117,13 +134,48 @@ describe("PatientCase API", () => {
       note: "New note text",
     };
 
-    const postRes = await request(app).post(`/patient/${patientId}/case/${caseId}/note`).send(newNote);
+    const postRes = await agent
+      .post(`/patient/${patientId}/case/${caseId}/note`)
+      .set("Cookie", sessionCookie)
+      .send(newNote);
     expect(postRes.status).toBe(201);
     expect(postRes.body.responseObject.notes[1]).toHaveProperty("note", "New note text");
 
     const noteId = postRes.body.responseObject._id;
-    const deleteRes = await request(app).delete(`/patient/${patientId}/case/${caseId}/note/${noteId}`);
+    const deleteRes = await agent
+      .delete(`/patient/${patientId}/case/${caseId}/note/${noteId}`)
+      .set("Cookie", sessionCookie);
     expect(deleteRes.status).toBe(204);
+  });
+
+  it("should auto-populate createdBy when creating a note without it", async () => {
+    const patientId = patientCaseRepository.mockPatientCases[0].patient;
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
+    const newNoteWithoutCreatedBy = {
+      dateCreated: new Date(),
+      note: "Auto-populated createdBy test",
+    };
+
+    // Use authenticated agent with session cookie
+    const postRes = await agent
+      .post(`/patient/${patientId}/case/${caseId}/note`)
+      .set("Cookie", sessionCookie)
+      .send(newNoteWithoutCreatedBy);
+
+    expect(postRes.status).toBe(201);
+
+    // Find the note we just created by its content
+    const createdNote = postRes.body.responseObject.notes.find(
+      (note: any) => note.note === "Auto-populated createdBy test",
+    );
+
+    expect(createdNote).toBeDefined();
+    expect(createdNote).toHaveProperty("note", "Auto-populated createdBy test");
+    expect(createdNote).toHaveProperty("createdBy");
+    // Note: The exact user ID will depend on session/auth setup, but it should be populated
+    expect(createdNote.createdBy).toBeDefined();
+    // Verify that createdBy is set to the logged-in user's ID
+    expect(createdNote.createdBy).toBe(mockUser._id);
   });
 
   function comparePatientCases(case1: PatientCase, case2: PatientCase): boolean {

@@ -1,3 +1,4 @@
+import { CustomFormDataSchema } from "@/api/formtemplate/formTemplateModel";
 import { app } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
@@ -63,7 +64,13 @@ describe("Form API", () => {
   it("should update a form", async () => {
     const form = formRepository.mockForms[0];
 
-    const updateData = { score: 10 };
+    const newFormData = {
+      standardfragebogen: { q1: 3, q2: 4, q3: 2, q4: 1, q5: null, q6: null },
+      sportfragebogen: { s1: null, s2: null, s3: null, s4: null },
+    };
+    expect(CustomFormDataSchema.parse(newFormData)).toBeTruthy();
+    // score cannot be directly updated, because it gets calculated from the form data
+    const updateData = { formData: newFormData };
     const res = await request(app).put(`/form/${form._id}`).send(updateData);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toHaveProperty("score", 10);

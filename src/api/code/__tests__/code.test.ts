@@ -1,31 +1,41 @@
+import { codeRepository } from "@/api/code/codeRepository";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
-import { codeRepository } from "@/api/seed/seedRouter";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
+import { loginUserWithRole } from "@/utils/unitTesting";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
+import type TestAgent from "supertest/lib/agent";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Code } from "../codeModel";
 
 describe("Code API Endpoints", () => {
+  let agent: TestAgent;
+  let sessionCookie: string;
+
   beforeAll(async () => {
+    // Login with MFA role
+    const { agent: testAgent, sessionCookie: cookie } = await loginUserWithRole("mfa");
+    agent = testAgent;
+    sessionCookie = cookie;
+
     // Seed the database with mock data
-    const res = await request(app).get("/seed/form-access-codes");
+    const res = await agent.get("/seed/form-access-codes").set("Cookie", sessionCookie);
     if (res.status !== StatusCodes.OK) {
       throw new Error("Failed to seed codes");
     }
     //also need to seed consultations, because it depends on them
-    const resConsultations = await request(app).get("/seed/consultation");
+    const resConsultations = await agent.get("/seed/consultation").set("Cookie", sessionCookie);
     if (resConsultations.status !== StatusCodes.OK) {
       throw new Error("Failed to seed consultations");
     }
   });
 
-  describe("GET /form-access-code", () => {
+  describe("GET /form-access-code/all", () => {
     it("should retrieve all codes", async () => {
       // Act
-      const response = await request(app).get("/form-access-code");
+      const response = await agent.get("/form-access-code/all").set("Cookie", sessionCookie);
       const responseBody: ServiceResponse<Code[]> = response.body;
 
       // Assert
@@ -41,7 +51,7 @@ describe("Code API Endpoints", () => {
     //   await codeRepository.deleteAllCodes(); // Assuming this method exists to clear the database
 
     //   // Act
-    //   const response = await request(app).get("/form-access-code");
+    //   const response = await agent.get("/form-access-code/all").set("Cookie", sessionCookie);
     //   const responseBody: ServiceResponse<Code[]> = response.body;
 
     //   // Assert
@@ -54,25 +64,26 @@ describe("Code API Endpoints", () => {
 
   describe("CodeService - getAllAvailableCodes", () => {
     it("should return available codes successfully", async () => {
-      const response = await request(app).get("/form-access-code");
+      const response = await agent.get("/form-access-code/all-available").set("Cookie", sessionCookie);
       const responseBody: ServiceResponse<Code[]> = response.body;
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
-      expect(responseBody.message).toContain("Codes retrieved successfully");
+      expect(responseBody.message).toContain("Available codes retrieved successfully");
       expect(responseBody.responseObject).toBeInstanceOf(Array);
-      expect(responseBody.responseObject?.length).toBe(codeRepository.codeMockData.length);
     });
   });
 
   describe("GET /form-access-code/activate", () => {
     it("should return code already activated", async () => {
       // Arrange
-      const testCode = codeRepository.codeMockData[0].externalCode;
+      const testCode = codeRepository.codeMockData[0].code;
       const consultationId = consultationRepository.mockConsultations[4]._id;
       // Act
-      const response = await request(app).put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`);
+      const response = await agent
+        .put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.CONFLICT);
@@ -86,9 +97,9 @@ describe("Code API Endpoints", () => {
       const invalidCode = "677da5efcb4569adaa655560";
       const consultationId = consultationRepository.mockConsultations[4]._id;
       // Act
-      const response = await request(app).put(
-        `/form-access-code/activate/${invalidCode}/consultation/${consultationId}`,
-      );
+      const response = await agent
+        .put(`/form-access-code/activate/${invalidCode}/consultation/${consultationId}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -102,9 +113,9 @@ describe("Code API Endpoints", () => {
       const internalCode = codeRepository.codeMockData[0]._id;
       const consultationId = `${consultationRepository.mockConsultations[0]._id}INVALID`; // Invalid consultationId
       // Act
-      const response = await request(app).put(
-        `/form-access-code/activate/${internalCode}/consultation/${consultationId}`,
-      );
+      const response = await agent
+        .put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -118,9 +129,9 @@ describe("Code API Endpoints", () => {
       const internalCode = codeRepository.codeMockData[1]._id;
       const consultationId = new mongoose.Types.ObjectId(); // Nonexistent consultationId
       // Act
-      const response = await request(app).put(
-        `/form-access-code/activate/${internalCode}/consultation/${consultationId}`,
-      );
+      const response = await agent
+        .put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -136,7 +147,9 @@ describe("Code API Endpoints", () => {
 
       const newCode = codeRepository.codeMockData[2]._id;
       // Act
-      const response = await request(app).put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`);
+      const response = await agent
+        .put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.CONFLICT);
@@ -149,14 +162,14 @@ describe("Code API Endpoints", () => {
     let addedCodes: Code[];
     it("should add 5 codes using backend 'addCodes' and verify their initial state", async () => {
       // Add 5 codes
-      const addCodesResponse = await request(app).post("/form-access-code/addCodes/5");
+      const addCodesResponse = await agent.post("/form-access-code/addCodes/5").set("Cookie", sessionCookie);
       expect(addCodesResponse.status).toBe(StatusCodes.CREATED);
       expect(Array.isArray(addCodesResponse.body.responseObject)).toBe(true);
       expect(addCodesResponse.body.responseObject.length).toBe(5);
 
-      // Check that all codes have "activated" = undefined
+      // Check that all codes have "activatedOn" = undefined
       addCodesResponse.body.responseObject.forEach((code: any) => {
-        expect(code.activated).toBeUndefined();
+        expect(code.activatedOn).toBeUndefined();
         expect(code.expiresOn).toBeUndefined();
         expect(code.consultationId).toBeUndefined();
       });
@@ -169,38 +182,38 @@ describe("Code API Endpoints", () => {
       expect(consultation).toBeDefined();
       expect(consultation._id).toBeDefined();
 
-      const activateResponse = await request(app).put(
-        `/form-access-code/activate/${codeToActivate.externalCode}/consultation/${consultation._id}`,
-      );
+      const activateResponse = await agent
+        .put(`/form-access-code/activate/${codeToActivate.code}/consultation/${consultation._id}`)
+        .set("Cookie", sessionCookie);
 
       expect(activateResponse.status).toBe(StatusCodes.OK);
       expect(activateResponse.body.responseObject.activatedOn).toBeDefined();
       expect(activateResponse.body.responseObject.expiresOn).toBeDefined();
       expect(activateResponse.body.responseObject.consultationId).toEqual(consultation._id);
-      expect(activateResponse.body.responseObject.externalCode).toEqual(codeToActivate.externalCode);
+      expect(activateResponse.body.responseObject.code).toEqual(codeToActivate.code);
       expect(activateResponse.body.responseObject._id).toBeUndefined(); // _id should not be returned
     });
 
     it("should deactivate the code", async () => {
       const codeToDeactivate = addedCodes[0];
-      const deactivateResponse = await request(app).put(
-        `/form-access-code/deactivate/${codeToDeactivate.externalCode}`,
-      );
+      const deactivateResponse = await agent
+        .put(`/form-access-code/deactivate/${codeToDeactivate.code}`)
+        .set("Cookie", sessionCookie);
 
       expect(deactivateResponse.status).toBe(StatusCodes.OK);
       expect(deactivateResponse.body.success).toBeTruthy();
       expect(deactivateResponse.body.message).toContain("Code deactivated successfully");
-      expect(deactivateResponse.body.responseObject.activated).toBeUndefined();
+      expect(deactivateResponse.body.responseObject.activatedOn).toBeUndefined();
       expect(deactivateResponse.body.responseObject.expiresOn).toBeUndefined();
       expect(deactivateResponse.body.responseObject.consultationId).toBeUndefined();
-      expect(deactivateResponse.body.responseObject.externalCode).toEqual(codeToDeactivate.externalCode);
+      expect(deactivateResponse.body.responseObject.code).toEqual(codeToDeactivate.code);
     });
     it("should delete a code successfully", async () => {
       // Arrange
-      const testCode = addedCodes[0].externalCode;
+      const testCode = addedCodes[0].code;
 
       // Act
-      const response = await request(app).delete(`/form-access-code/code/${testCode}`);
+      const response = await agent.delete(`/form-access-code/${testCode}`).set("Cookie", sessionCookie);
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.NO_CONTENT);
@@ -211,7 +224,7 @@ describe("Code API Endpoints", () => {
       const invalidCode = "INV12";
 
       // Act
-      const response = await request(app).delete(`/form-access-code/code/${invalidCode}`);
+      const response = await agent.delete(`/form-access-code/${invalidCode}`).set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -222,7 +235,7 @@ describe("Code API Endpoints", () => {
 
     it("cannot deactivate an non existent code", async () => {
       const invalidCode = "INV12";
-      const response = await request(app).put(`/form-access-code/deactivate/${invalidCode}`);
+      const response = await agent.put(`/form-access-code/deactivate/${invalidCode}`).set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
@@ -232,13 +245,13 @@ describe("Code API Endpoints", () => {
     });
   });
 
-  describe("GET /form-access-code/internal-code/:internalCode", () => {
+  describe("GET /form-access-code/byId/:id", () => {
     it("should retrieve a code by its internalCode", async () => {
       // Arrange
       const testInternalCode = codeRepository.codeMockData[0]._id;
 
       // Act
-      const response = await request(app).get(`/form-access-code/internal-code/${testInternalCode}`);
+      const response = await agent.get(`/form-access-code/byId/${testInternalCode}`).set("Cookie", sessionCookie);
       const responseBody: ServiceResponse<Code> = response.body;
 
       // Assert
@@ -253,7 +266,7 @@ describe("Code API Endpoints", () => {
       const invalidInternalCode = "123e4567-e89b-12d3-a456-426614174999";
 
       // Act
-      const response = await request(app).get(`/form-access-code/internal-code/${invalidInternalCode}`);
+      const response = await agent.get(`/form-access-code/byId/${invalidInternalCode}`).set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -266,7 +279,9 @@ describe("Code API Endpoints", () => {
       const nonExistentInternalCode = new mongoose.Types.ObjectId();
 
       // Act
-      const response = await request(app).get(`/form-access-code/internal-code/${nonExistentInternalCode}`);
+      const response = await agent
+        .get(`/form-access-code/byId/${nonExistentInternalCode}`)
+        .set("Cookie", sessionCookie);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
