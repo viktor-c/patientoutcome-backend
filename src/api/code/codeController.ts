@@ -5,14 +5,14 @@ import { codeService } from "./codeService";
 
 class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
-    const { externalCode, consultationId } = req.params;
-    logger.debug("Activating code:", externalCode, "for consultation:", consultationId);
-    const serviceResponse = await codeService.activateCode(externalCode, consultationId);
+    const { code, consultationId } = req.params;
+    logger.debug("Activating code:", code, "for consultation:", consultationId);
+    const serviceResponse = await codeService.activateCode(code, consultationId);
     return handleServiceResponse(serviceResponse, res);
   };
   public deactivateCode: RequestHandler = async (req: Request, res: Response) => {
-    const { externalCode } = req.params;
-    const serviceResponse = await codeService.deactivateCode(externalCode);
+    const { code } = req.params;
+    const serviceResponse = await codeService.deactivateCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
   public addCodes: RequestHandler = async (req: Request, res: Response) => {
@@ -21,19 +21,19 @@ class CodeController {
     return handleServiceResponse(serviceResponse, res);
   };
   public deleteCode: RequestHandler = async (req: Request, res: Response) => {
-    const { externalCode } = req.params;
-    const serviceResponse = await codeService.deleteCode(externalCode);
+    const { code } = req.params;
+    const serviceResponse = await codeService.deleteCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
 
-  public getCodeByInternalCode: RequestHandler = async (req: Request, res: Response) => {
-    const { internalCode } = req.params;
-    const serviceResponse = await codeService.getCodeByInternalCode(internalCode);
+  public getCodeById: RequestHandler = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const serviceResponse = await codeService.getCodeById(id);
     return handleServiceResponse(serviceResponse, res);
   };
-  public getCodeByExternalCode: RequestHandler = async (req: Request, res: Response) => {
-    const { externalCode } = req.params;
-    const serviceResponse = await codeService.getCodeByExternalCode(externalCode);
+  public getCode: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const serviceResponse = await codeService.getCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -47,9 +47,9 @@ class CodeController {
     return handleServiceResponse(serviceResponse, res);
   }
 
-  async isValidExternalCode(req: Request, res: Response): Promise<Response> {
-    const { externalCode } = req.params;
-    const serviceResponse = await codeService.isValidExternalCode(externalCode);
+  async validateCode(req: Request, res: Response): Promise<Response> {
+    const { code } = req.params;
+    const serviceResponse = await codeService.validateCode(code);
     return handleServiceResponse(serviceResponse, res);
   }
 }

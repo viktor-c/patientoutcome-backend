@@ -35,24 +35,24 @@ class CodeService {
     }
   }
 
-  async activateCode(externalCode: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
+  async activateCode(code: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.activateCode(externalCode, consultationId);
-      if (typeof code === "string") {
-        if (code === "External code not found") {
+      const foundCode = await this.codeRepository.activateCode(code, consultationId);
+      if (typeof foundCode === "string") {
+        if (foundCode === "External code not found") {
           return ServiceResponse.failure("External code not found", null, StatusCodes.NOT_FOUND);
-        } else if (code === "code already activated") {
+        } else if (foundCode === "Code already activated") {
           return ServiceResponse.failure("Code already activated", null, StatusCodes.CONFLICT);
-        } else if (code === "Consultation not found") {
+        } else if (foundCode === "Consultation not found") {
           return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
-        } else if (code === "Consultation already has an active code") {
+        } else if (foundCode === "Consultation already has an active code") {
           return ServiceResponse.failure("Consultation already has an active code", null, StatusCodes.CONFLICT);
         }
-      } else if (code === null) {
+      } else if (foundCode === null) {
         return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
       }
-      if (typeof code === "object" && code !== null) {
-        return ServiceResponse.success("Code activated successfully", code);
+      if (typeof foundCode === "object" && foundCode !== null) {
+        return ServiceResponse.success("Code activated successfully", foundCode);
       }
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
@@ -65,11 +65,11 @@ class CodeService {
     }
   }
 
-  async deactivateCode(externalCode: string): Promise<ServiceResponse<Code | null>> {
+  async deactivateCode(code: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.deactivateCode(externalCode);
-      if (typeof code === "object" && code !== null) {
-        return ServiceResponse.success("Code deactivated successfully", code);
+      const foundCode = await this.codeRepository.deactivateCode(code);
+      if (typeof foundCode === "object" && foundCode !== null) {
+        return ServiceResponse.success("Code deactivated successfully", foundCode);
       }
       return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
     } catch (error) {
@@ -111,9 +111,9 @@ class CodeService {
     }
   }
 
-  async deleteCode(externalCode: string): Promise<ServiceResponse<null>> {
+  async deleteCode(code: string): Promise<ServiceResponse<null>> {
     try {
-      const result = await this.codeRepository.deleteCode(externalCode);
+      const result = await this.codeRepository.deleteCode(code);
       return ServiceResponse.noContent("Code deleted successfully", null);
     } catch (error) {
       if (typeof error === "string") {
@@ -128,13 +128,13 @@ class CodeService {
     }
   }
 
-  async getCodeByExternalCode(externalCode: string): Promise<ServiceResponse<Code | null>> {
+  async getCode(code: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.findByExternalCode(externalCode);
-      if (!code) {
+      const codeDocument = await this.codeRepository.findByCode(code);
+      if (!codeDocument) {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Code retrieved successfully", code);
+      return ServiceResponse.success("Code retrieved successfully", codeDocument);
     } catch (error) {
       return ServiceResponse.failure(
         "An error occurred while retrieving the code.",
@@ -149,9 +149,9 @@ class CodeService {
    * @param internalCode
    * @returns
    */
-  async getCodeByInternalCode(internalCode: string): Promise<ServiceResponse<Code | null>> {
+  async getCodeById(id: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.findByInternalCode(internalCode);
+      const code = await this.codeRepository.findById(id);
       if (!code) {
         return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
       }
@@ -178,13 +178,13 @@ class CodeService {
     }
   }
 
-  async isValidExternalCode(externalCode: string): Promise<ServiceResponse<boolean>> {
+  async validateCode(code: string): Promise<ServiceResponse<boolean>> {
     try {
-      const code = await this.codeRepository.findByExternalCode(externalCode);
-      if (!code) {
+      const codeDocument = await this.codeRepository.findByCode(code);
+      if (!codeDocument) {
         return ServiceResponse.failure("Code not found", false, StatusCodes.NOT_FOUND);
       }
-      if (code.activatedOn && code.expiresOn && code.expiresOn > new Date()) {
+      if (codeDocument.activatedOn && codeDocument.expiresOn && codeDocument.expiresOn > new Date()) {
         return ServiceResponse.success("Code is valid", true);
       } else {
         return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);

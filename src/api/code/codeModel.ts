@@ -32,7 +32,7 @@ export const CodeSchema = z.object({
   /*
    * this string will be given to the user, he can access data with this code. Using an external code to access data leads to the translation into internal code.
    */
-  externalCode: z.string().unique(),
+  code: z.string().unique(),
   /*
    * this date will be set when the code is created
    * activatedOn can be reset.
@@ -61,12 +61,12 @@ export const codeModel = mongoose.model("Code", MongooseCodeSchema, "form-access
 
 // Input validation for 'GET code/:code' endpoint
 export const GetCodeSchema = z.object({
-  params: z.object({ externalCode: z.string() }),
+  params: z.object({ code: z.string() }),
 });
 
 // Input validation for 'PUT code/:code/consultation/:consultationId' endpoint
 export const ActivateCodeSchema = z.object({
-  params: z.object({ externalCode: z.string(), consultationId: commonValidations.id }),
+  params: z.object({ code: z.string(), consultationId: commonValidations.id }),
 });
 
 // Input validation for 'POST code/:numberOfCodes' endpoint
@@ -81,6 +81,6 @@ export const CreateCodeSchema = z.object({
 });
 
 // Input validation for 'DELETE code/:code' endpoint
-export const DeleteCodeSchema = z.object({ externalCode: z.string() });
+export const DeleteCodeSchema = z.object({ code: z.string() });
 
-export const ExternalCodeSchema = z.object({ params: z.object({ externalCode: z.string() }) });
+export const ExternalCodeSchema = z.object({ params: z.object({ code: z.string() }) });
