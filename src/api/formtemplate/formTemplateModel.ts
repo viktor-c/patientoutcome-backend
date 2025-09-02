@@ -3,6 +3,20 @@ import { zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
 
+export interface Questionnaire {
+  [key: string]: number | null;
+}
+
+export interface CustomFormData {
+  [key: string]: Questionnaire;
+}
+
+// Define the Questionnaire schema
+export const QuestionnaireSchema = z.record(z.string(), z.number().nullable());
+
+// Define the CustomFormData schema
+export const CustomFormDataSchema = z.record(z.string(), QuestionnaireSchema);
+
 // Define the FormTemplate schema
 export const FormTemplate = z
   .object({
@@ -13,6 +27,7 @@ export const FormTemplate = z
     markdownFooter: z.string(),
     formSchema: z.object({}).passthrough(),
     formSchemaUI: z.object({}).passthrough(),
+    // formData: CustomFormDataSchema //this does not work when validating mongoose model. But zod validates.
     formData: z.object({}).passthrough(),
   })
   .strict();

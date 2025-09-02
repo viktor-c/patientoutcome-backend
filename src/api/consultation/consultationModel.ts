@@ -1,8 +1,17 @@
 import { Form } from "@/api/form/formModel";
-import { NoteSchema, dateSchema } from "@/api/generalSchemas";
+import { CreateNoteSchema, NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
 import mongoose, { Schema } from "mongoose";
 import { z } from "zod";
+
+// Define the Image schema for creation (allows optional createdBy in notes)
+export const CreateImageSchema = z.object({
+  path: z.string(),
+  format: z.string(),
+  dateAdded: dateSchema,
+  addedBy: zId("User"),
+  notes: z.array(CreateNoteSchema),
+});
 
 // Define the Image schema
 export const ImageSchema = z.object({
@@ -29,9 +38,14 @@ export const ConsultationSchema = z.object({
 
 export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true }).extend({
   formTemplates: z.array(zId("FormTemplate")),
+  notes: z.array(CreateNoteSchema),
+  images: z.array(CreateImageSchema),
 });
 
-export const UpdateConsultationSchema = ConsultationSchema.partial();
+export const UpdateConsultationSchema = ConsultationSchema.partial().extend({
+  notes: z.array(CreateNoteSchema).optional(),
+  images: z.array(CreateImageSchema).optional(),
+});
 export const GetConsultationRequestSchema = z.object({
   params: z.object({ id: zId("Consultation") }),
 });
