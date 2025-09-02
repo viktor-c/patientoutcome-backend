@@ -28,8 +28,8 @@ class FormController {
 
   public updateForm: RequestHandler = async (req: Request, res: Response) => {
     const { formId } = req.params;
-    const formData = req.body;
-    const serviceResponse = await formService.updateForm(formId, formData);
+    const updatedForm = req.body;
+    const serviceResponse = await formService.updateForm(formId, updatedForm);
     return handleServiceResponse(serviceResponse, res);
   };
 

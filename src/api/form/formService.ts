@@ -1,6 +1,7 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import { CustomFormDataSchema } from "../formtemplate/formTemplateModel";
 import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
 
@@ -47,24 +48,32 @@ export class FormService {
     }
   }
 
-  async updateForm(id: string, formData: Partial<Form>): Promise<ServiceResponse<Form | null>> {
+  async updateForm(formId: string, updatedForm: Partial<Form>): Promise<ServiceResponse<Form | null>> {
     try {
       // get the form by id
-      const existingForm = await formRepository.getFormById(id);
+      const existingForm = await formRepository.getFormById(formId);
       if (!existingForm) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
       // first check if the fields in the formData are completely filled
       const incompleteFields = [];
       let score = 0;
-      for (const [, answerValues] of Object.entries(formData)) {
-        for (const [question, answer] of Object.entries(answerValues)) {
-          if (answer === null || answer === undefined || answer === "") {
-            incompleteFields.push(question);
-          } else {
-            const numericAnswer = Number.parseInt(answer as string, 10);
-            if (!Number.isNaN(numericAnswer)) {
-              score += numericAnswer;
+      if (updatedForm.formData) {
+        logger.debug(
+          "formService.ts Form validation: updatedForm.formData is ",
+          CustomFormDataSchema.parse(updatedForm.formData) ? "valid" : "invalid",
+        );
+        for (const [, answerValues] of Object.entries(updatedForm.formData)) {
+          if (typeof answerValues === "object" && answerValues !== null) {
+            for (const [question, answer] of Object.entries(answerValues)) {
+              if (answer === null || answer === undefined || answer === "") {
+                incompleteFields.push(question);
+              } else {
+                const numericAnswer = Number.parseInt(answer as string);
+                if (!Number.isNaN(numericAnswer)) {
+                  score += numericAnswer;
+                }
+              }
             }
           }
         }
@@ -79,10 +88,10 @@ export class FormService {
         existingForm.updatedAt = new Date(); // update updatedAt to current date
         existingForm.completedAt = new Date(); // update completedAt to current date
       }
-      existingForm.formData = formData; // update the form data
+      existingForm.formData = updatedForm.formData ? updatedForm.formData : existingForm.formData; // update the form data
       // update the score
       existingForm.score = score;
-      const response = await formRepository.updateForm(id, existingForm);
+      const response = await formRepository.updateForm(formId, existingForm);
       return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
       return ServiceResponse.failure(
