@@ -39,7 +39,7 @@ export const aclConfig = {
 
   // login routes
   // login path is not here, so it should pass without acl
-  "user-login": { roles: ["anonymous"] }, // Allow anonymous users to login
+  //"user-login": { roles: ["anonymous"] }, // Allow anonymous users to login
   "user-logout": { roles: ["authenticated"] }, // Allow authenticated users to logout
   "user:get": { atLeastAuthenticationLevel: "admin" },
   "user:delete": { atLeastAuthenticationLevel: "admin" },

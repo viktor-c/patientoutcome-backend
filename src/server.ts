@@ -98,6 +98,6 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-console.debug("Node env is ", env.NODE_ENV);
+logger.debug("Node env is ", env.NODE_ENV);
 
 export { app, logger };
