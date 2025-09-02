@@ -26,13 +26,13 @@ consultationRegistry.register("GetConsultation", GetConsultationRequestSchema);
 // Register the path for creating a consultation
 consultationRegistry.registerPath({
   method: "post",
-  path: "/patient/{patientId}/case/{caseId}/consultation",
+  path: "/consultation/case/{caseId}",
   tags: ["consultation"],
   operationId: "createConsultation",
   summary: "Create a new consultation for a patient case",
   description: "Create a new consultation for a patient case",
   request: {
-    params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
+    params: z.object({ caseId: commonValidations.id }),
     body: {
       content: {
         "application/json": { schema: createConsultation },
@@ -59,11 +59,11 @@ consultationRegistry.registerPath({
 });
 
 consultationRouter.post(
-  "/patient/:patientId/case/:caseId/consultation",
+  "/consultation/case/:caseId",
   validateRequest(
     z.object({
       body: CreateConsultationSchema,
-      params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }),
+      params: z.object({ caseId: commonValidations.id }),
     }),
   ),
   consultationController.createConsultation,
@@ -111,12 +111,12 @@ consultationRouter.get("/consultation/:consultationId", consultationController.g
 // Register the path for getting all consultations for a given patientId and caseId
 consultationRegistry.registerPath({
   method: "get",
-  path: "/patient/{patientId}/case/{caseId}/consultations",
+  path: "/consultations/case/{caseId}",
   tags: ["consultation"],
   operationId: "getAllConsultations",
-  summary: "Retrieve all consultations for a given patientId and caseId",
-  description: "Retrieve all consultations for a given patientId and caseId",
-  request: { params: z.object({ patientId: commonValidations.id, caseId: commonValidations.id }) },
+  summary: "Retrieve all consultations for a given caseId",
+  description: "Retrieve all consultations for a given caseId",
+  request: { params: z.object({ caseId: commonValidations.id }) },
   responses: createApiResponses([
     {
       schema: z.array(ConsultationSchema),
@@ -136,7 +136,7 @@ consultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.get("/patient/:patientId/case/:caseId/consultations", consultationController.getAllConsultations);
+consultationRouter.get("/consultations/case/:caseId", consultationController.getAllConsultations);
 
 // Register the path for getting all consultations for a given day
 consultationRegistry.registerPath({
@@ -179,7 +179,7 @@ consultationRouter.get(
 // Register the path for updating a consultation by ID
 consultationRegistry.registerPath({
   method: "put",
-  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
+  path: "/consultation/{consultationId}",
   tags: ["consultation"],
   operationId: "updateConsultation",
   summary: "Update a consultation by ID for a patient case",
@@ -219,7 +219,7 @@ consultationRegistry.registerPath({
 });
 
 consultationRouter.put(
-  "/patient/:patientId/case/:caseId/consultation/:consultationId",
+  "/consultation/:consultationId",
   // validateRequest(z.object({ body: updateConsultation.partial() })),
   validateRequest(updateConsultation.partial()),
   consultationController.updateConsultation,
@@ -228,15 +228,13 @@ consultationRouter.put(
 // Register the path for deleting a consultation by ID
 consultationRegistry.registerPath({
   method: "delete",
-  path: "/patient/{patientId}/case/{caseId}/consultation/{consultationId}",
+  path: "consultation/{consultationId}",
   tags: ["consultation"],
   operationId: "deleteConsultation",
-  summary: "Delete a consultation by ID for a patient case",
-  description: "Delete a consultation by ID for a patient case",
+  summary: "Delete a consultation by ID",
+  description: "Delete a consultation by ID",
   request: {
     params: z.object({
-      patientId: commonValidations.id,
-      caseId: commonValidations.id,
       consultationId: commonValidations.id,
     }),
   },
@@ -264,22 +262,19 @@ consultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.delete(
-  "/patient/:patientId/case/:caseId/consultation/:consultationId",
-  consultationController.deleteConsultation,
-);
+consultationRouter.delete("/consultation/:consultationId", consultationController.deleteConsultation);
 
 // Register the path for getting a consultation by form access code
 consultationRegistry.registerPath({
   method: "get",
-  path: "/consultation/code/{externalCode}",
+  path: "/consultation/code/{code}",
   tags: ["consultation"],
-  operationId: "getConsultationByExternalCode",
-  summary: "Retrieve a consultation by form access external(short) code",
-  description: "Retrieve a consultation by form access external(short) code",
+  operationId: "getConsultationByCode",
+  summary: "Retrieve a consultation by form access code",
+  description: "Retrieve a consultation by form access code",
   request: {
     params: z.object({
-      externalCode: z.string(),
+      code: z.string(),
     }),
   },
   responses: createApiResponses([
@@ -307,11 +302,11 @@ consultationRegistry.registerPath({
 });
 
 consultationRouter.get(
-  "/consultation/code/:externalCode",
+  "/consultation/code/:code",
   validateRequest(
     z.object({
-      params: z.object({ externalCode: z.string() }),
+      params: z.object({ code: z.string() }),
     }),
   ),
-  consultationController.getConsultationByExternalCode,
+  consultationController.getConsultationByCode,
 );

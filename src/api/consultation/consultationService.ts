@@ -379,18 +379,18 @@ export class ConsultationService {
    * If an error occurs during the retrieval process, it logs the error and returns a failure response.
    * @returns {Promise<ServiceResponse<Consultation | null>>} - A promise that resolves to a ServiceResponse containing the consultation or an error message.
    */
-  async getConsultationByExternalCode(externalCode: string): Promise<ServiceResponse<Consultation | null>> {
+  async getConsultationByCode(code: string): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const code = await this.codeRepository.findByExternalCode(externalCode);
-      if (!code) {
+      const foundCode = await this.codeRepository.findByInternalCode(code);
+      if (!foundCode) {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }
 
-      if (!code.consultationId) {
+      if (!foundCode.consultationId) {
         return ServiceResponse.failure("Code is not associated with any consultation", null, StatusCodes.BAD_REQUEST);
       }
 
-      const consultation = await this.consultationRepository.getConsultationById(code.consultationId);
+      const consultation = await this.consultationRepository.getConsultationById(foundCode.consultationId);
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
