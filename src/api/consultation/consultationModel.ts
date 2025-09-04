@@ -34,6 +34,7 @@ export const ConsultationSchema = z.object({
   images: z.array(ImageSchema),
   visitedBy: z.array(zId("User")),
   formAccessCode: zId("FormAccessCode").optional(),
+  kioskId: zId("User").optional(),
 });
 
 export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true }).extend({

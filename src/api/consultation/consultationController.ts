@@ -1,6 +1,9 @@
 import { codeService } from "@/api/code/codeService";
+import { userService } from "@/api/user/userService";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import type { Request, RequestHandler, Response } from "express";
+import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { consultationService } from "./consultationService";
@@ -18,10 +21,37 @@ class ConsultationController {
     }
   }
 
+  // Helper method to validate that kioskId belongs to a user with "kiosk" role
+  private async validateKioskUser(kioskId: string): Promise<ServiceResponse<boolean>> {
+    try {
+      const userResponse = await userService.findById(kioskId);
+      if (!userResponse.success || !userResponse.responseObject) {
+        return ServiceResponse.failure("Kiosk user not found", false, StatusCodes.NOT_FOUND);
+      }
+
+      const user = userResponse.responseObject;
+      if (!user.roles.includes("kiosk")) {
+        return ServiceResponse.failure("User does not have kiosk role", false, StatusCodes.BAD_REQUEST);
+      }
+
+      return ServiceResponse.success("Kiosk user validated", true);
+    } catch (error) {
+      return ServiceResponse.failure("Error validating kiosk user", false, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   // Create a new consultation
   public createConsultation: RequestHandler = async (req: Request, res: Response) => {
     const { caseId } = req.params;
     const consultationData = req.body;
+
+    // Validate kioskId if provided
+    if (consultationData.kioskId) {
+      const kioskValidation = await this.validateKioskUser(consultationData.kioskId);
+      if (!kioskValidation.success) {
+        return handleServiceResponse(kioskValidation, res);
+      }
+    }
 
     // If consultation has notes and createdBy is empty, use the logged-in user's ID
     if (consultationData.notes && req.session?.userId) {
@@ -53,6 +83,14 @@ class ConsultationController {
     const consultationId = z.string().parse(req.params.consultationId);
     const consultationData = req.body;
 
+    // Validate kioskId if provided
+    if (consultationData.kioskId) {
+      const kioskValidation = await this.validateKioskUser(consultationData.kioskId);
+      if (!kioskValidation.success) {
+        return handleServiceResponse(kioskValidation, res);
+      }
+    }
+
     // If consultation has notes and createdBy is empty, use the logged-in user's ID
     if (consultationData.notes && req.session?.userId) {
       this.populateNotesCreatedBy(consultationData.notes, req.session.userId);
@@ -78,7 +116,7 @@ class ConsultationController {
     const formAccessCode = await consultationService.getFormAccessCode(consultationId);
     if (formAccessCode?.responseObject) {
       //first get code by internal id
-      const fullCodeDocument = await codeService.getCodeByInternalCode(formAccessCode.responseObject);
+      const fullCodeDocument = await codeService.getCode(formAccessCode.responseObject);
       if (fullCodeDocument.responseObject?._id) {
         // then delete the code
         // Note: This will delete the code from the database, which is expected behavior.
