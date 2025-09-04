@@ -4,6 +4,7 @@ import { CodeRepository } from "@/api/code/codeRepository";
 import { type ConsultationRepository, consultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
+import { KioskRepository } from "@/api/kiosk/kioskRepository";
 import { userRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -25,6 +26,8 @@ const codeRepository = new CodeRepository();
 const userRegistrationRepository = new UserRegistrationRepository();
 // const consultationRepository = new ConsultationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
+const kioskRepository = new KioskRepository();
+
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") {
@@ -172,7 +175,7 @@ seedRouter.get("/clinicalStudy", async (_req: Request, res: Response) => {
 
 /**
  * Seed database with mock data for codes
- * @route GET /seed/codes
+ * @route GET /seed/form-access-codes
  */
 seedRouter.get("/form-access-codes", async (_req: Request, res: Response) => {
   try {
@@ -183,6 +186,25 @@ seedRouter.get("/form-access-codes", async (_req: Request, res: Response) => {
   } catch (error) {
     const serviceResponse = ServiceResponse.failure(
       "Failed to insert code mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+/**
+ * Seed database with mock data for kiosks
+ * @route GET /seed/kiosks
+ */
+seedRouter.get("/kiosks", async (_req: Request, res: Response) => {
+  try {
+    await kioskRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Kiosk mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert kiosk mock data",
       null,
       StatusCodes.INTERNAL_SERVER_ERROR,
     );
@@ -231,6 +253,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
     await userRepository.createMockUserData();
     await clinicalStudyRepository.createMockDataClinicalStudies();
     await codeRepository.createMockDataFormAccessCodes();
+    await kioskRepository.createMockData();
 
     const serviceResponse = ServiceResponse.success("All mock data reset successfully", null);
     return handleServiceResponse(serviceResponse, res);
@@ -254,4 +277,5 @@ export {
   userRepository,
   clinicalStudyRepository,
   codeRepository,
+  kioskRepository,
 };
