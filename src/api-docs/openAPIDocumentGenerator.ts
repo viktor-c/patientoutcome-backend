@@ -8,6 +8,7 @@ import { formRegistry } from "@/api/form/formRouter";
 import { formTemplateRegistry } from "@/api/formtemplate/formTemplateRouter";
 import { generalSchemaRegistry } from "@/api/generalSchemas";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
+import { kioskRegistry } from "@/api/kiosk/kioskRouter";
 import { patientRegistry } from "@/api/patient/patientRouter";
 import { userRegistry } from "@/api/user/userRouter";
 
@@ -27,6 +28,7 @@ export function generateOpenAPIDocument() {
     consultationRegistry,
     formTemplateRegistry,
     formRegistry,
+    kioskRegistry,
     generalSchemaRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);

@@ -12,6 +12,7 @@ import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { formRouter } from "@/api/form/formRouter";
 import { formTemplateRouter } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
+import { kioskRouter } from "@/api/kiosk/kioskRouter";
 import { seedRouter } from "@/api/seed/seedRouter";
 import { userRouter } from "@/api/user/userRouter";
 
@@ -84,6 +85,7 @@ app.use("/seed", seedRouter);
 app.use("/formtemplate", formTemplateRouter);
 app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);
+app.use("/kiosk", kioskRouter);
 
 // Swagger UI
 app.use("/openapi", openAPIRouter);
