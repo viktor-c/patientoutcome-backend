@@ -38,6 +38,25 @@ export class UserService {
     }
   }
 
+  // Retrieves all users with kiosk role from the database
+  async getAllKioskUsers(): Promise<ServiceResponse<UserNoPassword[] | null>> {
+    try {
+      const kioskUsers = await this.userRepository.findAllByRoleAsync("kiosk");
+      if (!kioskUsers || kioskUsers.length === 0) {
+        return ServiceResponse.failure("No Kiosk users found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success<UserNoPassword[]>("Kiosk users found", kioskUsers);
+    } catch (ex) {
+      const errorMessage = `Error finding kiosk users: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while retrieving kiosk users.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // Retrieves a single user by their ID
   async findById(id: string): Promise<ServiceResponse<UserNoPassword | null>> {
     try {

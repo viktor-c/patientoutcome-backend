@@ -21,7 +21,6 @@ export class UserRepository {
       username: "student",
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
-
     {
       _id: "676336bea497301f6eff8c8e",
       belongsToCenter: ["1"],
@@ -95,6 +94,30 @@ export class UserRepository {
       // password: "$2b$10$EsE/ZP4QOWd4cHAnctAGm.MqjkS5spI9TVk22qZu9tGG2MMiFey8u", // plaintext
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
+    {
+      _id: "676336bea497301f6eff8c95",
+      belongsToCenter: ["1"],
+      department: "Orthopädie",
+      email: "kiosk1@example.com",
+      lastLogin: faker.date.recent().toISOString(),
+      name: "Kiosk Tablet 1",
+      roles: ["kiosk"],
+      permissions: [],
+      username: "kiosk1",
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+    },
+    {
+      _id: "676336bea497301f6eff8c96",
+      belongsToCenter: ["1"],
+      department: "Orthopädie",
+      email: "kiosk2@example.com",
+      lastLogin: faker.date.recent().toISOString(),
+      name: "Kiosk Tablet 2",
+      roles: ["kiosk"],
+      permissions: [],
+      username: "kiosk2",
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+    },
   ];
 
   async findAllAsync(): Promise<UserNoPassword[]> {
@@ -102,6 +125,19 @@ export class UserRepository {
       const users = (await userModel.find().select("-password").lean()) as unknown as UserNoPassword[];
       return users;
     } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  async findAllByRoleAsync(role: string): Promise<UserNoPassword[]> {
+    try {
+      const users = (await userModel
+        .find({ roles: { $in: [role] } })
+        .select("-password")
+        .lean()) as unknown as UserNoPassword[];
+      return users;
+    } catch (error: any) {
+      logger.error({ error: error.message }, `Error finding users with role ${role}`);
       return Promise.reject(error);
     }
   }

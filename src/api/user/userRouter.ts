@@ -134,6 +134,41 @@ userRegistry.registerPath({
 // add this path with the function getUsers from userController
 userRouter.get("/", AclMiddleware(), userController.getUsers);
 
+// register the path get /user/kiosk-users
+userRegistry.registerPath({
+  method: "get",
+  path: "/user/kiosk-users",
+  tags: ["User"],
+  operationId: "getAllKioskUsers",
+  description: "Get all users with kiosk role",
+  summary: "Get all kiosk users",
+  responses: createApiResponses([
+    {
+      schema: z.array(UserNoPasswordSchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "No Kiosk users found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving kiosk users.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Unauthorized",
+      statusCode: 401,
+    },
+  ]),
+});
+
+// add this path with the function getAllKioskUsers from userController
+userRouter.get("/kiosk-users", AclMiddleware("user:get-kiosk"), userController.getAllKioskUsers);
+
 //************************************** */
 // register another path, get /user/{id}
 userRegistry.registerPath({

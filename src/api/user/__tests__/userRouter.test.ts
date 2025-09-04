@@ -92,6 +92,49 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
     });
   });
+
+  describe("GET /user/kiosk-users", () => {
+    it("should return a list of kiosk users for authenticated users", async () => {
+      const { agent, sessionCookie } = await loginUserWithRole("student");
+      // Act
+      const response = await agent.get("/user/kiosk-users").set("Cookie", sessionCookie);
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Kiosk users found");
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      // Check that all returned users have kiosk role
+      responseBody.responseObject.forEach((user) => {
+        expect(user.roles).toContain("kiosk");
+      });
+
+      // logout user to clear session cookie
+      await logoutUserWithCookie(agent, sessionCookie);
+    });
+
+    it("should return kiosk users for any authenticated user role", async () => {
+      const { agent, sessionCookie } = await loginUserWithRole("doctor");
+      // Act
+      const response = await agent.get("/user/kiosk-users").set("Cookie", sessionCookie);
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Kiosk users found");
+
+      // logout user to clear session cookie
+      await logoutUserWithCookie(agent, sessionCookie);
+    });
+
+    it("should return an error when no user is logged in", async () => {
+      const response = await request(app).get("/user/kiosk-users");
+      expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+    });
+  });
+
   // get user by id
   describe("GET /user/:id", () => {
     let adminTestAgent: TestAgent;

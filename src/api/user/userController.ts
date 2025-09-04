@@ -16,6 +16,11 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public getAllKioskUsers: RequestHandler = async (_req: Request, res: Response) => {
+    const serviceResponse = await userService.getAllKioskUsers();
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public getUser: RequestHandler = async (req: Request, res: Response) => {
     // const id = Number.parseInt(req.params.id as string, 10);
     const id = z.string().parse(req.params.id);
