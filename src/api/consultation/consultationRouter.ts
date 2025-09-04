@@ -228,7 +228,7 @@ consultationRouter.put(
 // Register the path for deleting a consultation by ID
 consultationRegistry.registerPath({
   method: "delete",
-  path: "consultation/{consultationId}",
+  path: "/consultation/{consultationId}",
   tags: ["consultation"],
   operationId: "deleteConsultation",
   summary: "Delete a consultation by ID",
