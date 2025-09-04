@@ -17,6 +17,7 @@ export const userAuthenticationLevels: userAuthenticationLevelsType = {
   "study-nurse": 200, // Study nurse level
   doctor: 100, // Doctor level
   mfa: 50, // medizinische fachangestellte
+  kiosk: 25, // Kiosk user level
   student: 25, // Student level
   authenticated: 1,
   anonymous: 0,
@@ -37,11 +38,19 @@ export const aclConfig = {
   "patient:update": { roles: ["authenticated"] },
   "patient:delete": { roles: ["admin"] },
 
+  // Kiosk routes
+  "kiosk:get": { roles: ["kiosk"] },
+  "kiosk:put": { roles: ["kiosk"] },
+  "kiosk:get-for": { atLeastAuthenticationLevel: "mfa" },
+  "kiosk:delete-for": { atLeastAuthenticationLevel: "mfa" },
+  "kiosk:set-consultation": { atLeastAuthenticationLevel: "mfa" },
+
   // login routes
   // login path is not here, so it should pass without acl
   //"user-login": { roles: ["anonymous"] }, // Allow anonymous users to login
   "user-logout": { roles: ["authenticated"] }, // Allow authenticated users to logout
   "user:get": { atLeastAuthenticationLevel: "admin" },
+  "user:get-kiosk": { roles: ["authenticated"] },
   "user:delete": { atLeastAuthenticationLevel: "admin" },
 
   // Add more route keys as needed
