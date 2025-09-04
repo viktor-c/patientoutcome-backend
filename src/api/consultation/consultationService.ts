@@ -80,7 +80,7 @@ export class ConsultationService {
       // we get a consultation document, which has save()
       //@ts-expect-error newConsultation is a mongoose document
       await newConsultation.save();
-
+      // after saving the consultation, links its id to user kiosk1
       return ServiceResponse.created("Consultation created successfully", newConsultation);
     } catch (ex) {
       const errorMessage = `Error creating consultation: ${(ex as Error).message}`;
