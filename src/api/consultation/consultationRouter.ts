@@ -7,6 +7,7 @@ import { z } from "zod";
 import { consultationController } from "./consultationController";
 import {
   ConsultationSchema,
+  ConsultationWithFormsSchema,
   CreateConsultationSchema,
   GetConsultationRequestSchema,
   UpdateConsultationSchema,
@@ -18,9 +19,9 @@ export const consultationRegistry = new OpenAPIRegistry();
 export const consultationRouter: Router = express.Router();
 
 consultationRegistry.register("Consultation", ConsultationSchema);
+consultationRegistry.register("ConsultationWithForms", ConsultationWithFormsSchema);
 const createConsultation = consultationRegistry.register("CreateConsultation", CreateConsultationSchema);
 const updateConsultation = consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
-consultationRegistry.register("UpdateConsultation", UpdateConsultationSchema);
 consultationRegistry.register("GetConsultation", GetConsultationRequestSchema);
 
 // Register the path for creating a consultation
@@ -41,7 +42,7 @@ consultationRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation created successfully",
       statusCode: 201,
     },
@@ -84,7 +85,7 @@ consultationRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation retrieved successfully",
       statusCode: 200,
     },
@@ -119,7 +120,7 @@ consultationRegistry.registerPath({
   request: { params: z.object({ caseId: commonValidations.id }) },
   responses: createApiResponses([
     {
-      schema: z.array(ConsultationSchema),
+      schema: z.array(ConsultationWithFormsSchema),
       description: "Consultations retrieved successfully",
       statusCode: 200,
     },
@@ -149,7 +150,7 @@ consultationRegistry.registerPath({
   request: { params: z.object({ fromDate: z.date(), toDate: z.date() }) },
   responses: createApiResponses([
     {
-      schema: z.array(ConsultationSchema),
+      schema: z.array(ConsultationWithFormsSchema),
       description: "Consultations retrieved successfully",
       statusCode: 200,
     },
@@ -196,7 +197,7 @@ consultationRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation updated successfully",
       statusCode: 200,
     },
@@ -279,7 +280,7 @@ consultationRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation retrieved successfully",
       statusCode: 200,
     },

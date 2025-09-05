@@ -4,21 +4,37 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
-import { UserSchema } from "@/api/user/userModel";
+import { ConsultationWithFormsSchema } from "@/api/consultation/consultationModel";
+import { PatientSchema } from "@/api/patient/patientModel";
+import { UserNoPasswordSchema } from "@/api/user/userModel";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";
 import { patientCaseController } from "./patientCaseController";
-import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
+import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema, SurgerySchema } from "./patientCaseModel";
 
 import { CreateNoteSchema, NoteSchema } from "@/api/generalSchemas";
 
 export const patientCaseRegistry = new OpenAPIRegistry();
 export const caseRouter: Router = express.Router({ mergeParams: true });
 
+// Create the PatientCase schema with populated fields for OpenAPI
+const SurgeryWithUsersSchema = SurgerySchema.extend({
+  surgeons: z.array(UserNoPasswordSchema),
+});
+
+const PatientCaseWithPopulatedFieldsSchema = PatientCaseSchema.extend({
+  patient: PatientSchema,
+  surgeries: z.array(SurgeryWithUsersSchema),
+  supervisors: z.array(UserNoPasswordSchema),
+  consultations: z.array(ConsultationWithFormsSchema).optional(),
+  // Note: consultationTemplate would need FormTemplate schema if it gets populated
+});
+
 /**
  * Register the PatientCase schema
  */
 patientCaseRegistry.register("PatientCase", PatientCaseSchema);
+patientCaseRegistry.register("PatientCaseWithPopulatedFields", PatientCaseWithPopulatedFieldsSchema);
 
 /**
  * description: Get all patient cases for patient with patientId
@@ -33,7 +49,7 @@ patientCaseRegistry.registerPath({
   request: { params: z.object({ patientId: commonValidations.id }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseSchema),
+      schema: z.array(PatientCaseWithPopulatedFieldsSchema),
       description: "Returns an array of patient cases",
       statusCode: 200,
     },
@@ -73,7 +89,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseSchema,
+      schema: PatientCaseWithPopulatedFieldsSchema,
       description: "Returns the patient case",
       statusCode: 200,
     },
@@ -120,7 +136,7 @@ patientCaseRegistry.registerPath({
   request: { params: z.object({ searchQuery: z.string() }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseSchema),
+      schema: z.array(PatientCaseWithPopulatedFieldsSchema),
       description: "Returns a list of cases whose ids match the given query",
       statusCode: 200,
     },
@@ -165,7 +181,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseSchema,
+      schema: PatientCaseWithPopulatedFieldsSchema,
       description: "Returns the created patient case",
       statusCode: 201,
     },
@@ -225,7 +241,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseSchema,
+      schema: PatientCaseWithPopulatedFieldsSchema,
       description: "Returns the updated patient case",
       statusCode: 200,
     },
@@ -408,7 +424,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientCaseSchema,
+      schema: PatientCaseWithPopulatedFieldsSchema,
       description: "Returns the updated case",
       statusCode: 200,
     },
@@ -525,7 +541,7 @@ patientCaseRegistry.registerPath({
   request: { params: z.object({ diagnosis: z.string() }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseSchema),
+      schema: z.array(PatientCaseWithPopulatedFieldsSchema),
       description: "Returns an array of cases with a given diagnosis",
       statusCode: 200,
     },
@@ -565,7 +581,7 @@ patientCaseRegistry.registerPath({
   request: { params: z.object({ diagnosisICD10: z.string() }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseSchema),
+      schema: z.array(PatientCaseWithPopulatedFieldsSchema),
       description: "Returns an array of cases with a given diagnosisICD10",
       statusCode: 200,
     },
@@ -610,7 +626,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: z.array(UserSchema),
+      schema: z.array(UserNoPasswordSchema),
       description: "Returns an array of surgeons for the given case",
       statusCode: 200,
     },
@@ -672,7 +688,7 @@ patientCaseRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: z.array(UserSchema),
+      schema: z.array(UserNoPasswordSchema),
       description: "Returns an array of supervisors for the given case",
       statusCode: 200,
     },

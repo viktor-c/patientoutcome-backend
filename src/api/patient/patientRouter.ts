@@ -3,6 +3,7 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { PatientCaseSchema } from "@/api/case/patientCaseModel";
 import {
   CreatePatientSchema,
   GetPatientByExternalIdSchema,
@@ -18,8 +19,14 @@ export const patientRegistry = new OpenAPIRegistry();
 // create an express router
 export const patientRouter: Router = express.Router();
 
+// Create the Patient schema with populated cases for OpenAPI
+const PatientWithCasesSchema = PatientSchema.extend({
+  cases: z.array(PatientCaseSchema).optional(),
+});
+
 /* Define schemas and paths to create openapi */
 patientRegistry.register("Patient", PatientSchema);
+patientRegistry.register("PatientWithCases", PatientWithCasesSchema);
 
 // Register the path for getting all patients
 patientRegistry.registerPath({
@@ -31,7 +38,7 @@ patientRegistry.registerPath({
   description: "Get all patients",
   responses: createApiResponses([
     {
-      schema: z.array(PatientSchema),
+      schema: z.array(PatientWithCasesSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -61,7 +68,7 @@ patientRegistry.registerPath({
   request: { params: GetPatientSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: PatientSchema,
+      schema: PatientWithCasesSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -88,7 +95,7 @@ patientRegistry.registerPath({
   request: { params: GetPatientByExternalIdSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: PatientSchema,
+      schema: PatientWithCasesSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -133,7 +140,7 @@ patientRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientSchema,
+      schema: PatientWithCasesSchema,
       description: "Success",
       statusCode: 201,
     },
@@ -175,7 +182,7 @@ patientRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: PatientSchema,
+      schema: PatientWithCasesSchema,
       description: "Success",
       statusCode: 200,
     },

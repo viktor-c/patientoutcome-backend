@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { validateRequest } from "@/common/utils/httpHandlers";
-import { ConsultationSchema } from "../consultation/consultationModel";
+import { ConsultationWithFormsSchema } from "../consultation/consultationModel";
+import { UserNoPasswordSchema } from "../user/userModel";
 import { kioskController } from "./kioskController";
 import {
   DeleteKioskSchema,
@@ -18,8 +19,15 @@ import {
 export const kioskRegistry = new OpenAPIRegistry();
 export const kioskRouter: Router = express.Router();
 
+// Create the Kiosk schema with populated consultation and user for OpenAPI
+const KioskWithPopulatedFieldsSchema = KioskSchema.extend({
+  consultationId: ConsultationWithFormsSchema,
+  kioskUserId: UserNoPasswordSchema,
+});
+
 /* Define schemas and paths to create openapi */
 kioskRegistry.register("Kiosk", KioskSchema);
+kioskRegistry.register("KioskWithPopulatedFields", KioskWithPopulatedFieldsSchema);
 
 // Register the path for getting the current active consultation for the logged-in kiosk user
 kioskRegistry.registerPath({
@@ -32,7 +40,7 @@ kioskRegistry.registerPath({
     "Returns the current active consultation for the logged-in kiosk user. Only accessible by users with 'kiosk' role.",
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation retrieved successfully",
       statusCode: 200,
     },
@@ -74,7 +82,7 @@ kioskRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation status updated successfully",
       statusCode: 200,
     },
@@ -120,7 +128,7 @@ kioskRegistry.registerPath({
   request: { params: GetKioskSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: ConsultationSchema,
+      schema: ConsultationWithFormsSchema,
       description: "Consultation retrieved successfully",
       statusCode: 200,
     },
@@ -212,12 +220,12 @@ kioskRegistry.registerPath({
   request: { params: SetConsultationSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: KioskSchema,
+      schema: KioskWithPopulatedFieldsSchema,
       description: "Kiosk consultation set successfully",
       statusCode: 201,
     },
     {
-      schema: KioskSchema,
+      schema: KioskWithPopulatedFieldsSchema,
       description: "Kiosk consultation updated successfully",
       statusCode: 200,
     },

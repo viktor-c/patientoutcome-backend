@@ -10,6 +10,9 @@ import { Form } from "./formModel";
 const router = Router();
 export const formRegistry = new OpenAPIRegistry();
 
+// Register the Form schema for OpenAPI
+formRegistry.register("Form", Form);
+
 const formIdSchema = z.object({
   params: z.object({
     formId: z.string(),

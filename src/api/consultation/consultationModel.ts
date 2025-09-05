@@ -22,7 +22,7 @@ export const ImageSchema = z.object({
   notes: z.array(NoteSchema),
 });
 
-// Define the PatientCaseConsultation schema
+// Define the PatientCaseConsultation schema (for database)
 export const ConsultationSchema = z.object({
   _id: zId().optional(),
   __v: z.number().optional(),
@@ -37,6 +37,11 @@ export const ConsultationSchema = z.object({
   kioskId: zId("User").optional(),
 });
 
+// Define the PatientCaseConsultation schema for OpenAPI (with populated forms)
+export const ConsultationWithFormsSchema = ConsultationSchema.extend({
+  proms: z.array(Form),
+});
+
 export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true }).extend({
   formTemplates: z.array(zId("FormTemplate")),
   notes: z.array(CreateNoteSchema),
@@ -47,11 +52,13 @@ export const UpdateConsultationSchema = ConsultationSchema.partial().extend({
   notes: z.array(CreateNoteSchema).optional(),
   images: z.array(CreateImageSchema).optional(),
 });
+
 export const GetConsultationRequestSchema = z.object({
   params: z.object({ id: zId("Consultation") }),
 });
 
 export type Consultation = z.infer<typeof ConsultationSchema>;
+export type ConsultationWithForms = z.infer<typeof ConsultationWithFormsSchema>;
 export type CreateConsultation = z.infer<typeof CreateConsultationSchema>;
 // Define the mongoose schema and model
 const ConsultationMongooseSchema = zodSchema(ConsultationSchema.omit({ _id: true }));

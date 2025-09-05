@@ -4,6 +4,7 @@ import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { Router } from "express";
 import { z } from "zod";
+import { ConsultationWithFormsSchema } from "../consultation/consultationModel";
 import { codeController } from "./codeController";
 import {
   ActivateCodeSchema,
@@ -18,8 +19,14 @@ import {
 export const codeRegistry = new OpenAPIRegistry();
 export const formAccessCodeRouter: Router = Router();
 
+// Create the Code schema with populated consultation for OpenAPI
+const CodeWithConsultationSchema = CodeSchema.extend({
+  consultationId: ConsultationWithFormsSchema.optional(),
+});
+
 // Register the Code schema
 codeRegistry.register("Code", CodeSchema);
+codeRegistry.register("CodeWithConsultation", CodeWithConsultationSchema);
 
 // Route to find all codes
 codeRegistry.registerPath({
@@ -30,7 +37,7 @@ codeRegistry.registerPath({
   summary: "Retrieve all codes",
   description: "Retrieve all codes from the database.",
   responses: createApiResponses([
-    { schema: z.array(CodeSchema), description: "Codes retrieved successfully", statusCode: 200 },
+    { schema: z.array(CodeWithConsultationSchema), description: "Codes retrieved successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
   ]),
 });
@@ -45,7 +52,11 @@ codeRegistry.registerPath({
   summary: "Get all available codes",
   description: "Retrieve all available (non-activated) codes from the database.",
   responses: createApiResponses([
-    { schema: z.array(CodeSchema), description: "Available codes retrieved successfully", statusCode: 200 },
+    {
+      schema: z.array(CodeWithConsultationSchema),
+      description: "Available codes retrieved successfully",
+      statusCode: 200,
+    },
     { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
   ]),
 });
@@ -61,7 +72,7 @@ codeRegistry.registerPath({
   description: "Activate a code by its code.",
   request: { params: ActivateCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: CodeSchema, description: "Code activated successfully", statusCode: 200 },
+    { schema: CodeWithConsultationSchema, description: "Code activated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Consultation not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
@@ -85,7 +96,7 @@ codeRegistry.registerPath({
   description: "Deactivate a code by its code.",
   request: { params: GetCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: CodeSchema, description: "Code deactivated successfully", statusCode: 200 },
+    { schema: CodeWithConsultationSchema, description: "Code deactivated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
     { schema: z.object({ message: z.string() }), description: "Internal server error", statusCode: 500 },
@@ -103,7 +114,7 @@ codeRegistry.registerPath({
   description: "The backend creates a number of new codes and returns them",
   request: { params: CreateCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: z.array(CodeSchema), description: "Code created successfully", statusCode: 201 },
+    { schema: z.array(CodeWithConsultationSchema), description: "Code created successfully", statusCode: 201 },
     { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
   ]),
 });
@@ -157,7 +168,7 @@ codeRegistry.registerPath({
   description: "Retrieve details for a code",
   request: { params: GetCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: CodeSchema, description: "Code retrieved successfully", statusCode: 200 },
+    { schema: CodeWithConsultationSchema, description: "Code retrieved successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
   ]),
 });
@@ -173,7 +184,7 @@ codeRegistry.registerPath({
   description: "Retrieve a code by its internal code, same as the id of the code.",
   request: { params: z.object({ id: commonValidations.id }) },
   responses: createApiResponses([
-    { schema: CodeSchema, description: "Code retrieved successfully", statusCode: 200 },
+    { schema: CodeWithConsultationSchema, description: "Code retrieved successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
   ]),
 });

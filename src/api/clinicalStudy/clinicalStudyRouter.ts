@@ -3,6 +3,7 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { UserNoPasswordSchema } from "@/api/user/userModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { clinicalStudyController } from "./clinicalStudyController";
 // ********************** specific imports for clinicalstudy ************************
@@ -20,8 +21,15 @@ export const clinicalStudyRegistry = new OpenAPIRegistry();
 // create an express router
 export const clinicalStudyRouter: Router = express.Router();
 
+// Create the ClinicalStudy schema with populated users for OpenAPI
+const ClinicalStudyWithUsersSchema = ClinicalStudySchema.extend({
+  studyNurses: z.array(UserNoPasswordSchema),
+  supervisors: z.array(UserNoPasswordSchema),
+});
+
 /* Define schemas and paths to create openapi */
 clinicalStudyRegistry.register("ClinicalStudy", ClinicalStudySchema);
+clinicalStudyRegistry.register("ClinicalStudyWithUsers", ClinicalStudyWithUsersSchema);
 
 // Register the path for creating a clinical study
 clinicalStudyRegistry.registerPath({
@@ -40,7 +48,7 @@ clinicalStudyRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ClinicalStudySchema,
+      schema: ClinicalStudyWithUsersSchema,
       description: "Success",
       statusCode: 201,
     },
@@ -69,7 +77,7 @@ clinicalStudyRegistry.registerPath({
   description: "Get all clinical studies",
   responses: createApiResponses([
     {
-      schema: z.array(ClinicalStudySchema),
+      schema: z.array(ClinicalStudyWithUsersSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -99,7 +107,7 @@ clinicalStudyRegistry.registerPath({
   request: { params: GetClinicalStudySchema.shape.params },
   responses: createApiResponses([
     {
-      schema: ClinicalStudySchema,
+      schema: ClinicalStudyWithUsersSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -136,7 +144,7 @@ clinicalStudyRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: ClinicalStudySchema,
+      schema: ClinicalStudyWithUsersSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -214,7 +222,7 @@ clinicalStudyRegistry.registerPath({
   request: { params: GetClinicalStudyBySupervisorIdSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: z.array(ClinicalStudySchema),
+      schema: z.array(ClinicalStudyWithUsersSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -253,7 +261,7 @@ clinicalStudyRegistry.registerPath({
   request: { params: GetClinicalStudyByNurseIdSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: z.array(ClinicalStudySchema),
+      schema: z.array(ClinicalStudyWithUsersSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -292,7 +300,7 @@ clinicalStudyRegistry.registerPath({
   request: { params: GetClinicalStudyByDiagnosisSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: z.array(ClinicalStudySchema),
+      schema: z.array(ClinicalStudyWithUsersSchema),
       description: "Success",
       statusCode: 200,
     },
