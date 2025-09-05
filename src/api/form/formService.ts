@@ -48,6 +48,12 @@ export class FormService {
     }
   }
 
+  /**
+   *
+   * @param formId
+   * @param updatedForm this only has the data answered for this form, nothing else.
+   * @returns
+   */
   async updateForm(formId: string, updatedForm: Partial<Form>): Promise<ServiceResponse<Form | null>> {
     try {
       // get the form by id
@@ -58,12 +64,12 @@ export class FormService {
       // first check if the fields in the formData are completely filled
       const incompleteFields = [];
       let score = 0;
-      if (updatedForm.formData) {
+      if (updatedForm) {
         logger.debug(
           "formService.ts Form validation: updatedForm.formData is ",
-          CustomFormDataSchema.parse(updatedForm.formData) ? "valid" : "invalid",
+          CustomFormDataSchema.parse(updatedForm) ? "valid" : "invalid",
         );
-        for (const [, answerValues] of Object.entries(updatedForm.formData)) {
+        for (const [, answerValues] of Object.entries(updatedForm)) {
           if (typeof answerValues === "object" && answerValues !== null) {
             for (const [question, answer] of Object.entries(answerValues)) {
               if (answer === null || answer === undefined || answer === "") {
@@ -88,7 +94,7 @@ export class FormService {
         existingForm.updatedAt = new Date(); // update updatedAt to current date
         existingForm.completedAt = new Date(); // update completedAt to current date
       }
-      existingForm.formData = updatedForm.formData ? updatedForm.formData : existingForm.formData; // update the form data
+      existingForm.formData = updatedForm ? updatedForm : existingForm.formData; // update the form data
       // update the score
       existingForm.score = score;
       const response = await formRepository.updateForm(formId, existingForm);

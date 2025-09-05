@@ -46,6 +46,7 @@ const LoginResponseSchema = z.object({
   department: z.string(),
   belongsToCenter: z.array(z.string()),
   email: z.string().email().optional(),
+  roles: z.array(z.string()),
 });
 
 // Register the path for login

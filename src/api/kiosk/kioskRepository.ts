@@ -27,7 +27,23 @@ export class KioskRepository {
    */
   async getKioskByUserId(kioskUserId: string): Promise<Kiosk | null> {
     try {
-      return await kioskModel.findOne({ kioskUserId }).populate(["consultationId", "kioskUserId"]).lean();
+      return await kioskModel
+        .findOne({ kioskUserId })
+        .populate([
+          "kioskUserId",
+          {
+            path: "consultationId",
+            populate: [
+              { path: "patientCaseId" },
+              { path: "proms" },
+              { path: "visitedBy" },
+              { path: "kioskId" },
+              { path: "notes.createdBy" },
+              { path: "images.addedBy" },
+            ],
+          },
+        ])
+        .lean();
     } catch (error) {
       logger.error({ error }, "KioskRepository.getKioskByUserId: Error getting kiosk");
       throw error;
@@ -44,7 +60,21 @@ export class KioskRepository {
     try {
       return await kioskModel
         .findOneAndUpdate({ kioskUserId }, data, { new: true })
-        .populate(["consultationId", "kioskUserId"])
+        .populate([
+          "kioskUserId",
+          {
+            path: "consultationId",
+            populate: [
+              { path: "patientCaseId" },
+              { path: "proms" },
+              { path: "visitedBy" },
+              { path: "formAccessCode" },
+              { path: "kioskId" },
+              { path: "notes.createdBy" },
+              { path: "images.addedBy" },
+            ],
+          },
+        ])
         .lean();
     } catch (error) {
       logger.error({ error }, "KioskRepository.updateKioskByUserId: Error updating kiosk");
@@ -73,7 +103,24 @@ export class KioskRepository {
    */
   async getAllKiosks(): Promise<Kiosk[]> {
     try {
-      return await kioskModel.find().populate(["consultationId", "kioskUserId"]).lean();
+      return await kioskModel
+        .find()
+        .populate([
+          "kioskUserId",
+          {
+            path: "consultationId",
+            populate: [
+              { path: "patientCaseId" },
+              { path: "proms" },
+              { path: "visitedBy" },
+              { path: "formAccessCode" },
+              { path: "kioskId" },
+              { path: "notes.createdBy" },
+              { path: "images.addedBy" },
+            ],
+          },
+        ])
+        .lean();
     } catch (error) {
       logger.error({ error }, "KioskRepository.getAllKiosks: Error getting all kiosks");
       throw error;

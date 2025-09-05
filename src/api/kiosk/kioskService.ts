@@ -24,11 +24,11 @@ export class KioskService {
       if (!kiosk) {
         return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
       }
-
-      const consultation = await consultationRepository.getConsultationById(kiosk.consultationId.toString());
-      if (!consultation) {
+      // consultationid is already populated with the consultation. use this to return
+      if (!kiosk.consultationId) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
+      const consultation = kiosk.consultationId as unknown as Consultation;
 
       return ServiceResponse.success("Consultation retrieved successfully", consultation);
     } catch (ex) {

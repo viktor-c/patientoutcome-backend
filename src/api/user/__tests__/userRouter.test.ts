@@ -268,21 +268,31 @@ describe("User API Endpoints", () => {
   });
 
   describe("POST /user/login", () => {
-    it("should login a user successfully", async () => {
+    it("should login a user successfully and include roles in response", async () => {
       // Arrange
+      const expectedUser = userRepository.mockUsers[0];
       const loginData = {
-        username: userRepository.mockUsers[0].username,
+        username: expectedUser.username,
         password: "password123#124",
       };
 
       // Act
       const response = await request(app).post("/user/login").send(loginData);
-      const responseBody: ServiceResponse<{ sessionId: string }> = response.body;
+      const responseBody: ServiceResponse<any> = response.body;
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Login successful");
+      expect(responseBody.responseObject).toBeDefined();
+      expect(responseBody.responseObject.roles).toEqual(expectedUser.roles);
+      expect(responseBody.responseObject.username).toEqual(expectedUser.username);
+      expect(responseBody.responseObject.name).toEqual(expectedUser.name);
+      expect(responseBody.responseObject.department).toEqual(expectedUser.department);
+      expect(responseBody.responseObject.email).toEqual(expectedUser.email);
+      expect(responseBody.responseObject.belongsToCenter).toEqual(expectedUser.belongsToCenter);
+      // Ensure password is not included in response
+      expect(responseBody.responseObject.password).toBeUndefined();
     });
 
     it("should return an error for invalid credentials", async () => {

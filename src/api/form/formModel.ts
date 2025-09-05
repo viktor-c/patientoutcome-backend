@@ -5,7 +5,6 @@ import { z } from "zod";
 
 // Define the Form schema
 export const Form = FormTemplate.extend({
-  // patientId: zId("Patient"),
   caseId: zId("PatientCase"),
   consultationId: zId("Consultation"),
   formTemplateId: zId("FormTemplate"),

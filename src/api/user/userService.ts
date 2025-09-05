@@ -187,12 +187,21 @@ export class UserService {
       user.lastLogin = new Date().toISOString();
       //@ts-ignore-next-line
       await user.save(); // Save the last login time
-      // Remove sensitive information from the user object before returning
-      //@ts-ignore
-      user.password = undefined; // Remove password from the response
-      user.confirmPassword = undefined; // Remove confirmPassword from the response
-      // return the user without password
-      return ServiceResponse.success("Login successful", user, StatusCodes.OK);
+
+      // Create UserNoPassword object with all fields including roles
+      const userWithoutPassword: UserNoPassword = {
+        _id: user._id,
+        username: user.username,
+        name: user.name,
+        department: user.department,
+        roles: user.roles, // Ensure roles are included
+        permissions: user.permissions,
+        email: user.email,
+        lastLogin: user.lastLogin,
+        belongsToCenter: user.belongsToCenter,
+      };
+
+      return ServiceResponse.success("Login successful", userWithoutPassword, StatusCodes.OK);
     } catch (ex) {
       const errorMessage = `Error logging in user: ${(ex as Error).message}`;
       logger.error(errorMessage);
