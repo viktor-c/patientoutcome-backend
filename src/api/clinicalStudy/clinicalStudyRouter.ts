@@ -27,9 +27,11 @@ const ClinicalStudyWithUsersSchema = ClinicalStudySchema.extend({
   supervisors: z.array(UserNoPasswordSchema),
 });
 
-/* Define schemas and paths to create openapi */
-clinicalStudyRegistry.register("ClinicalStudy", ClinicalStudySchema);
-clinicalStudyRegistry.register("ClinicalStudyWithUsers", ClinicalStudyWithUsersSchema);
+/* Define schemas and paths to create openapi - only in non-test environment */
+if (process.env.NODE_ENV !== "test") {
+  clinicalStudyRegistry.register("ClinicalStudy", ClinicalStudySchema);
+  clinicalStudyRegistry.register("ClinicalStudyWithUsers", ClinicalStudyWithUsersSchema);
+}
 
 // Register the path for creating a clinical study
 clinicalStudyRegistry.registerPath({

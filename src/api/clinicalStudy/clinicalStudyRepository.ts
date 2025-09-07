@@ -1,4 +1,4 @@
-import { logger } from "@/server";
+import { logger } from "@/common/utils/logger";
 import { type ClinicalStudy, clinicalStudyModel } from "./clinicalStudyModel";
 
 /**
@@ -19,7 +19,7 @@ export class ClinicalStudyRepository {
 
   async getClinicalStudyById(id: string): Promise<ClinicalStudy | null> {
     try {
-      logger.debug("clinicalStudyRepository.ts: Finding clinical study with id ", id);
+      logger.debug(`clinicalStudyRepository.ts: Finding clinical study with id ${id}`);
       return clinicalStudyModel
         .findById(id)
         .populate(["supervisors", "studyNurses"])
@@ -168,7 +168,7 @@ export class ClinicalStudyRepository {
       await clinicalStudyModel.deleteMany({}); // Clear existing data
       await clinicalStudyModel.insertMany(this.mockClinicalStudies);
     } catch (error) {
-      logger.error("Error creating mock data for clinical studies:", error);
+      logger.error({ error }, "Error creating mock data for clinical studies");
     }
   }
 }

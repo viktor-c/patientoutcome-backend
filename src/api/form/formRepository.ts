@@ -20,7 +20,8 @@ export class FormRepository {
   }
 
   async getFormById(id: string): Promise<Form | null> {
-    return FormModel.findById(id).lean();
+    // populate caseId, consultationId, formTemplateId
+    return FormModel.findById(id).populate("caseId consultationId formTemplateId").lean();
   }
 
   async createForm(data: Form): Promise<Form> {
