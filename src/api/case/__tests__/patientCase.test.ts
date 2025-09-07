@@ -118,7 +118,7 @@ describe("PatientCase API", () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
     const notes = patientCaseRepository.mockPatientCases[0].notes;
-    const res = await request(app).get(`/patient/${patientId}/case/${caseId}/notes`);
+    const res = await request(app).get(`/patient/${patientId}/case/${caseId}/notes/`);
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
     expect(compareObjects(res.body.responseObject[0], notes[0])).toBeTruthy();

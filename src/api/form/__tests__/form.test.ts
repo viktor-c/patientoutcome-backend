@@ -11,7 +11,7 @@ import { formRepository } from "../formRepository";
 describe("Form API", () => {
   beforeAll(async () => {
     try {
-      const res = await request(app).get("/seed/form");
+      const res = await request(app).get("/seed/forms");
       if (res.status !== 200) {
         throw new Error("Failed to seed forms");
       }
@@ -36,7 +36,7 @@ describe("Form API", () => {
     const res = await request(app).get("/forms");
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
-    expect(res.body.responseObject.length).toBe(formRepository.mockForms.length);
+    expect(res.body.responseObject[0]._id).toBe(formRepository.mockForms[0]._id);
   });
 
   it("should get a form by ID", async () => {

@@ -61,21 +61,26 @@ export class FormService {
       if (!existingForm) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
+
+      // Extract formData from the updatedForm if it exists
+      const formData = updatedForm.formData || updatedForm;
+
       // first check if the fields in the formData are completely filled
       const incompleteFields = [];
       let score = 0;
-      if (updatedForm) {
-        logger.debug(
-          "formService.ts Form validation: updatedForm.formData is ",
-          CustomFormDataSchema.parse(updatedForm) ? "valid" : "invalid",
-        );
-        for (const [, answerValues] of Object.entries(updatedForm)) {
+
+      if (formData && typeof formData === "object") {
+        const validationResult = CustomFormDataSchema.safeParse(formData);
+        logger.debug({ isValid: validationResult.success }, "formService.ts Form validation");
+
+        // Iterate through each questionnaire section
+        for (const [sectionName, answerValues] of Object.entries(formData)) {
           if (typeof answerValues === "object" && answerValues !== null) {
             for (const [question, answer] of Object.entries(answerValues)) {
               if (answer === null || answer === undefined || answer === "") {
-                incompleteFields.push(question);
+                incompleteFields.push(`${sectionName}.${question}`);
               } else {
-                const numericAnswer = Number.parseInt(answer as string);
+                const numericAnswer = Number(answer);
                 if (!Number.isNaN(numericAnswer)) {
                   score += numericAnswer;
                 }
@@ -84,8 +89,9 @@ export class FormService {
           }
         }
       }
+
       if (incompleteFields.length > 0) {
-        logger.debug("formService.ts Form validation failed. Incomplete fields:", incompleteFields);
+        logger.debug({ incompleteFields }, "formService.ts Form validation failed");
         existingForm.formFillStatus = "incomplete";
         existingForm.updatedAt = new Date(); // update updatedAt to current date
       } else {
@@ -94,12 +100,20 @@ export class FormService {
         existingForm.updatedAt = new Date(); // update updatedAt to current date
         existingForm.completedAt = new Date(); // update completedAt to current date
       }
-      existingForm.formData = updatedForm ? updatedForm : existingForm.formData; // update the form data
+
+      // Update the form data
+      if (updatedForm.formData) {
+        existingForm.formData = updatedForm.formData;
+      } else if (formData) {
+        existingForm.formData = formData;
+      }
+
       // update the score
       existingForm.score = score;
       const response = await formRepository.updateForm(formId, existingForm);
       return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
+      logger.error({ error }, "Error in updateForm service");
       return ServiceResponse.failure(
         "An error occurred while updating the form.",
         null,
