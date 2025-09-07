@@ -14,7 +14,6 @@ import { consultationService } from "../consultationService";
 describe("Patient Case Consultation API", () => {
   const mockUser = userRepository.mockUsers[0];
   let agent: any;
-  let sessionCookie: string;
 
   beforeAll(async () => {
     //login first user
@@ -33,19 +32,19 @@ describe("Patient Case Consultation API", () => {
       }
     }
 
-    // Login to get session
+    // Login to get session - agent automatically handles session cookies
     const loginRes = await agent.post("/user/login").send({
       username: mockUser.username,
       password: "password123#124", // plaintext for first user
     });
     expect(loginRes.status).toBe(StatusCodes.OK);
-    sessionCookie = loginRes.headers["set-cookie"]?.[0];
   });
 
   it("should get a consultation by ID", async () => {
     const consultationId = consultationRepository.mockConsultations[0]._id;
 
-    const response = await agent.get(`/consultation/${consultationId}`).set("Cookie", sessionCookie);
+    // Agent automatically uses session cookies, no need to set manually
+    const response = await agent.get(`/consultation/${consultationId}`);
 
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultation found");
@@ -59,7 +58,7 @@ describe("Patient Case Consultation API", () => {
 
   it("should get all consultations", async () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const response = await agent.get(`/consultations/case/${caseId}`).set("Cookie", sessionCookie);
+    const response = await agent.get(`/consultations/case/${caseId}`);
     expect(response.status).toBe(StatusCodes.OK);
     expect(response.body.message).toBe("Consultations retrieved successfully");
     expect(Array.isArray(response.body.responseObject)).toBe(true);
@@ -79,7 +78,7 @@ describe("Patient Case Consultation API", () => {
     newConsultation._id = undefined; // Reset _id to undefined to create a new consultation
 
     // create a new form access code
-    const createCodeResponse = await agent.post("/form-access-code/addCodes/1").set("Cookie", sessionCookie);
+    const createCodeResponse = await agent.post("/form-access-code/addCodes/1");
     expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
     expect(createCodeResponse.body.message).toBe("Codes created successfully");
     expect(createCodeResponse.body.responseObject).toBeDefined();

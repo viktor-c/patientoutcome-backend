@@ -8,8 +8,10 @@ import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import type { ObjectId } from "mongoose";
 
-import { loginUserWithRole, logoutUserWithCookie } from "@/utils/unitTesting";
+import { loginUserAgent, loginUserWithRole, logoutUser, logoutUserWithCookie } from "@/utils/unitTesting";
 import type TestAgent from "supertest/lib/agent";
+
+import { z } from "zod";
 
 describe("User API Endpoints", () => {
   // seed users and all registration codes before all tests
@@ -57,9 +59,9 @@ describe("User API Endpoints", () => {
   });
   describe("GET /user", () => {
     it("should return a list of users, when at least admin is logged in", async () => {
-      const { agent, sessionCookie } = await loginUserWithRole("admin");
+      const agent = await loginUserAgent("admin");
       // Act
-      const response = await agent.get("/user").set("Cookie", sessionCookie);
+      const response = await agent.get("/user");
       const responseBody: ServiceResponse<User[]> = response.body;
 
       // Assert
@@ -69,13 +71,13 @@ describe("User API Endpoints", () => {
       expect(responseBody.responseObject.length).toEqual(userRepository.mockUsers.length);
       responseBody.responseObject.forEach((user, index) => compareUsers(userRepository.mockUsers[index] as User, user));
 
-      // logout user to clear session cookie
-      await logoutUserWithCookie(agent, sessionCookie);
+      // logout user to clear session
+      await logoutUser(agent);
     });
     it("should return error, when not admin is logged in", async () => {
-      const { agent, sessionCookie } = await loginUserWithRole("doctor");
+      const agent = await loginUserAgent("doctor");
       // Act
-      const response = await agent.get("/user").set("Cookie", sessionCookie);
+      const response = await agent.get("/user");
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -84,8 +86,8 @@ describe("User API Endpoints", () => {
       expect(responseBody.message).toContain("Forbidden");
       expect(responseBody.responseObject).toBeUndefined();
 
-      // logout user to clear session cookie
-      await logoutUserWithCookie(agent, sessionCookie);
+      // logout user to clear session
+      await logoutUser(agent);
     });
     it("should return an error, when no user is logged in", async () => {
       const response = await request(app).get("/user");
@@ -95,9 +97,9 @@ describe("User API Endpoints", () => {
 
   describe("GET /user/kiosk-users", () => {
     it("should return a list of kiosk users for authenticated users", async () => {
-      const { agent, sessionCookie } = await loginUserWithRole("student");
+      const agent = await loginUserAgent("student");
       // Act
-      const response = await agent.get("/user/kiosk-users").set("Cookie", sessionCookie);
+      const response = await agent.get("/user/kiosk-users");
       const responseBody: ServiceResponse<User[]> = response.body;
 
       // Assert
@@ -110,14 +112,14 @@ describe("User API Endpoints", () => {
         expect(user.roles).toContain("kiosk");
       });
 
-      // logout user to clear session cookie
-      await logoutUserWithCookie(agent, sessionCookie);
+      // logout user to clear session
+      await logoutUser(agent);
     });
 
     it("should return kiosk users for any authenticated user role", async () => {
-      const { agent, sessionCookie } = await loginUserWithRole("doctor");
+      const agent = await loginUserAgent("doctor");
       // Act
-      const response = await agent.get("/user/kiosk-users").set("Cookie", sessionCookie);
+      const response = await agent.get("/user/kiosk-users");
       const responseBody: ServiceResponse<User[]> = response.body;
 
       // Assert
@@ -125,8 +127,8 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Kiosk users found");
 
-      // logout user to clear session cookie
-      await logoutUserWithCookie(agent, sessionCookie);
+      // logout user to clear session
+      await logoutUser(agent);
     });
 
     it("should return an error when no user is logged in", async () => {
@@ -138,12 +140,8 @@ describe("User API Endpoints", () => {
   // get user by id
   describe("GET /user/:id", () => {
     let adminTestAgent: TestAgent;
-    let adminSessionCookie: string;
     beforeAll(async () => {
-      const { agent, sessionCookie } = await loginUserWithRole("admin");
-      // Save the agent and sessionCookie for use in tests
-      adminTestAgent = agent;
-      adminSessionCookie = sessionCookie;
+      adminTestAgent = await loginUserAgent("admin");
     });
 
     it("should return a user for a valid ID, when admin is logged in", async () => {
@@ -151,7 +149,7 @@ describe("User API Endpoints", () => {
       const testId = userRepository.mockUsers[0]._id;
 
       // Act
-      const response = await adminTestAgent.get(`/user/${testId}`).set("Cookie", adminSessionCookie);
+      const response = await adminTestAgent.get(`/user/${testId}`);
       const responseBody: ServiceResponse<User> = response.body;
 
       // Assert
@@ -165,7 +163,7 @@ describe("User API Endpoints", () => {
       const testId = "123412341234123412341234";
 
       // Act
-      const response = await adminTestAgent.get(`/user/${testId}`).set("Cookie", adminSessionCookie);
+      const response = await adminTestAgent.get(`/user/${testId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -180,7 +178,7 @@ describe("User API Endpoints", () => {
       const testId = Number.MAX_SAFE_INTEGER;
 
       // Act
-      const response = await adminTestAgent.get(`/user/${testId}`).set("Cookie", adminSessionCookie);
+      const response = await adminTestAgent.get(`/user/${testId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -193,7 +191,7 @@ describe("User API Endpoints", () => {
     it("should return a BAD REQUEST for invalid ID format", async () => {
       // Act
       const invalidInput = "abc";
-      const response = await adminTestAgent.get(`/user/${invalidInput}`).set("Cookie", adminSessionCookie);
+      const response = await adminTestAgent.get(`/user/${invalidInput}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -207,30 +205,19 @@ describe("User API Endpoints", () => {
   // update user
   describe("PUT /user/update/:id", () => {
     const mockUser = userRepository.mockUsers[0];
-    let agent: any;
-    let sessionCookie: string;
-
-    beforeAll(async () => {
-      agent = request.agent(app);
-      // Login to get session
-      const loginRes = await agent.post("/user/login").send({
-        username: mockUser.username,
-        password: "password123#124", // plaintext for first user
-      });
-      expect(loginRes.status).toBe(StatusCodes.OK);
-      sessionCookie = loginRes.headers["set-cookie"]?.[0];
-    });
 
     it("should update a user successfully", async () => {
+      const agent = await loginUserAgent("admin");
       // Arrange
       //first login user, use useragent to save session cookie, then update the user
       const updatedData = { name: "Updated Name" };
       const originalData = { name: userRepository.mockUsers[0].name };
       const expectedUser = userRepository.mockUsers[0] as User;
+      const originalName = expectedUser.name; // Store original name
       expectedUser.name = updatedData.name;
 
       // Act
-      const response = await agent.put("/user/update").set("Cookie", sessionCookie).send(updatedData);
+      const response = await agent.put("/user/update").send(updatedData);
       const responseBody: ServiceResponse = response.body;
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
@@ -238,13 +225,17 @@ describe("User API Endpoints", () => {
       expect(responseBody.message).toContain("User updated successfully");
       expect(responseBody.responseObject).toBeDefined();
       expect(responseBody.responseObject).toHaveProperty("name", updatedData.name);
+
+      // Restore original data to avoid affecting other tests
+      expectedUser.name = originalName;
     });
 
     it("should return an error if id is not valid", async () => {
+      const agent = await loginUserAgent("admin");
       const updatedData = { name: "Updated Name", _id: "invalid" };
 
       // Act
-      const response = await agent.put("/user/update").set("Cookie", sessionCookie).send(updatedData);
+      const response = await agent.put("/user/update").send(updatedData);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -255,13 +246,13 @@ describe("User API Endpoints", () => {
     });
 
     it("should return an error if user is not logged in", async () => {
+      const agent = await loginUserAgent("admin");
       //first logout the user
-      const responseLogout = await agent.get("/user/logout").set("Cookie", sessionCookie);
-      expect(responseLogout.statusCode).toEqual(StatusCodes.OK);
+      await logoutUser(agent);
 
       // Arrange
       const updatedData = { name: "Updated Name" };
-      const response = await agent.put("/user/update").set("Cookie", sessionCookie).send(updatedData);
+      const response = await agent.put("/user/update").send(updatedData);
 
       expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
     });
@@ -316,22 +307,10 @@ describe("User API Endpoints", () => {
 
   describe("PUT /user/change-password", () => {
     const mockUser = userRepository.mockUsers[0];
-    let agent: any;
-    let sessionCookie: string;
-
-    beforeAll(async () => {
-      agent = request.agent(app);
-      // Login to get session
-      const loginRes = await agent.post("/user/login").send({
-        username: mockUser.username,
-        password: "password123#124", // plaintext for first user
-      });
-      expect(loginRes.status).toBe(StatusCodes.OK);
-      sessionCookie = loginRes.headers["set-cookie"]?.[0];
-    });
 
     it("should fail if current password is incorrect", async () => {
-      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+      const agent = await loginUserAgent("admin");
+      const res = await agent.put("/user/change-password").send({
         userId: mockUser._id,
         currentPassword: "wrongPassword",
         newPassword: "newPassword!456",
@@ -342,7 +321,8 @@ describe("User API Endpoints", () => {
     });
 
     it("should fail if newPassword and confirmPassword do not match", async () => {
-      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+      const agent = await loginUserAgent("admin");
+      const res = await agent.put("/user/change-password").send({
         userId: mockUser._id,
         currentPassword: "password123#124",
         newPassword: "newPassword!456",
@@ -363,7 +343,8 @@ describe("User API Endpoints", () => {
       expect(res.body.message).toContain("Unauthorized");
     });
     it("should change password successfully for logged in user", async () => {
-      const res = await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+      const agent = await loginUserAgent("admin");
+      const res = await agent.put("/user/change-password").send({
         userId: mockUser._id,
         currentPassword: "password123#124",
         newPassword: "newPassword!456",
@@ -373,14 +354,12 @@ describe("User API Endpoints", () => {
       expect(res.body.message).toContain("Password changed successfully");
 
       // revert password to original value
-      await agent.put("/user/change-password").set("Cookie", sessionCookie).send({
+      await agent.put("/user/change-password").send({
         userId: mockUser._id,
         currentPassword: "newPassword!456",
         newPassword: "password123#124",
         confirmPassword: "password123#124",
       });
-      expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.message).toContain("Password changed successfully");
     });
   });
 });

@@ -1,6 +1,6 @@
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
-import { loginUserWithRole } from "@/utils/unitTesting";
+import { loginUserAgent, logoutUser } from "@/utils/unitTesting";
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, test } from "vitest";
@@ -116,28 +116,23 @@ describe("POST /user/register", () => {
   });
   afterAll(async () => {
     //login as admin to delete the test user, use login
-    const { agent, sessionCookie } = await loginUserWithRole("admin");
+    const agent = await loginUserAgent("admin");
     // delete the test user
-    const response = await agent.delete(`/user/username/${validNewUserData.username}`).set("Cookie", sessionCookie);
+    const response = await agent.delete(`/user/username/${validNewUserData.username}`);
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(response.body.success).toBeTruthy();
     expect(response.body.message).toContain("User deleted successfully");
 
     //logout admin user
-    const logoutResponse = await agent.get("/user/logout").set("Cookie", sessionCookie);
-    expect(logoutResponse.statusCode).toEqual(StatusCodes.OK);
-    expect(logoutResponse.body.success).toBeTruthy();
+    await logoutUser(agent);
   });
 
   //for use deletion we need ACL
   describe("DELETE /user/username/:username", () => {
     let adminAgent: request.Agent;
-    let adminSessionCookie: string;
     beforeAll(async () => {
       //login as admin to try deleting non existing users
-      const { agent, sessionCookie } = await loginUserWithRole("admin");
-      adminAgent = agent;
-      adminSessionCookie = sessionCookie;
+      adminAgent = await loginUserAgent("admin");
     });
 
     it("should return not found if user does not exist", async () => {
@@ -145,9 +140,7 @@ describe("POST /user/register", () => {
       const nonexistentUsername = "sadf4";
 
       // Act
-      const response = await adminAgent
-        .delete(`/user/username/${nonexistentUsername}`)
-        .set("Cookie", adminSessionCookie);
+      const response = await adminAgent.delete(`/user/username/${nonexistentUsername}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -158,9 +151,7 @@ describe("POST /user/register", () => {
     });
     afterAll(async () => {
       //logout admin user
-      const logoutResponse = await adminAgent.get("/user/logout").set("Cookie", adminSessionCookie);
-      expect(logoutResponse.statusCode).toEqual(StatusCodes.OK);
-      expect(logoutResponse.body.success).toBeTruthy();
+      await logoutUser(adminAgent);
     });
   });
 });

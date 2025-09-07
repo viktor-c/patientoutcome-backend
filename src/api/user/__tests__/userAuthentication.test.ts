@@ -2,8 +2,8 @@ import { userRepository } from "@/api/user/userRepository";
 import { app } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
-
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 describe("User Authentication", () => {
   let userSessions: Array<{ TestAgent: any; sessionKey: string }> = [];
 
@@ -44,17 +44,19 @@ describe("User Authentication", () => {
         .post("/user/login")
         .send({ username: user.username, password: "password123#124" });
       expect(loginResponse.status).toBe(200);
-      // Extract session cookie
-      const sessionCookie = loginResponse.headers["set-cookie"]?.[0];
-      userSessions.push({ TestAgent: agent, sessionKey: sessionCookie });
+
+      // Store the agent (which maintains the session automatically)
+      userSessions.push({ TestAgent: agent, sessionKey: "" });
     }
     expect(userSessions.length).toBe(userRepository.mockUsers.length);
   });
+
   it("should logout all users", async () => {
     expect(userSessions.length).toBeGreaterThan(0);
     // Iterate through each user session and log them out
-    for (const { TestAgent, sessionKey } of userSessions) {
-      const res = await TestAgent.get("/user/logout").set("Cookie", sessionKey);
+    for (const { TestAgent } of userSessions) {
+      // Use the agent directly - it maintains session cookies automatically
+      const res = await TestAgent.get("/user/logout");
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("message");
     }

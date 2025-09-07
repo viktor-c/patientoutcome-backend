@@ -9,7 +9,6 @@ import { type PatientCase, PatientCaseSchema } from "../patientCaseModel";
 describe("PatientCase API", () => {
   const mockUser = userRepository.mockUsers[0];
   let agent: any;
-  let sessionCookie: string;
 
   // seed the mongodb table "patientcases"; if it fails, then fail all tests
   beforeAll(async () => {
@@ -19,14 +18,14 @@ describe("PatientCase API", () => {
         throw new Error("Failed to insert mock data");
       }
 
-      // Login first user to get session
+      // Login first user to get session - agent automatically handles session cookies
       agent = request.agent(app);
       const loginRes = await agent.post("/user/login").send({
         username: mockUser.username,
         password: "password123#124", // plaintext for first user
       });
-      if (loginRes.status === StatusCodes.OK) {
-        sessionCookie = loginRes.headers["set-cookie"]?.[0];
+      if (loginRes.status !== StatusCodes.OK) {
+        throw new Error("Failed to login user");
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -95,13 +94,13 @@ describe("PatientCase API", () => {
     };
 
     const patientId = newCase.patient;
-    const createRes = await agent.post(`/patient/${patientId}/case`).set("Cookie", sessionCookie).send(newCase);
+    const createRes = await agent.post(`/patient/${patientId}/case`).send(newCase);
     expect(createRes.status).toBe(201);
     expect(createRes.body.responseObject).toHaveProperty("_id");
     expect(createRes.body.responseObject.patient).toEqual(patientId);
 
     const caseId = createRes.body.responseObject._id;
-    const deleteRes = await agent.delete(`/patient/${patientId}/case/${caseId}`).set("Cookie", sessionCookie);
+    const deleteRes = await agent.delete(`/patient/${patientId}/case/${caseId}`);
     expect(deleteRes.status).toBe(204);
     expect(deleteRes.body.responseObject).toBeUndefined();
   });
@@ -134,17 +133,12 @@ describe("PatientCase API", () => {
       note: "New note text",
     };
 
-    const postRes = await agent
-      .post(`/patient/${patientId}/case/${caseId}/note`)
-      .set("Cookie", sessionCookie)
-      .send(newNote);
+    const postRes = await agent.post(`/patient/${patientId}/case/${caseId}/note`).send(newNote);
     expect(postRes.status).toBe(201);
     expect(postRes.body.responseObject.notes[1]).toHaveProperty("note", "New note text");
 
     const noteId = postRes.body.responseObject._id;
-    const deleteRes = await agent
-      .delete(`/patient/${patientId}/case/${caseId}/note/${noteId}`)
-      .set("Cookie", sessionCookie);
+    const deleteRes = await agent.delete(`/patient/${patientId}/case/${caseId}/note/${noteId}`);
     expect(deleteRes.status).toBe(204);
   });
 
@@ -157,10 +151,7 @@ describe("PatientCase API", () => {
     };
 
     // Use authenticated agent with session cookie
-    const postRes = await agent
-      .post(`/patient/${patientId}/case/${caseId}/note`)
-      .set("Cookie", sessionCookie)
-      .send(newNoteWithoutCreatedBy);
+    const postRes = await agent.post(`/patient/${patientId}/case/${caseId}/note`).send(newNoteWithoutCreatedBy);
 
     expect(postRes.status).toBe(201);
 

@@ -1,6 +1,7 @@
 import { app } from "@/server";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 describe("Kiosk API", () => {
   describe("GET /kiosk/consultation", () => {

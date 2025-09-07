@@ -2,7 +2,7 @@ import { codeRepository } from "@/api/code/codeRepository";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
-import { loginUserWithRole } from "@/utils/unitTesting";
+import { loginUserAgent } from "@/utils/unitTesting";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
@@ -12,21 +12,18 @@ import type { Code } from "../codeModel";
 
 describe("Code API Endpoints", () => {
   let agent: TestAgent;
-  let sessionCookie: string;
 
   beforeAll(async () => {
-    // Login with MFA role
-    const { agent: testAgent, sessionCookie: cookie } = await loginUserWithRole("mfa");
-    agent = testAgent;
-    sessionCookie = cookie;
+    // Login with MFA role and get agent that handles sessions automatically
+    agent = await loginUserAgent("mfa");
 
     // Seed the database with mock data
-    const res = await agent.get("/seed/form-access-codes").set("Cookie", sessionCookie);
+    const res = await agent.get("/seed/form-access-codes");
     if (res.status !== StatusCodes.OK) {
       throw new Error("Failed to seed codes");
     }
     //also need to seed consultations, because it depends on them
-    const resConsultations = await agent.get("/seed/consultation").set("Cookie", sessionCookie);
+    const resConsultations = await agent.get("/seed/consultation");
     if (resConsultations.status !== StatusCodes.OK) {
       throw new Error("Failed to seed consultations");
     }
@@ -35,7 +32,7 @@ describe("Code API Endpoints", () => {
   describe("GET /form-access-code/all", () => {
     it("should retrieve all codes", async () => {
       // Act
-      const response = await agent.get("/form-access-code/all").set("Cookie", sessionCookie);
+      const response = await agent.get("/form-access-code/all");
       const responseBody: ServiceResponse<Code[]> = response.body;
 
       // Assert
@@ -51,7 +48,7 @@ describe("Code API Endpoints", () => {
     //   await codeRepository.deleteAllCodes(); // Assuming this method exists to clear the database
 
     //   // Act
-    //   const response = await agent.get("/form-access-code/all").set("Cookie", sessionCookie);
+    //   const response = await agent.get("/form-access-code/all");
     //   const responseBody: ServiceResponse<Code[]> = response.body;
 
     //   // Assert
@@ -64,7 +61,7 @@ describe("Code API Endpoints", () => {
 
   describe("CodeService - getAllAvailableCodes", () => {
     it("should return available codes successfully", async () => {
-      const response = await agent.get("/form-access-code/all-available").set("Cookie", sessionCookie);
+      const response = await agent.get("/form-access-code/all-available");
       const responseBody: ServiceResponse<Code[]> = response.body;
 
       // Assert
@@ -81,9 +78,7 @@ describe("Code API Endpoints", () => {
       const testCode = codeRepository.codeMockData[0].code;
       const consultationId = consultationRepository.mockConsultations[4]._id;
       // Act
-      const response = await agent
-        .put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/activate/${testCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.CONFLICT);
@@ -97,9 +92,7 @@ describe("Code API Endpoints", () => {
       const invalidCode = "677da5efcb4569adaa655560";
       const consultationId = consultationRepository.mockConsultations[4]._id;
       // Act
-      const response = await agent
-        .put(`/form-access-code/activate/${invalidCode}/consultation/${consultationId}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/activate/${invalidCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -113,9 +106,7 @@ describe("Code API Endpoints", () => {
       const internalCode = codeRepository.codeMockData[0]._id;
       const consultationId = `${consultationRepository.mockConsultations[0]._id}INVALID`; // Invalid consultationId
       // Act
-      const response = await agent
-        .put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -129,9 +120,7 @@ describe("Code API Endpoints", () => {
       const internalCode = codeRepository.codeMockData[1]._id;
       const consultationId = new mongoose.Types.ObjectId(); // Nonexistent consultationId
       // Act
-      const response = await agent
-        .put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -147,9 +136,7 @@ describe("Code API Endpoints", () => {
 
       const newCode = codeRepository.codeMockData[2]._id;
       // Act
-      const response = await agent
-        .put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.CONFLICT);
@@ -162,7 +149,7 @@ describe("Code API Endpoints", () => {
     let addedCodes: Code[];
     it("should add 5 codes using backend 'addCodes' and verify their initial state", async () => {
       // Add 5 codes
-      const addCodesResponse = await agent.post("/form-access-code/addCodes/5").set("Cookie", sessionCookie);
+      const addCodesResponse = await agent.post("/form-access-code/addCodes/5");
       expect(addCodesResponse.status).toBe(StatusCodes.CREATED);
       expect(Array.isArray(addCodesResponse.body.responseObject)).toBe(true);
       expect(addCodesResponse.body.responseObject.length).toBe(5);
@@ -182,9 +169,9 @@ describe("Code API Endpoints", () => {
       expect(consultation).toBeDefined();
       expect(consultation._id).toBeDefined();
 
-      const activateResponse = await agent
-        .put(`/form-access-code/activate/${codeToActivate.code}/consultation/${consultation._id}`)
-        .set("Cookie", sessionCookie);
+      const activateResponse = await agent.put(
+        `/form-access-code/activate/${codeToActivate.code}/consultation/${consultation._id}`,
+      );
 
       expect(activateResponse.status).toBe(StatusCodes.OK);
       expect(activateResponse.body.responseObject.activatedOn).toBeDefined();
@@ -196,9 +183,7 @@ describe("Code API Endpoints", () => {
 
     it("should deactivate the code", async () => {
       const codeToDeactivate = addedCodes[0];
-      const deactivateResponse = await agent
-        .put(`/form-access-code/deactivate/${codeToDeactivate.code}`)
-        .set("Cookie", sessionCookie);
+      const deactivateResponse = await agent.put(`/form-access-code/deactivate/${codeToDeactivate.code}`);
 
       expect(deactivateResponse.status).toBe(StatusCodes.OK);
       expect(deactivateResponse.body.success).toBeTruthy();
@@ -213,7 +198,7 @@ describe("Code API Endpoints", () => {
       const testCode = addedCodes[0].code;
 
       // Act
-      const response = await agent.delete(`/form-access-code/${testCode}`).set("Cookie", sessionCookie);
+      const response = await agent.delete(`/form-access-code/${testCode}`);
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.NO_CONTENT);
@@ -224,7 +209,7 @@ describe("Code API Endpoints", () => {
       const invalidCode = "INV12";
 
       // Act
-      const response = await agent.delete(`/form-access-code/${invalidCode}`).set("Cookie", sessionCookie);
+      const response = await agent.delete(`/form-access-code/${invalidCode}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -235,7 +220,7 @@ describe("Code API Endpoints", () => {
 
     it("cannot deactivate an non existent code", async () => {
       const invalidCode = "INV12";
-      const response = await agent.put(`/form-access-code/deactivate/${invalidCode}`).set("Cookie", sessionCookie);
+      const response = await agent.put(`/form-access-code/deactivate/${invalidCode}`);
       const responseBody: ServiceResponse = response.body;
 
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
@@ -251,7 +236,7 @@ describe("Code API Endpoints", () => {
       const testInternalCode = codeRepository.codeMockData[0]._id;
 
       // Act
-      const response = await agent.get(`/form-access-code/byId/${testInternalCode}`).set("Cookie", sessionCookie);
+      const response = await agent.get(`/form-access-code/byId/${testInternalCode}`);
       const responseBody: ServiceResponse<Code> = response.body;
 
       // Assert
@@ -266,7 +251,7 @@ describe("Code API Endpoints", () => {
       const invalidInternalCode = "123e4567-e89b-12d3-a456-426614174999";
 
       // Act
-      const response = await agent.get(`/form-access-code/byId/${invalidInternalCode}`).set("Cookie", sessionCookie);
+      const response = await agent.get(`/form-access-code/byId/${invalidInternalCode}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
@@ -279,9 +264,7 @@ describe("Code API Endpoints", () => {
       const nonExistentInternalCode = new mongoose.Types.ObjectId();
 
       // Act
-      const response = await agent
-        .get(`/form-access-code/byId/${nonExistentInternalCode}`)
-        .set("Cookie", sessionCookie);
+      const response = await agent.get(`/form-access-code/byId/${nonExistentInternalCode}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert
