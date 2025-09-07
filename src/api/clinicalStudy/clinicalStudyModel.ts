@@ -1,10 +1,8 @@
 import { commonValidations } from "@/common/utils/commonValidation";
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
 
-extendZodWithOpenApi(z);
 // Define the ClinicalStudy schema
 export const ClinicalStudySchema = z.object({
   _id: zId().optional(),

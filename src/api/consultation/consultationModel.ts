@@ -4,6 +4,8 @@ import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
 import mongoose, { Schema } from "mongoose";
 import { z } from "zod";
 
+// Extend zod with OpenAPI support
+
 // Define the Image schema for creation (allows optional createdBy in notes)
 export const CreateImageSchema = z.object({
   path: z.string(),

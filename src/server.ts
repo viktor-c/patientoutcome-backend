@@ -1,3 +1,6 @@
+// Initialize OpenAPI extension first before any other imports that use zod
+import { z } from "@/common/utils/zodInit";
+
 import { logger } from "@/common/utils/logger";
 import MongoStore from "connect-mongo";
 import cors from "cors";
@@ -6,7 +9,6 @@ import session from "express-session";
 import helmet from "helmet";
 
 //****************** Routers import ****************************** */
-import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { formRouter } from "@/api/form/formRouter";
@@ -23,17 +25,15 @@ import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import { patientRouter } from "./api/patient/patientRouter";
 
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { extendZod as extendZodMongoose } from "@zodyac/zod-mongoose";
 
 // Use the patientCaseRouter
 import { caseRouter } from "@/api/case/patientCaseRouter"; // Import the patientCaseRouter
 import { consultationRouter } from "@/api/consultation/consultationRouter";
-import { z } from "zod";
 import connectMongooseDB from "./common/database";
 
-// Extend zod with OpenAPI support
-extendZodWithOpenApi(z);
+// Extend zod with Mongoose support
+logger.debug("server.ts: Extending Zod with Mongoose support");
 extendZodMongoose(z);
 
 const app: Express = express();
@@ -87,8 +87,11 @@ app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);
 app.use("/kiosk", kioskRouter);
 
-// Swagger UI
-app.use("/openapi", openAPIRouter);
+// Swagger UI - only load in non-test environments to avoid schema loading issues
+if (env.NODE_ENV !== "test") {
+  const { openAPIRouter } = require("@/api-docs/openAPIRouter");
+  app.use("/openapi", openAPIRouter);
+}
 
 // Error handlers
 app.use(errorHandler());

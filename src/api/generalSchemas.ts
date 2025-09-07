@@ -1,8 +1,6 @@
-import { OpenAPIRegistry, extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { z } from "@/common/utils/zodInit";
+import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { zId } from "@zodyac/zod-mongoose";
-import { z } from "zod";
-
-extendZodWithOpenApi(z);
 
 export const dateSchema = z.coerce.date();
 // export const dateSchema = z.string().datetime().transform((str) => new Date(str).toISOString());

@@ -3,6 +3,8 @@ import { zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";
 
+// Extend zod with OpenAPI support
+
 export interface Questionnaire {
   [key: string]: number | null;
 }

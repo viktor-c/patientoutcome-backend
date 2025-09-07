@@ -1,4 +1,5 @@
 import { FormTemplate } from "@/api/formtemplate/formTemplateModel";
+import { CreateNoteSchema, NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
 import { z } from "zod";

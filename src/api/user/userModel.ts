@@ -1,13 +1,8 @@
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
-
 import { zId, zodSchema, zodSchemaRaw } from "@zodyac/zod-mongoose";
 import mongoose, { model, Mongoose } from "mongoose";
+import { z } from "zod";
 
 import { commonValidations } from "@/common/utils/commonValidation";
-
-// Extend zod with OpenAPI support
-extendZodWithOpenApi(z);
 
 // Define the UserNoPassword schema
 export const UserNoPasswordSchema = z.object({
