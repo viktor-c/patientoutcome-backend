@@ -49,9 +49,8 @@ describe("User Authentication", () => {
       userSessions.push({ TestAgent: agent, sessionKey: "" });
     }
     expect(userSessions.length).toBe(userRepository.mockUsers.length);
-  });
 
-  it("should logout all users", async () => {
+    // now log out all users
     expect(userSessions.length).toBeGreaterThan(0);
     // Iterate through each user session and log them out
     for (const { TestAgent } of userSessions) {
@@ -61,6 +60,7 @@ describe("User Authentication", () => {
       expect(res.body).toHaveProperty("message");
     }
   });
+
   afterAll(async () => {
     // Clear all user sessions after tests
     const res = await request(app).get("/seed/clear-all-sessions");
