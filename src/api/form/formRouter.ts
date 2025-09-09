@@ -1,4 +1,5 @@
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { ServiceResponseSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -12,6 +13,10 @@ export const formRegistry = new OpenAPIRegistry();
 
 // Register the Form schema for OpenAPI
 formRegistry.register("Form", Form);
+
+// Create a response schema for getFormById that matches the ServiceResponse structure
+const GetFormByIdResponseSchema = ServiceResponseSchema(Form);
+formRegistry.register("GetFormByIdResponse", GetFormByIdResponseSchema);
 
 const formIdSchema = z.object({
   params: z.object({
@@ -42,9 +47,14 @@ formRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: createFormSchema.shape.body,
-      description: "Success",
+      schema: Form,
+      description: "Form retrieved successfully",
       statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Form not found",
+      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -78,8 +88,8 @@ formRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: createFormSchema.shape.body,
-      description: "Success",
+      schema: createFormSchema,
+      description: "Form created successfully",
       statusCode: 201,
     },
     {
@@ -107,8 +117,8 @@ formRegistry.registerPath({
   summary: "Get all forms",
   responses: createApiResponses([
     {
-      schema: z.array(createFormSchema.shape.body),
-      description: "Success",
+      schema: z.array(Form),
+      description: "Forms retrieved successfully",
       statusCode: 200,
     },
     {
@@ -125,36 +135,6 @@ formRegistry.registerPath({
 });
 
 router.get("/forms", formController.getForms);
-
-// Register the path for getting a form by ID
-formRegistry.registerPath({
-  method: "get",
-  path: "/form/{formId}",
-  tags: ["form"],
-  operationId: "getForm",
-  description: "Get a form by ID",
-  summary: "Get a form by ID",
-  request: { params: formIdSchema.shape.params },
-  responses: createApiResponses([
-    {
-      schema: createFormSchema.shape.body,
-      description: "Success",
-      statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "An error occurred while retrieving the form.",
-      statusCode: 500,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Validation error",
-      statusCode: 400,
-    },
-  ]),
-});
-
-router.get("/form/:formId", validateRequest(formIdSchema), formController.getForm);
 
 // Register the path for updating a form
 formRegistry.registerPath({
@@ -175,8 +155,13 @@ formRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: Form,
-      description: "Success",
+      description: "Form updated successfully",
       statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Form not found",
+      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -205,8 +190,13 @@ formRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.object({ message: z.string() }),
-      description: "Success",
+      description: "Form deleted successfully",
       statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Form not found",
+      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
