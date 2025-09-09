@@ -14,12 +14,6 @@ class FormController {
     return handleServiceResponse(serviceResponse, res);
   };
 
-  public getForm: RequestHandler = async (req: Request, res: Response) => {
-    const { formId } = req.params;
-    const serviceResponse = await formService.getFormById(formId);
-    return handleServiceResponse(serviceResponse, res);
-  };
-
   public createForm: RequestHandler = async (req: Request, res: Response) => {
     const formData = req.body;
     const serviceResponse = await formService.createForm(formData);

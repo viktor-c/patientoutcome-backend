@@ -119,6 +119,47 @@ export class FormRepository {
         formData: formTemplateRepository.mockFormTemplateData[1].formData,
       });
 
+      // forms for the second consultation
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d55",
+        // patientId: "6771d9d410ede2552b7bba40",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a2",
+        formTemplateId: "67b4e612d0feb4ad99ae2e83",
+        score: undefined,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[0].title,
+        description: formTemplateRepository.mockFormTemplateData[0].description,
+        markdownHeader: formTemplateRepository.mockFormTemplateData[0].markdownHeader,
+        markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
+        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
+        formData: formTemplateRepository.mockFormTemplateData[0].formData,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d56",
+        // patientId: "6771d9d410ede2552b7bba40",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a2",
+        formTemplateId: "67b4e612d0feb4ad99ae2e84",
+        score: undefined,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[1].title,
+        description: formTemplateRepository.mockFormTemplateData[1].description,
+        markdownHeader: formTemplateRepository.mockFormTemplateData[1].markdownHeader,
+        markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
+        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
+        formData: formTemplateRepository.mockFormTemplateData[1].formData,
+      });
+
       logger.info("Mock forms populated with template data successfully");
     } catch (error) {
       logger.error({ error }, "Error populating mock forms with template data");
