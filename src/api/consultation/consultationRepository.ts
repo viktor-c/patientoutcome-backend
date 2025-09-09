@@ -140,7 +140,7 @@ export class ConsultationRepository {
           note: faker.lorem.paragraph(),
         },
       ],
-      proms: [],
+      proms: ["6832337195b15e2d7e223d55", "6832337395b15e2d7e223d56"],
       images: [],
       visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
     },

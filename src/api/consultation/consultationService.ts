@@ -38,8 +38,9 @@ export class ConsultationService {
       }
       //after creating the consultation, we can check if the code is valid
       if (data.formAccessCode) {
-        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
-
+        //BUG we allow both code string and code id for now
+        // let code = await this.codeRepository.findByCode(data.formAccessCode.toString());
+        const code = await this.codeRepository.findById(data.formAccessCode.toString());
         if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
