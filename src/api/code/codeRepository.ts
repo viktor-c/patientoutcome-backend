@@ -124,7 +124,7 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
-  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
+  async activateCode(newCodeId: string, consultationId: string): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -133,8 +133,9 @@ export class CodeRepository {
       // check if there is already an active code for this consultation
       if (consultation.formAccessCode) {
         // Find the current active code to compare with the incoming code
+        // BUG what is better, code param as string = external Code or internal id?
         const currentActiveCode = await codeModel.findById(consultation.formAccessCode);
-        if (currentActiveCode && currentActiveCode.code !== codeString) {
+        if (currentActiveCode && currentActiveCode.id !== newCodeId) {
           // if the consultation already has an active code, return a message
           // this is to prevent activating a new code for the same consultation
           // if you want to change the code, you need to deactivate the old one first
@@ -146,7 +147,7 @@ export class CodeRepository {
 
       // check if the code exists, return this code and use it
       //BUG if we populate consultationId, we will get no code, why ?
-      const code = await codeModel.findOne({ code: codeString }); //.populate(["consultationId"]);
+      const code = await codeModel.findById(newCodeId); //.populate(["consultationId"]);
       if (!code) {
         return Promise.resolve("Code not found");
       }
