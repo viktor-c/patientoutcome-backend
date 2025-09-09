@@ -20,7 +20,7 @@ export class PatientRepository {
       return Promise.reject(error);
     }
     try {
-      const patient = await patientModel.findById(id).lean();
+      const patient = await patientModel.findById(id).populate(["cases"]);
       return patient;
     } catch (error) {
       return Promise.reject(error);
