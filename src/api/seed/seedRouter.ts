@@ -1,3 +1,4 @@
+import { BlueprintRepository } from "@/api/blueprint/blueprintRepository";
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { ClinicalStudyRepository } from "@/api/clinicalStudy/clinicalStudyRepository";
 import { CodeRepository } from "@/api/code/codeRepository";
@@ -17,6 +18,7 @@ import { PatientRepository } from "../patient/patientRepository";
 import { UserRegistrationRepository } from "../user/userRegistrationRepository";
 
 const seedRouter: Router = express.Router();
+const blueprintRepository = new BlueprintRepository();
 const patientRepository = new PatientRepository();
 const patientCaseRepository = new PatientCaseRepository();
 const formTemplateRepository = new FormTemplateRepository();
@@ -212,6 +214,25 @@ seedRouter.get("/kiosks", async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * seed database with mock data for blueprints
+ * @route GET /seed/blueprints
+ */
+seedRouter.get("/blueprints", async (_req: Request, res: Response) => {
+  try {
+    await blueprintRepository.createMockData();
+    const serviceResponse = ServiceResponse.success("Blueprint mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert blueprint mock data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
 seedRouter.get("/user-registration-codes", async (req, res) => {
   try {
     await userRegistrationRepository.createMockUserRegistrationCodes();
@@ -245,6 +266,7 @@ seedRouter.get("/clear-all-sessions", async (_req, res) => {
 
 seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
   try {
+    await blueprintRepository.createMockData();
     await patientRepository.createMockData();
     await patientCaseRepository.createMockPatientCaseData();
     await consultationRepository.createMockData();
@@ -269,6 +291,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
 
 export {
   seedRouter,
+  blueprintRepository,
   patientRepository,
   patientCaseRepository,
   // consultationRepository,

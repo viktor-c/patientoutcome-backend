@@ -9,6 +9,7 @@ import session from "express-session";
 import helmet from "helmet";
 
 //****************** Routers import ****************************** */
+import { blueprintRouter } from "@/api/blueprint/blueprintRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { formRouter } from "@/api/form/formRouter";
@@ -75,6 +76,7 @@ app.use(
 app.use(requestLogger);
 
 // Routes
+app.use("/blueprints", blueprintRouter);
 app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);

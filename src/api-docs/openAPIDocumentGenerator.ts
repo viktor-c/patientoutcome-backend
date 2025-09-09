@@ -10,6 +10,7 @@ import { env } from "@/common/utils/envConfig";
  */
 export function generateOpenAPIDocument() {
   // Only import registries when generating docs to avoid circular dependencies
+  const { blueprintRegistry } = require("@/api/blueprint/blueprintRouter");
   const { patientCaseRegistry } = require("@/api/case/patientCaseRouter");
   const { clinicalStudyRegistry } = require("@/api/clinicalStudy/clinicalStudyRouter");
   const { codeRegistry } = require("@/api/code/codeRouter");
@@ -23,6 +24,7 @@ export function generateOpenAPIDocument() {
   const { userRegistry } = require("@/api/user/userRouter");
 
   const registry = new OpenAPIRegistry([
+    blueprintRegistry,
     codeRegistry,
     healthCheckRegistry,
     userRegistry,
