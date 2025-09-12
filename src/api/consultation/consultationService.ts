@@ -38,8 +38,8 @@ export class ConsultationService {
       }
       //after creating the consultation, we can check if the code is valid
       if (data.formAccessCode) {
-        // Find code by the code string (not by _id)
-        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
+        // Find code by the code ID (not by code string)
+        const code = await this.codeRepository.findById(data.formAccessCode.toString());
         if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
@@ -157,7 +157,7 @@ export class ConsultationService {
         // await this.codeRepository.deactivateCode(originalConsultation.formAccessCode.toString());
       } else if (data.formAccessCode && originalConsultation.formAccessCode?.toString() !== data.formAccessCode) {
         // If a new formAccessCode is provided, check if it exists and is not already activated
-        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
+        const code = await this.codeRepository.findById(data.formAccessCode.toString());
         if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
@@ -304,10 +304,17 @@ export class ConsultationService {
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success(
-        "Form access code retrieved successfully",
-        consultation.formAccessCode?.toString() || null,
-      );
+
+      // If consultation has a formAccessCode (which is now a code ID), get the actual code string
+      if (consultation.formAccessCode) {
+        const code = await this.codeRepository.findById(consultation.formAccessCode.toString());
+        if (!code) {
+          return ServiceResponse.failure("Associated code not found", null, StatusCodes.NOT_FOUND);
+        }
+        return ServiceResponse.success("Form access code retrieved successfully", code.code);
+      }
+
+      return ServiceResponse.success("Form access code retrieved successfully", null);
     } catch (ex) {
       const errorMessage = `Error fetching form access code: ${(ex as Error).message}`;
       logger.error(errorMessage);

@@ -53,6 +53,25 @@ class ConsultationController {
       }
     }
 
+    // Validate and replace formAccessCode with code ID if provided
+    if (consultationData.formAccessCode) {
+      const codeResponse = await codeService.getCode(consultationData.formAccessCode);
+      if (!codeResponse.success || !codeResponse.responseObject) {
+        return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
+      }
+
+      const code = codeResponse.responseObject;
+      if (code.activatedOn) {
+        return handleServiceResponse(
+          ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
+          res,
+        );
+      }
+
+      // Replace the code string with the code's ID
+      consultationData.formAccessCode = code._id?.toString();
+    }
+
     // If consultation has notes and createdBy is empty, use the logged-in user's ID
     if (consultationData.notes && req.session?.userId) {
       this.populateNotesCreatedBy(consultationData.notes, req.session.userId);
@@ -89,6 +108,25 @@ class ConsultationController {
       if (!kioskValidation.success) {
         return handleServiceResponse(kioskValidation, res);
       }
+    }
+
+    // Validate and replace formAccessCode with code ID if provided
+    if (consultationData.formAccessCode) {
+      const codeResponse = await codeService.getCode(consultationData.formAccessCode);
+      if (!codeResponse.success || !codeResponse.responseObject) {
+        return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
+      }
+
+      const code = codeResponse.responseObject;
+      if (code.activatedOn) {
+        return handleServiceResponse(
+          ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
+          res,
+        );
+      }
+
+      // Replace the code string with the code's ID
+      consultationData.formAccessCode = code._id?.toString();
     }
 
     // If consultation has notes and createdBy is empty, use the logged-in user's ID

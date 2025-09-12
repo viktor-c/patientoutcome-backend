@@ -83,9 +83,9 @@ describe("Patient Case Consultation API", () => {
     expect(createCodeResponse.body.message).toBe("Codes created successfully");
     expect(createCodeResponse.body.responseObject).toBeDefined();
 
-    // Assign the created code to the new consultation
+    // Assign the created code string to the new consultation
     const newCode: Code = createCodeResponse.body.responseObject;
-    newConsultation.formAccessCode = newCode._id;
+    newConsultation.formAccessCode = newCode.code;
 
     // Create a new consultation
     const createResponse = await agent.post(`/consultation/case/${caseId}`).send(newConsultation);
