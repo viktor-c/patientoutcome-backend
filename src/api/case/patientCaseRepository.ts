@@ -1,4 +1,6 @@
 import type { User } from "@/api/user/userModel";
+import { env } from "@/common/utils/envConfig";
+import { logger } from "@/common/utils/logger";
 // import { fakerDE as faker } from "@faker-js/faker";
 import { faker } from "@faker-js/faker";
 import mongoose from "mongoose";
@@ -18,7 +20,7 @@ export class PatientCaseRepository {
   // find case by externalId
   async getPatientCaseByExternalId(externalId: string): Promise<PatientCase[] | null> {
     try {
-      return PatientCaseModel.find({ externalId: externalId }).lean() as unknown as Promise<PatientCase>;
+      return PatientCaseModel.find({ externalId: externalId }).lean() as unknown as PatientCase[];
     } catch (error) {
       return Promise.reject(error);
     }
@@ -135,14 +137,6 @@ export class PatientCaseRepository {
     }
   }
 
-  async findCasesBySurgeon(surgeonId: string): Promise<PatientCase[]> {
-    try {
-      return PatientCaseModel.find({ surgeons: surgeonId }).lean() as unknown as Promise<PatientCase[]>;
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
   async findCasesBySupervisor(supervisorId: string): Promise<PatientCase[]> {
     try {
       return await PatientCaseModel.find({ supervisors: supervisorId });
@@ -151,13 +145,6 @@ export class PatientCaseRepository {
     }
   }
 
-  async findSurgeonsByCaseId(caseId: string): Promise<User[]> {
-    try {
-      return PatientCaseModel.findById(caseId).select("surgeons").populate(["surgeons"]) as unknown as Promise<User[]>;
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
   async findSupervisorsByCaseId(caseId: string): Promise<User[]> {
     try {
       return PatientCaseModel.findById(caseId).select("supervisors").populate(["supervisors"]) as unknown as Promise<
@@ -257,7 +244,8 @@ export class PatientCaseRepository {
     { id: 3, type: "general anaesthesia" },
     { id: 4, type: "local" },
   ];
-  public mockPatientCases = [
+
+  private _mockPatientCases = [
     {
       _id: "677da5d8cb4569ad1c65515f",
       externalId: "123456789",
@@ -268,19 +256,8 @@ export class PatientCaseRepository {
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       studyDiagnosisICD10: ["M20.1"],
       __v: 0,
-      surgeries: [
-        {
-          _id: "677da5d8cb4569ad1c65525f",
-          externalId: faker.string.uuid(),
-          diagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-          surgeryDate: faker.date.past().toISOString(),
-          side: "left",
-          roentgenDosis: faker.number.float({ min: 0, max: 100 }),
-          roentgenTime: "00:02:00.000",
-          anaesthesiaType: faker.helpers.arrayElement(this.anaesthesiaTypes),
-          surgeons: ["676336bea497301f6eff8c91"],
-        },
-      ],
+      // Surgeries are now references to Surgery documents
+      surgeries: ["677da5d8cb4569ad1c655260"],
       medicalHistory: faker.lorem.paragraph(),
       notes: [
         {
@@ -302,19 +279,8 @@ export class PatientCaseRepository {
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       studyDiagnosisICD10: ["M20.1"],
       __v: 0,
-      surgeries: [
-        {
-          _id: "677da5efcb4569ad1c655560",
-          externalId: faker.string.uuid(),
-          diagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-          surgeryDate: faker.date.past().toISOString(),
-          side: "none",
-          roentgenDosis: faker.number.float({ min: 0, max: 100 }),
-          roentgenTime: "00:00:03.000",
-          anaesthesiaType: faker.helpers.arrayElement(this.anaesthesiaTypes),
-          surgeons: ["676336bea497301f6eff8c91"],
-        },
-      ],
+      // Surgeries are now references to Surgery documents
+      surgeries: ["677da5d8cb4569ad1c655261"],
       medicalHistory: faker.lorem.paragraph(),
       notes: [
         {
@@ -327,7 +293,19 @@ export class PatientCaseRepository {
       supervisors: ["676336bea497301f6eff8c91"],
     },
   ];
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockPatientCaseData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       // Add code to save mockPatientCases to the database
       await PatientCaseModel.deleteMany({});
@@ -335,5 +313,18 @@ export class PatientCaseRepository {
     } catch (error) {
       return Promise.reject(error);
     }
+  }
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockPatientCases() {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockPatientCases;
   }
 }

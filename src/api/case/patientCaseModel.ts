@@ -6,48 +6,6 @@ import { z } from "zod";
 export const DiagnosisSchema = z.string();
 export type DiagnosisSchema = z.infer<typeof DiagnosisSchema>;
 
-/**
- * This is a schema for a surgery for creation (allows optional createdBy in notes)
- */
-export const CreateSurgerySchema = z.object({
-  _id: zId(),
-  externalId: z.string().optional(),
-  diagnosis: z.array(DiagnosisSchema).optional(),
-  diagnosisICD10: z.array(DiagnosisSchema).optional(),
-  therapy: z.string().optional(),
-  OPSCodes: z.array(z.string()).optional(),
-  side: z.enum(["left", "right", "none"]),
-  surgeryDate: dateSchema,
-  surgeryTime: z.number().optional(),
-  tourniqet: z.number().optional(),
-  anaesthesiaType: AnaesthesiaTypeSchema.optional(),
-  roentgenDosis: z.number().optional(),
-  roentgenTime: z.string().optional(),
-  additionalData: z.array(CreateNoteSchema).optional(),
-  surgeons: z.array(zId("User")),
-});
-
-/**
- * This is a schema for a surgery. It contains the following fields:
- */
-export const SurgerySchema = z.object({
-  _id: zId(),
-  externalId: z.string().optional(),
-  diagnosis: z.array(DiagnosisSchema).optional(),
-  diagnosisICD10: z.array(DiagnosisSchema).optional(),
-  therapy: z.string().optional(),
-  OPSCodes: z.array(z.string()).optional(),
-  side: z.enum(["left", "right", "none"]),
-  surgeryDate: dateSchema,
-  surgeryTime: z.number().optional(),
-  tourniqet: z.number().optional(),
-  anaesthesiaType: AnaesthesiaTypeSchema.optional(),
-  roentgenDosis: z.number().optional(),
-  roentgenTime: z.string().optional(),
-  additionalData: z.array(NoteSchema).optional(),
-  surgeons: z.array(zId("User")),
-});
-
 export const CreatePatientCaseSchema = z.object({
   _id: zId(),
   externalId: z.string().optional(),
@@ -60,7 +18,8 @@ export const CreatePatientCaseSchema = z.object({
   studyDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   otherDiagnosis: z.array(DiagnosisSchema).optional(),
   otherDiagnosisICD10: z.array(DiagnosisSchema).optional(),
-  surgeries: z.array(CreateSurgerySchema),
+  // Surgeries are now references to Surgery documents
+  surgeries: z.array(zId("Surgery")),
   supervisors: z.array(zId("User")),
   notes: z.array(CreateNoteSchema),
   medicalHistory: z.string().optional(),
@@ -80,7 +39,8 @@ export const PatientCaseSchema = z.object({
   studyDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   otherDiagnosis: z.array(DiagnosisSchema).optional(),
   otherDiagnosisICD10: z.array(DiagnosisSchema).optional(),
-  surgeries: z.array(SurgerySchema),
+  // Surgeries are now references to Surgery documents
+  surgeries: z.array(zId("Surgery")),
   supervisors: z.array(zId("User")),
   //BUG could be a problem when editing existing cases and adding new notes, that it gets mixed up when validating existing and empty createdById
   notes: z.array(NoteSchema),

@@ -1,3 +1,4 @@
+import { CreateNoteSchema, type NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
@@ -273,55 +274,19 @@ export class BlueprintRepository {
       createdOn: faker.date.past({ years: 1 }), // Random date within the past year
       createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
       blueprintFor: "consultation",
-      title: "Patient Consultation Template",
-      description:
-        "Template for patient consultations following the Consultation schema structure with all required fields.",
+      title: "MICA 6 Wochen",
+      description: "Template for 6-week post-op consultation after MICA procedure",
+      timeDelta: "+6 W",
       content: {
         consultation_structure: {
-          patientCaseId: "ObjectId reference to the associated PatientCase",
-          dateAndTime: "Date object for consultation scheduling",
-          reasonForConsultation: "Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']",
-          visitedBy: "Array of User ObjectId references for healthcare providers",
-          formAccessCode: "Optional ObjectId for form access (FormAccessCode reference)",
-          kioskId: "Optional User ObjectId reference for kiosk assignments",
-        },
-        documentation_arrays: {
-          notes: {
-            description: "Array of note objects for clinical documentation",
-            structure: {
-              dateCreated: "Date of note creation",
-              createdBy: "User ObjectId reference of note author",
-              note: "String containing the clinical note text",
-            },
-          },
-          images: {
-            description: "Array of image objects for clinical photography",
-            structure: {
-              path: "String path to the image file",
-              format: "String specifying image format (jpg, png, etc.)",
-              dateAdded: "Date when image was added",
-              addedBy: "User ObjectId reference of person adding image",
-              notes: "Array of note objects specific to this image",
-            },
-          },
-          proms: {
-            description: "Array of Form ObjectId references",
-            purpose: "Patient Reported Outcome Measures forms",
-          },
-        },
-        workflow_guidelines: {
-          consultation_types: {
-            planned: "Scheduled routine consultations with full documentation",
-            unplanned: "Non-scheduled but non-urgent consultations",
-            emergency: "Urgent consultations requiring immediate attention",
-            pain: "Pain management focused consultations",
-            followup: "Post-treatment monitoring and assessment visits",
-          },
-          documentation_requirements: {
-            minimum_notes: "At least one clinical note per consultation",
-            image_consent: "Ensure patient consent for clinical photography",
-            form_completion: "Complete assigned PROM forms when applicable",
-          },
+          patientCaseId: "", // id of the parent patient case
+          dateAndTime: "", //Date object for consultation scheduling
+          reasonForConsultation: "", //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+          notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+          visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
+          formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
+          kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
+          proms: [] as Array<string>, //Array of Form ObjectId references for associated PROMs
         },
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
@@ -331,9 +296,9 @@ export class BlueprintRepository {
       createdOn: faker.date.past({ years: 1 }), // Random date within the past year
       createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
       blueprintFor: "surgery",
-      title: "Surgery Documentation Template",
-      description:
-        "Template for documenting surgical procedures following the Surgery schema structure within patient cases.",
+      title: "MICA Surgery template",
+      description: "Blaupause für MICA Operation",
+      timeDelta: "0",
       content: {
         surgery_identification: {
           _id: "ObjectId for the surgery document",

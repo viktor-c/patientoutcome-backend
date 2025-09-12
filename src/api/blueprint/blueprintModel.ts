@@ -14,6 +14,7 @@ export const BlueprintSchema = z
     modifiedBy: zId("User").optional(),
     blueprintFor: z.enum(["case", "consultation", "surgery"]),
     title: z.string().min(1, "Title is required"),
+    timeDelta: z.string(),
     description: z.string(),
     content: z.object({}).passthrough(), // Flexible JSON object
     tags: z.array(z.string()).default([]),

@@ -266,28 +266,6 @@ export class PatientCaseService {
   }
 
   /**
-   * @description Get cases by surgeon
-   * @param surgeonId surgeon ID to search for
-   * @returns an array of patient cases with the specified surgeon, or null if no cases are found
-   * @throws {ServiceResponse} if an error occurs while finding cases
-   * @throws {ServiceResponse} if no cases are found
-   * @throws {ServiceResponse} if an error occurs while finding cases
-   */
-  async getCasesBySurgeon(surgeonId: string): Promise<ServiceResponse<PatientCase[] | null>> {
-    try {
-      const cases = await this.repository.findCasesBySurgeon(surgeonId);
-      if (!cases || cases.length === 0) {
-        return ServiceResponse.failure("No cases found for this surgeon", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Cases found", cases);
-    } catch (ex) {
-      const errorMessage = `Error finding cases with surgeon id ${surgeonId}: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", null, StatusCodes.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  /**
    * @description Get cases by supervisor
    * @param supervisorId supervisor ID to search for
    * @returns an array of patient cases with the specified supervisor, or null if no cases are found
@@ -309,29 +287,6 @@ export class PatientCaseService {
     }
   }
 
-  /**
-   * @description Get surgeons by case ID
-   * @param caseId the ID of the case
-   * @returns an array of surgeons for the specified case, or null if no surgeons are found
-   * @throws {ServiceResponse} if an error occurs while finding surgeons
-   */
-  async getSurgeonsByCaseId(caseId: string): Promise<ServiceResponse<User[] | null>> {
-    try {
-      const surgeons = await this.repository.findSurgeonsByCaseId(caseId);
-      if (!surgeons) {
-        return ServiceResponse.failure("No surgeons found for this case", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeons found", surgeons);
-    } catch (ex) {
-      const errorMessage = `Error finding surgeons for case with id ${caseId}: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure(
-        "An error occurred while finding surgeons.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
   /**
    * @description Get supervisors by case ID
    * @param caseId the ID of the case

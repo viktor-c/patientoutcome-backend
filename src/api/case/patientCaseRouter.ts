@@ -6,11 +6,12 @@ import { z } from "zod";
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ConsultationWithFormsSchema } from "@/api/consultation/consultationModel";
 import { PatientSchema } from "@/api/patient/patientModel";
+import { SurgerySchema } from "@/api/surgery/surgeryModel";
 import { UserNoPasswordSchema } from "@/api/user/userModel";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";
 import { patientCaseController } from "./patientCaseController";
-import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema, SurgerySchema } from "./patientCaseModel";
+import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
 
 import { CreateNoteSchema, NoteSchema } from "@/api/generalSchemas";
 
@@ -27,7 +28,6 @@ const PatientCaseWithPopulatedFieldsSchema = PatientCaseSchema.extend({
   surgeries: z.array(SurgeryWithUsersSchema),
   supervisors: z.array(UserNoPasswordSchema),
   consultations: z.array(ConsultationWithFormsSchema).optional(),
-  // Note: consultationTemplate would need FormTemplate schema if it gets populated
 });
 
 /**
@@ -606,68 +606,6 @@ caseRouter.get(
   "/diagnosisICD10/:diagnosisICD10/cases",
   validateRequest(z.object({ params: z.object({ diagnosisICD10: z.string() }) })),
   patientCaseController.getCasesByDiagnosisICD10,
-);
-
-/**
- * description: Get all surgeons for case with patientId and caseId
- */
-patientCaseRegistry.registerPath({
-  method: "get",
-  summary: "Get all surgeons for case with patientId and caseId",
-  description: "Get all surgeons for case with patientId and caseId",
-  operationId: "getSurgeonsByCaseId",
-  path: "/patient/{patientId}/case/{caseId}/surgeons",
-  tags: ["patient case"],
-  request: {
-    params: z.object({
-      patientId: commonValidations.id,
-      caseId: commonValidations.id,
-    }),
-  },
-  responses: createApiResponses([
-    {
-      schema: z.array(UserNoPasswordSchema),
-      description: "Returns an array of surgeons for the given case",
-      statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Patient case not found",
-      statusCode: 404,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "An error occurred while retrieving surgeons for the patient case.",
-      statusCode: 500,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Validation error",
-      statusCode: 400,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Patient not found",
-      statusCode: 404,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeon not found",
-      statusCode: 404,
-    },
-  ]),
-});
-caseRouter.get(
-  "/patient/:patientId/case/:caseId/surgeons",
-  validateRequest(
-    z.object({
-      params: z.object({
-        patientId: commonValidations.id,
-        caseId: commonValidations.id,
-      }),
-    }),
-  ),
-  patientCaseController.getSurgeonsByCaseId,
 );
 
 /**

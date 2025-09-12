@@ -126,12 +126,6 @@ class PatientCaseController {
     return handleServiceResponse(serviceResponse, res);
   };
 
-  public getSurgeonsByCaseId: RequestHandler = async (req: Request, res: Response) => {
-    const caseId = z.string().parse(req.params.caseId);
-    const serviceResponse = await service.getSurgeonsByCaseId(caseId);
-    return handleServiceResponse(serviceResponse, res);
-  };
-
   public getSupervisorsByCaseId: RequestHandler = async (req: Request, res: Response) => {
     const caseId = z.string().parse(req.params.caseId);
     const serviceResponse = await service.getSupervisorsByCaseId(caseId);
