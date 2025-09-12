@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import mongoose from "mongoose";
 import type { CreateKiosk, Kiosk, UpdateKiosk } from "./kioskModel";
@@ -143,9 +144,18 @@ export class KioskRepository {
   }
 
   /**
-   * Create mock data for testing
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       // Clear existing mock data
       await kioskModel.deleteMany({});

@@ -1,5 +1,6 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker, fakerDA } from "@faker-js/faker";
 import mongoose from "mongoose";
@@ -106,7 +107,7 @@ export class ConsultationRepository {
     return cons;
   }
 
-  public mockConsultations: Consultation[] = [
+  public _mockConsultations: Consultation[] = [
     {
       _id: "60d5ec49f1b2c12d88f1e8a1",
       __v: 0,
@@ -200,7 +201,19 @@ export class ConsultationRepository {
     },
   ];
 
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await consultationModel.deleteMany({});
       await consultationModel.insertMany(this.mockConsultations);
@@ -208,6 +221,19 @@ export class ConsultationRepository {
       logger.error({ error }, "Error seeding mock consultation data");
       return Promise.reject(error);
     }
+  }
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockConsultations(): Consultation[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockConsultations;
   }
 }
 

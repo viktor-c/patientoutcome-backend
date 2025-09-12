@@ -21,6 +21,7 @@ export function generateOpenAPIDocument() {
   const { healthCheckRegistry } = require("@/api/healthCheck/healthCheckRouter");
   const { kioskRegistry } = require("@/api/kiosk/kioskRouter");
   const { patientRegistry } = require("@/api/patient/patientRouter");
+  const { surgeryRegistry } = require("@/api/surgery/surgeryRouter");
   const { userRegistry } = require("@/api/user/userRouter");
 
   const registry = new OpenAPIRegistry([
@@ -31,6 +32,7 @@ export function generateOpenAPIDocument() {
     patientRegistry,
     clinicalStudyRegistry,
     patientCaseRegistry,
+    surgeryRegistry,
     consultationRegistry,
     formTemplateRegistry,
     formRegistry,

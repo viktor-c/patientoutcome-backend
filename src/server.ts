@@ -17,6 +17,7 @@ import { formTemplateRouter } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { kioskRouter } from "@/api/kiosk/kioskRouter";
 import { seedRouter } from "@/api/seed/seedRouter";
+import { surgeryRouter } from "@/api/surgery/surgeryRouter";
 import { userRouter } from "@/api/user/userRouter";
 
 /*******************  Middleware import **************************/
@@ -80,6 +81,7 @@ app.use("/blueprints", blueprintRouter);
 app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);
+app.use("", surgeryRouter);
 app.use("/user", userRouter);
 app.use("", consultationRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);

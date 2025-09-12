@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import mongoose from "mongoose";
 import { patientModel } from "./patientModel";
@@ -73,7 +74,19 @@ export class PatientRepository {
       return Promise.reject(error);
     }
   }
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       // Add code to save mockCases to the database
       await patientModel.deleteMany({});
@@ -83,8 +96,9 @@ export class PatientRepository {
       return Promise.reject(error);
     }
   }
+
   // Mock patients data
-  public mockPatients: Patient[] = [
+  private _mockPatients: Patient[] = [
     {
       _id: "6771d9d410ede2552b7bba40",
       externalPatientId: ["12345"],
@@ -226,4 +240,17 @@ export class PatientRepository {
       cases: [],
     },
   ];
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockPatients(): Patient[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockPatients;
+  }
 }

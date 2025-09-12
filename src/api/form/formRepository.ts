@@ -1,6 +1,7 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import type { ObjectId } from "mongoose";
@@ -60,7 +61,19 @@ export class FormRepository {
     return !!result;
   }
 
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createFormMockData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await FormModel.deleteMany({});
       this.populateMockForms();
@@ -77,6 +90,12 @@ export class FormRepository {
 
   // no need to be async, just populate the mock forms
   populateMockForms(): void {
+    // Only allow mock data access in development or test environments
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to populate mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+
     this.mockForms = [];
     try {
       this.mockForms.push({
@@ -167,7 +186,33 @@ export class FormRepository {
     }
   }
 
-  public mockForms: Form[] = [];
+  private _mockForms: Form[] = [];
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockForms(): Form[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockForms;
+  }
+
+  /**
+   * Setter to update mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public set mockForms(value: Form[]) {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to set mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    this._mockForms = value;
+  }
 }
 
 const formRepository = new FormRepository();

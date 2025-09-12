@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { type ClinicalStudy, clinicalStudyModel } from "./clinicalStudyModel";
 
@@ -100,7 +101,7 @@ export class ClinicalStudyRepository {
     }
   }
   // Mock data for 5 clinical studies
-  public mockClinicalStudies: ClinicalStudy[] = [
+  private _mockClinicalStudies: ClinicalStudy[] = [
     {
       _id: "6772b1cd10ede2552b7bba5d",
       name: "Study 1",
@@ -163,13 +164,38 @@ export class ClinicalStudyRepository {
     },
   ];
 
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockDataClinicalStudies(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await clinicalStudyModel.deleteMany({}); // Clear existing data
       await clinicalStudyModel.insertMany(this.mockClinicalStudies);
     } catch (error) {
       logger.error({ error }, "Error creating mock data for clinical studies");
     }
+  }
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockClinicalStudies(): ClinicalStudy[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockClinicalStudies;
   }
 }
 

@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
@@ -66,7 +67,19 @@ export class UserRegistrationRepository {
     return codeDoc;
   }
 
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockUserRegistrationCodes(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await RegistrationCodeModel.deleteMany({});
       const result = await RegistrationCodeModel.insertMany(this.userCodeMockData);
@@ -81,7 +94,7 @@ export class UserRegistrationRepository {
    * Mock data for user registration codes.
    * This is used for testing purposes.
    */
-  public userCodeMockData: RegistrationCode[] = [
+  private _userCodeMockData: RegistrationCode[] = [
     {
       code: "abc-123-abc",
       createdAt: faker.date.recent(),
@@ -117,4 +130,17 @@ export class UserRegistrationRepository {
       active: true,
     },
   ];
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get userCodeMockData(): RegistrationCode[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._userCodeMockData;
+  }
 }

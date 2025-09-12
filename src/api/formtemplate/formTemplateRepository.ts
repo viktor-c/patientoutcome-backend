@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
@@ -28,7 +29,19 @@ export class FormTemplateRepository {
     return !!result;
   }
 
+  /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
+   */
   async createMockDataFormTemplate(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await FormTemplateModel.deleteMany({});
       const result = await FormTemplateModel.insertMany(this.mockFormTemplateData);
@@ -39,7 +52,7 @@ export class FormTemplateRepository {
   }
 
   // Mock data for formTemplate
-  public mockFormTemplateData = [
+  private _mockFormTemplateData = [
     {
       _id: "67b4e612d0feb4ad99ae2e83",
       title: "EFAS Score",
@@ -456,6 +469,19 @@ export class FormTemplateRepository {
       },
     },
   ];
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockFormTemplateData() {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockFormTemplateData;
+  }
 }
 
 export const formTemplateRepository = new FormTemplateRepository();

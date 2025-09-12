@@ -1,4 +1,5 @@
 import { type User, type UserNoPassword, userModel } from "@/api/user/userModel";
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 
@@ -8,7 +9,7 @@ import { faker } from "@faker-js/faker";
  */
 
 export class UserRepository {
-  public mockUsers: User[] = [
+  private _mockUsers: User[] = [
     {
       _id: "676336bea497301f6eff8c8d",
       belongsToCenter: ["1"],
@@ -206,6 +207,13 @@ export class UserRepository {
   }
 
   async createMockUserData(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       await userModel.deleteMany({});
       const result = await userModel.insertMany(this.mockUsers);
@@ -214,6 +222,19 @@ export class UserRepository {
       logger.error({ error }, "Error seeding mock user data");
       return Promise.reject(error);
     }
+  }
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get mockUsers(): User[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._mockUsers;
   }
 
   // Find user by ID including password
