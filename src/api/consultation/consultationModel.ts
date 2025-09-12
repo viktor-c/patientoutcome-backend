@@ -44,7 +44,8 @@ export const ConsultationWithFormsSchema = ConsultationSchema.extend({
   proms: z.array(Form),
 });
 
-export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true }).extend({
+export const CreateConsultationSchema = ConsultationSchema.omit({ _id: true, __v: true, formAccessCode: true }).extend({
+  formAccessCode: z.string().optional(),
   formTemplates: z.array(zId("FormTemplate")),
   notes: z.array(CreateNoteSchema),
   images: z.array(CreateImageSchema),
