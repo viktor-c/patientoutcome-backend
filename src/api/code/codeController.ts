@@ -6,7 +6,7 @@ import { codeService } from "./codeService";
 class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
     const { code, consultationId } = req.params;
-    logger.debug("Activating code:", code, "for consultation:", consultationId);
+    logger.debug(`Activating code: ${code} for consultation: ${consultationId}`);
     const serviceResponse = await codeService.activateCode(code, consultationId);
     return handleServiceResponse(serviceResponse, res);
   };

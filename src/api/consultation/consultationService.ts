@@ -38,17 +38,20 @@ export class ConsultationService {
       }
       //after creating the consultation, we can check if the code is valid
       if (data.formAccessCode) {
-        //BUG we allow both code string and code id for now
-        // let code = await this.codeRepository.findByCode(data.formAccessCode.toString());
-        const code = await this.codeRepository.findById(data.formAccessCode.toString());
+        // Find code by the code string (not by _id)
+        const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
         if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
         if (code.activatedOn) {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
-        //@ts-expect-error
-        const activatedCode = await this.codeRepository.activateCode(code.id, newConsultation._id.toString());
+        // Ensure newConsultation._id exists
+        if (!newConsultation._id) {
+          return ServiceResponse.failure("Failed to get consultation ID", null, StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+        // Pass the code string to activateCode
+        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString());
         if (typeof activatedCode === "string") {
           return ServiceResponse.failure(activatedCode, null, StatusCodes.BAD_REQUEST);
         }
@@ -155,17 +158,14 @@ export class ConsultationService {
       } else if (data.formAccessCode && originalConsultation.formAccessCode?.toString() !== data.formAccessCode) {
         // If a new formAccessCode is provided, check if it exists and is not already activated
         const code = await this.codeRepository.findByCode(data.formAccessCode.toString());
-        if (!code || !code._id) {
+        if (!code) {
           return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
         }
         if (code.activatedOn) {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
 
-        await this.codeRepository.activateCode(
-          typeof code._id === "string" ? code._id : code._id.toString(),
-          consultationId,
-        );
+        await this.codeRepository.activateCode(code.code, consultationId);
       }
 
       /**

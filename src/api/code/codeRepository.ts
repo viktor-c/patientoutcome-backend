@@ -1,3 +1,4 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { isPast } from "date-fns";
 import dayjs from "dayjs";
@@ -5,7 +6,7 @@ import { consultationModel } from "../consultation/consultationModel";
 import { type Code, codeModel } from "./codeModel";
 
 export class CodeRepository {
-  public codeMockData: Code[] = [
+  private _codeMockData: Code[] = [
     {
       code: "XOL70",
       _id: "682f7de54ef4eb7a14be67f6",
@@ -44,10 +45,20 @@ export class CodeRepository {
   ];
 
   /**
+   * Creates mock data for testing and development purposes.
+   * This method is only available in development and test environments.
+   * In production, it will throw an error to prevent accidental data insertion.
    * Populates the `codeMockData` array with 20 mock codes.
    * Each code has a 3-letter and 2-number code and a unique mongodb ID
    */
   async createMockDataFormAccessCodes(): Promise<void> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
     try {
       const result = await codeModel.deleteMany();
       await codeModel.insertMany(this.codeMockData);
@@ -124,7 +135,7 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
-  async activateCode(newCodeId: string, consultationId: string): Promise<Code | string> {
+  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -133,9 +144,8 @@ export class CodeRepository {
       // check if there is already an active code for this consultation
       if (consultation.formAccessCode) {
         // Find the current active code to compare with the incoming code
-        // BUG what is better, code param as string = external Code or internal id?
         const currentActiveCode = await codeModel.findById(consultation.formAccessCode);
-        if (currentActiveCode && currentActiveCode.id !== newCodeId) {
+        if (currentActiveCode && currentActiveCode.code !== codeString) {
           // if the consultation already has an active code, return a message
           // this is to prevent activating a new code for the same consultation
           // if you want to change the code, you need to deactivate the old one first
@@ -146,8 +156,7 @@ export class CodeRepository {
       // if the consultation has an active code, this must be first inactivated or deleted
 
       // check if the code exists, return this code and use it
-      //BUG if we populate consultationId, we will get no code, why ?
-      const code = await codeModel.findById(newCodeId); //.populate(["consultationId"]);
+      const code = await codeModel.findOne({ code: codeString });
       if (!code) {
         return Promise.resolve("Code not found");
       }
@@ -161,7 +170,6 @@ export class CodeRepository {
       // if a code had the consultationId, but is expired or inactive, remove the consultationId
       // and set activatedOn and expiresOn to undefined
       // this is to allow the code to be reused for another consultation
-      //BUG if we populate consultationId, we will get no code, why ?
       if (code.consultationId && code.activatedOn && code.expiresOn && isPast(code.expiresOn)) {
         //@ts-ignore
         code.consultationId.formAccessCode = undefined;
@@ -230,6 +238,19 @@ export class CodeRepository {
       logger.error({ error }, "Error deactivating code");
       return Promise.reject("An error occurred while deactivating the code.");
     }
+  }
+
+  /**
+   * Getter to access mock data only in development or test environments.
+   * In production, accessing this property will throw an error to prevent
+   * accidental exposure of mock data.
+   */
+  public get codeMockData(): Code[] {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+    return this._codeMockData;
   }
 }
 

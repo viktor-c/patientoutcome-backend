@@ -88,8 +88,8 @@ describe("Code API Endpoints", () => {
     });
 
     it("should return NOT FOUND for a non existing code", async () => {
-      // Arrange, must be a valid ObjectId
-      const invalidCode = "677da5efcb4569adaa655560";
+      // Arrange
+      const invalidCode = "INV12";
       const consultationId = consultationRepository.mockConsultations[4]._id;
       // Act
       const response = await agent.put(`/form-access-code/activate/${invalidCode}/consultation/${consultationId}`);
@@ -103,10 +103,10 @@ describe("Code API Endpoints", () => {
 
     it("should return NOT FOUND for an invalid consultationId", async () => {
       // Arrange
-      const internalCode = codeRepository.codeMockData[0]._id;
+      const codeString = codeRepository.codeMockData[0].code;
       const consultationId = `${consultationRepository.mockConsultations[0]._id}INVALID`; // Invalid consultationId
       // Act
-      const response = await agent.put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`);
+      const response = await agent.put(`/form-access-code/activate/${codeString}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -117,10 +117,10 @@ describe("Code API Endpoints", () => {
 
     it("should return NOT FOUND for a not existing consultationId", async () => {
       // Arrange
-      const internalCode = codeRepository.codeMockData[1]._id;
+      const codeString = codeRepository.codeMockData[1].code;
       const consultationId = new mongoose.Types.ObjectId(); // Nonexistent consultationId
       // Act
-      const response = await agent.put(`/form-access-code/activate/${internalCode}/consultation/${consultationId}`);
+      const response = await agent.put(`/form-access-code/activate/${codeString}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
 
       // Assert/
@@ -134,7 +134,7 @@ describe("Code API Endpoints", () => {
       // by this time in the test suite, codeMockData[0] should be activated
       const consultationId = consultationRepository.mockConsultations[0]._id;
 
-      const newCode = codeRepository.codeMockData[2]._id;
+      const newCode = codeRepository.codeMockData[2].code;
       // Act
       const response = await agent.put(`/form-access-code/activate/${newCode}/consultation/${consultationId}`);
       const responseBody: ServiceResponse = response.body;
