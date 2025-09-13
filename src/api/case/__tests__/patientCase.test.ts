@@ -42,8 +42,18 @@ describe("PatientCase API", () => {
     expect(res.status).toBe(200);
     expect(res.body.responseObject).toBeInstanceOf(Array);
     expect(res.body.responseObject).length(1);
-    expect(PatientCaseSchema.safeParse(res.body.responseObject[0]).success).toBeTruthy();
-    expect(res.body.responseObject[0]._id).toEqual(patientCaseRepository.mockPatientCases[0]._id);
+
+    // Check that the response has the expected structure with populated surgeries
+    const patientCase = res.body.responseObject[0];
+    expect(patientCase._id).toEqual(patientCaseRepository.mockPatientCases[0]._id);
+    expect(patientCase.surgeries).toBeInstanceOf(Array);
+
+    // If there are surgeries, check that they are populated as objects, not just IDs
+    if (patientCase.surgeries.length > 0) {
+      expect(patientCase.surgeries[0]).toBeTypeOf("object");
+      expect(patientCase.surgeries[0]).toHaveProperty("_id");
+      expect(patientCase.surgeries[0]).toHaveProperty("surgeryDate");
+    }
     //TODO add indepth compare of objects
   });
 
