@@ -23,8 +23,8 @@ export const CreateNoteSchema = NoteSchema.omit({ createdBy: true }).extend({
 });
 
 export const AnaesthesiaSchema = z.object({
-  id: z.number(),
-  type: z.string(),
+  id: z.number().optional(),
+  type: z.string().optional(),
 });
 
 export const AnaesthesiaTypeSchema = AnaesthesiaSchema;
