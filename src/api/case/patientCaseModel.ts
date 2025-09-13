@@ -52,5 +52,10 @@ export const PatientCaseSchema = z.object({
 export type PatientCase = z.infer<typeof PatientCaseSchema>;
 export type CreatePatientCase = z.infer<typeof CreatePatientCaseSchema>;
 
+// For services that populate the surgeries field with actual Surgery objects
+export type PatientCaseWithPopulatedSurgeries = Omit<PatientCase, "surgeries"> & {
+  surgeries: import("../surgery/surgeryModel").Surgery[];
+};
+
 const MongoosePatientCaseSchema = zodSchema(PatientCaseSchema.omit({ _id: true }));
 export const PatientCaseModel = mongoose.models.PatientCase || mongoose.model("PatientCase", MongoosePatientCaseSchema);

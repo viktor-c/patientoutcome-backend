@@ -2,7 +2,9 @@ import type { User } from "@/api/user/userModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
-import type { PatientCase } from "./patientCaseModel";
+import { surgeryController } from "../surgery/surgeryController";
+import { SurgeryRepository } from "../surgery/surgeryRepository";
+import type { PatientCase, PatientCaseWithPopulatedSurgeries } from "./patientCaseModel";
 import { PatientCaseRepository } from "./patientCaseRepository";
 
 /**
@@ -11,9 +13,11 @@ import { PatientCaseRepository } from "./patientCaseRepository";
  */
 export class PatientCaseService {
   private repository: PatientCaseRepository;
+  private surgeryRepository: SurgeryRepository;
 
   constructor() {
     this.repository = new PatientCaseRepository();
+    this.surgeryRepository = new SurgeryRepository();
   }
 
   /**
@@ -22,13 +26,26 @@ export class PatientCaseService {
    * @returns an array of patient cases, or null if no cases are found
    * @throws {ServiceResponse} if an error occurs while finding cases
    */
-  async getAllPatientCases(patientId: string): Promise<ServiceResponse<PatientCase[] | null>> {
+  async getAllPatientCases(patientId: string): Promise<ServiceResponse<PatientCaseWithPopulatedSurgeries[] | null>> {
     try {
       const cases = await this.repository.getAllPatientCases(patientId);
       if (!cases || cases.length === 0) {
         return ServiceResponse.failure("No case found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Cases found", cases);
+      // For each case, we can populate additional fields if needed
+      const casesWithPopulatedSurgeries: PatientCaseWithPopulatedSurgeries[] = [];
+
+      for (const patientCase of cases) {
+        const surgeriesForCase = await this.surgeryRepository.getSurgeriesByPatientCaseId(
+          patientCase._id?.toString() || "",
+        );
+        const caseWithPopulatedSurgeries: PatientCaseWithPopulatedSurgeries = {
+          ...patientCase,
+          surgeries: surgeriesForCase || [],
+        };
+        casesWithPopulatedSurgeries.push(caseWithPopulatedSurgeries);
+      }
+      return ServiceResponse.success("Cases found", casesWithPopulatedSurgeries);
     } catch (ex) {
       const errorMessage = `Error finding all cases: ${(ex as Error).message}`;
       logger.error(errorMessage);
