@@ -1,10 +1,16 @@
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { app } from "@/server";
+import { SurgeryRepository } from "../surgeryRepository";
 
 describe("Surgery API", () => {
+  beforeAll(async () => {
+    // Reset surgery mock data using SurgeryRepository
+    const surgeryRepository = new SurgeryRepository();
+    await surgeryRepository.createMockSurgeryData();
+  });
   describe("GET /surgeries", () => {
     it("should return 200 for successful retrieval", async () => {
       // Act
@@ -118,7 +124,9 @@ describe("Surgery API", () => {
       const response = await request(app).get("/surgeries/side/left");
 
       // Assert
-      expect(response.status).toBe(StatusCodes.NOT_FOUND); // Since no surgeries exist
+      expect(response.status).toBe(StatusCodes.OK); // Since no surgeries exist
+      expect(response.body.responseObject).toBeInstanceOf(Array);
+      expect(response.body.responseObject).toHaveLength(1);
     });
 
     it("should return 400 for invalid side", async () => {
