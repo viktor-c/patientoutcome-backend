@@ -20,7 +20,7 @@ export interface PaginationOptions {
 }
 
 export interface PaginatedResult<T> {
-  data: T[];
+  blueprints: T[];
   total: number;
   page: number;
   limit: number;
@@ -53,7 +53,7 @@ export class BlueprintRepository {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: blueprints,
+        blueprints: blueprints,
         total,
         page,
         limit,
@@ -118,7 +118,7 @@ export class BlueprintRepository {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: blueprints,
+        blueprints: blueprints,
         total,
         page,
         limit,
@@ -223,49 +223,30 @@ export class BlueprintRepository {
       createdOn: faker.date.past({ years: 1 }), // Random date within the past year
       createdBy: "676336bea497301f6eff8c8f", // Mock admin user ID
       blueprintFor: "case",
-      title: "Standard Orthopedic Case Template",
-      description: "A comprehensive template for orthopedic patient cases following the PatientCase schema structure.",
+      title: "Blaupause für MICA Patientenfall",
+      description: "Gerüst um einen Patientenfall mit MICA Operation zu erstellen",
+      timeDelta: "x",
       content: {
-        patient_case_structure: {
-          externalId: "Optional external identifier for the case",
-          patient: "ObjectId reference to Patient document",
-          mainDiagnosis: "Array of primary diagnosis strings",
-          studyDiagnosis: "Array of study-specific diagnosis strings",
-          mainDiagnosisICD10: "Array of ICD-10 codes for main diagnoses",
-          studyDiagnosisICD10: "Array of ICD-10 codes for study diagnoses",
-          otherDiagnosis: "Array of additional diagnosis strings",
-          otherDiagnosisICD10: "Array of ICD-10 codes for other diagnoses",
-        },
-        surgeries_array: {
-          description: "Array of surgery objects with the following structure",
-          surgery_fields: {
-            externalId: "Optional external surgery identifier",
-            diagnosis: "Array of diagnosis strings for this surgery",
-            diagnosisICD10: "Array of ICD-10 codes for surgery diagnoses",
-            therapy: "String describing the therapeutic intervention",
-            OPSCodes: "Array of OPS (operation and procedure) codes",
-            side: "Enum: 'left', 'right', or 'none'",
-            surgeryDate: "Date of the surgical procedure",
-            surgeryTime: "Duration of surgery in minutes (number)",
-            tourniqet: "Tourniquet time in minutes (number)",
-            anaesthesiaType: "Anesthesia type object with id and type fields",
-            roentgenDosis: "Radiation dose in appropriate units (number)",
-            roentgenTime: "Duration of X-ray exposure as string",
-            additionalData: "Array of note objects with dateCreated, createdBy, note",
-            surgeons: "Array of User ObjectId references",
-          },
-        },
-        case_management: {
-          supervisors: "Array of User ObjectId references for case supervisors",
-          notes: "Array of note objects with dateCreated, createdBy, note fields",
-          medicalHistory: "String containing patient's medical history",
-          consultations: "Array of Consultation ObjectId references",
-          consultationTemplate: "Array of ConsultationTemplate ObjectId references",
-        },
-        timestamps: {
-          createdAt: "Automatic creation timestamp",
-          updatedAt: "Automatic update timestamp",
-        },
+        externalId: "",
+        patient: "",
+        mainDiagnosis: ["Hallux valgus bei Spreizfuß", "Metatarsus primus varus"],
+        studyDiagnosis: ["Hallux valgus"],
+        mainDiagnosisICD10: ["M20.1", "Q66.8"],
+        studyDiagnosisICD10: ["M20.1"],
+        otherDiagnosis: ["Schlafapnoe", "Hypertonie"],
+        otherDiagnosisICD10: ["G47.3", "I10"],
+        // this field holds id to surgery blueprints
+        surgeries: ["68c08903290365a33d085fcc"],
+        supervisors: "Array of User ObjectId references for case supervisors",
+        notes: [],
+        medicalHistory: "String containing patient's medical history",
+        // array of ids for consultation blueprints
+        consultations: [
+          "68c08903290365a33d085fcb",
+          "68c08903290365a33d085fcf",
+          "68c08903290365a33d085fd0",
+          "68c08903290365a33d085fd1",
+        ],
       },
       tags: ["case", "patient-care", "orthopedics", "template"],
     },
@@ -276,18 +257,16 @@ export class BlueprintRepository {
       blueprintFor: "consultation",
       title: "MICA 6 Wochen",
       description: "Template for 6-week post-op consultation after MICA procedure",
-      timeDelta: "+6 W",
+      timeDelta: "+6W",
       content: {
-        consultation_structure: {
-          patientCaseId: "", // id of the parent patient case
-          dateAndTime: "", //Date object for consultation scheduling
-          reasonForConsultation: "", //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
-          notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
-          visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
-          formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
-          kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-          proms: [] as Array<string>, //Array of Form ObjectId references for associated PROMs
-        },
+        patientCaseId: "", // id of the parent patient case
+        dateAndTime: "+6W", //Date object for consultation scheduling
+        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+        visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
+        formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
+        kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -300,113 +279,27 @@ export class BlueprintRepository {
       description: "Blaupause für MICA Operation",
       timeDelta: "0",
       content: {
-        surgery_identification: {
-          _id: "ObjectId for the surgery document",
-          externalId: "Optional external identifier for the surgery",
+        externalId: "",
+        diagnosis: ["Hallux valgus", "Hammerzehen"],
+        diagnosisICD10: ["M20.1", "M20.7"],
+        therapy: "String describing the therapeutic intervention or procedure name",
+        OPSCodes: ["5-788.5a", "5-789.0"], //Array of OPS codes relevant to the surgery
+        side: ["left", "right", "none"],
+        surgeryDate: "",
+        surgeryTime: 30,
+        tourniquet: 0,
+        anaesthesiaType: {
+          id: "Numeric identifier for anesthesia type",
+          type: "String enum: 'block', 'spinal', 'general anaesthesia', 'local'",
+          description: "Human-readable description of anesthesia method",
         },
-        diagnosis_information: {
-          diagnosis: "Array of diagnosis strings specific to this surgery",
-          diagnosisICD10: "Array of ICD-10 codes corresponding to the diagnoses",
-          therapy: "String describing the therapeutic intervention or procedure name",
-        },
-        procedure_coding: {
-          OPSCodes: "Array of OPS (Operation and Procedure) codes for billing/documentation",
-        },
-        surgical_details: {
-          side: "Enum value: 'left', 'right', or 'none' for bilateral/non-lateralized procedures",
-          surgeryDate: "Date object for when the surgery was performed",
-          surgeryTime: "Number representing duration of surgery in minutes",
-          tourniqet: "Number representing tourniquet time in minutes (if applicable)",
-        },
-        anesthesia_management: {
-          anaesthesiaType: {
-            description: "Object containing anesthesia details",
-            structure: {
-              id: "Numeric identifier for anesthesia type",
-              type: "String enum: 'block', 'spinal', 'general anaesthesia', 'local'",
-              description: "Human-readable description of anesthesia method",
-            },
-          },
-        },
-        radiation_safety: {
-          roentgenDosis: "Number representing radiation dose in appropriate units",
-          roentgenTime: "String representing duration of X-ray/fluoroscopy exposure (HH:MM:SS format)",
-        },
-        surgical_team: {
-          surgeons: "Array of User ObjectId references for performing surgeons",
-        },
-        additional_documentation: {
-          additionalData: {
-            description: "Array of note objects for surgical documentation",
-            structure: {
-              dateCreated: "Date of note creation",
-              createdBy: "User ObjectId reference of note author",
-              note: "String containing surgical notes, complications, observations",
-            },
-          },
-        },
-        integration_notes: {
-          parent_case: "This surgery object is part of the surgeries array in a PatientCase document",
-          populated_fields:
-            "In API responses, surgeons field gets populated with User documents (SurgeryWithUsersSchema)",
-        },
+        roentgenDosis: "2",
+        roentgenTime: "00:01:00",
+        surgeons: [] as Array<string>, //Array of User ObjectId references for surgeons
+        additionalData: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+        patientCase: "", //User ObjectId reference for the associated patient case
       },
       tags: ["surgery", "procedure", "documentation", "medical-coding"],
-    },
-    {
-      _id: "68c08903290365a33d085fcd",
-      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
-      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
-      blueprintFor: "case",
-      title: "Hallux Valgus Patient Case Template",
-      description:
-        "Specific template for hallux valgus patient cases following PatientCase schema with orthopedic-specific content.",
-      content: {
-        case_identification: {
-          externalId: "Optional external case identifier (e.g., HV-2024-001)",
-          patient: "ObjectId reference to Patient document",
-        },
-        diagnosis_structure: {
-          mainDiagnosis: "Array of primary diagnoses: ['Hallux valgus']",
-          studyDiagnosis: "Array of study-specific diagnoses for research",
-          mainDiagnosisICD10: "Array of ICD-10 codes: ['M20.1']",
-          studyDiagnosisICD10: "Array of study-specific ICD-10 codes",
-          otherDiagnosis: "Array of secondary diagnoses (e.g., metatarsalgia)",
-          otherDiagnosisICD10: "Array of secondary ICD-10 codes",
-        },
-        surgical_intervention: {
-          description: "Surgeries array containing hallux valgus correction details",
-          typical_surgery: {
-            diagnosis: "['Hallux valgus deformity']",
-            diagnosisICD10: "['M20.1']",
-            therapy: "Chevron osteotomy with bunionectomy",
-            OPSCodes: "['5-788.5a'] - Osteotomy and correction of foot bones",
-            side: "Enum: 'left' or 'right'",
-            anaesthesiaType: {
-              common_options: [
-                "{ id: 1, type: 'block', description: 'Regional nerve block' }",
-                "{ id: 2, type: 'spinal', description: 'Spinal anesthesia' }",
-                "{ id: 4, type: 'local', description: 'Local anesthesia' }",
-              ],
-            },
-            roentgenDosis: "Radiation dose from intraoperative imaging",
-            roentgenTime: "Duration of fluoroscopy (format: HH:MM:SS)",
-            surgeons: "Array of surgeon User ObjectIds",
-          },
-        },
-        case_management: {
-          supervisors: "Array of supervising physician User ObjectIds",
-          medicalHistory: "Patient's relevant medical history including prior foot problems",
-          notes: "Array of clinical notes with dateCreated, createdBy, note fields",
-          consultations: "Array of Consultation ObjectIds for follow-up visits",
-        },
-        clinical_workflow: {
-          preoperative_assessment: "Document foot deformity, pain levels, functional limitations",
-          postoperative_care: "Weight-bearing restrictions, wound care, rehabilitation protocol",
-          follow_up_schedule: "2 weeks, 6 weeks, 3 months, 1 year intervals",
-        },
-      },
-      tags: ["case", "hallux-valgus", "orthopedic", "foot-surgery"],
     },
     {
       _id: "68c08903290365a33d085fce",
@@ -414,6 +307,7 @@ export class BlueprintRepository {
       createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
       blueprintFor: "consultation" as const,
       title: "Comprehensive Consultation Workflow Template",
+      timeDelta: "+6 W",
       description:
         "Enhanced consultation template based on actual Consultation schema with complete field coverage and workflow guidance",
       content: {
@@ -482,6 +376,66 @@ export class BlueprintRepository {
       },
       tags: ["consultation", "workflow", "documentation", "clinical-care", "schema-based"],
     },
+    {
+      _id: "68c08903290365a33d085fcf",
+      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
+      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+      blueprintFor: "consultation",
+      title: "MICA 12 Wochen",
+      description: "Template for 12-week post-op consultation after MICA procedure",
+      timeDelta: "+12W",
+      content: {
+        patientCaseId: "", // id of the parent patient case
+        dateAndTime: "+12W", //Date object for consultation scheduling
+        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+        visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
+        formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
+        kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+      },
+      tags: ["consultation", "clinical", "documentation", "patient-care"],
+    },
+    {
+      _id: "68c08903290365a33d085fd0",
+      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
+      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+      blueprintFor: "consultation",
+      title: "MICA 6 Monate postop",
+      description: "Template for 6-month post-op consultation after MICA procedure",
+      timeDelta: "+6M",
+      content: {
+        patientCaseId: "", // id of the parent patient case
+        dateAndTime: "+6M", //Date object for consultation scheduling
+        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+        visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
+        formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
+        kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+      },
+      tags: ["consultation", "clinical", "documentation", "patient-care"],
+    },
+    {
+      _id: "68c08903290365a33d085fd1",
+      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
+      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+      blueprintFor: "consultation",
+      title: "MICA 1 Jahr postop",
+      description: "Template for 1-year post-op consultation after MICA procedure",
+      timeDelta: "+12M",
+      content: {
+        patientCaseId: "", // id of the parent patient case
+        dateAndTime: "+12M", //Date object for consultation scheduling
+        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
+        visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
+        formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
+        kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+      },
+      tags: ["consultation", "clinical", "documentation", "patient-care"],
+    },
   ];
 
   /**
@@ -499,3 +453,62 @@ export class BlueprintRepository {
 }
 
 export const blueprintRepository = new BlueprintRepository();
+
+/**
+ *     {
+      _id: "68c08903290365a33d085fcd",
+      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
+      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+      blueprintFor: "case",
+      title: "BAD Hallux Valgus Patient Case Template",
+      description:
+        "Specific template for hallux valgus patient cases following PatientCase schema with orthopedic-specific content.",
+      timeDelta: "+6 W",
+      content: {
+        case_identification: {
+          externalId: "Optional external case identifier (e.g., HV-2024-001)",
+          patient: "ObjectId reference to Patient document",
+        },
+        diagnosis_structure: {
+          mainDiagnosis: "Array of primary diagnoses: ['Hallux valgus']",
+          studyDiagnosis: "Array of study-specific diagnoses for research",
+          mainDiagnosisICD10: "Array of ICD-10 codes: ['M20.1']",
+          studyDiagnosisICD10: "Array of study-specific ICD-10 codes",
+          otherDiagnosis: "Array of secondary diagnoses (e.g., metatarsalgia)",
+          otherDiagnosisICD10: "Array of secondary ICD-10 codes",
+        },
+        surgical_intervention: {
+          description: "Surgeries array containing hallux valgus correction details",
+          typical_surgery: {
+            diagnosis: "['Hallux valgus deformity']",
+            diagnosisICD10: "['M20.1']",
+            therapy: "Chevron osteotomy with bunionectomy",
+            OPSCodes: "['5-788.5a'] - Osteotomy and correction of foot bones",
+            side: "Enum: 'left' or 'right'",
+            anaesthesiaType: {
+              common_options: [
+                "{ id: 1, type: 'block', description: 'Regional nerve block' }",
+                "{ id: 2, type: 'spinal', description: 'Spinal anesthesia' }",
+                "{ id: 4, type: 'local', description: 'Local anesthesia' }",
+              ],
+            },
+            roentgenDosis: "Radiation dose from intraoperative imaging",
+            roentgenTime: "Duration of fluoroscopy (format: HH:MM:SS)",
+            surgeons: "Array of surgeon User ObjectIds",
+          },
+        },
+        case_management: {
+          supervisors: "Array of supervising physician User ObjectIds",
+          medicalHistory: "Patient's relevant medical history including prior foot problems",
+          notes: "Array of clinical notes with dateCreated, createdBy, note fields",
+          consultations: "Array of Consultation ObjectIds for follow-up visits",
+        },
+        clinical_workflow: {
+          preoperative_assessment: "Document foot deformity, pain levels, functional limitations",
+          postoperative_care: "Weight-bearing restrictions, wound care, rehabilitation protocol",
+          follow_up_schedule: "2 weeks, 6 weeks, 3 months, 1 year intervals",
+        },
+      },
+      tags: ["case", "hallux-valgus", "orthopedic", "foot-surgery"],
+    },
+ */
