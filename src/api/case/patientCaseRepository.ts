@@ -31,7 +31,9 @@ export class PatientCaseRepository {
     try {
       return PatientCaseModel.find({
         patient: patientId,
-      }).lean() as unknown as Promise<PatientCase[]>;
+      })
+        .populate(["patient", "surgeries", "supervisors", "consultations"])
+        .lean() as unknown as Promise<PatientCase[]>;
     } catch (error) {
       return Promise.reject(error);
     }
