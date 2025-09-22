@@ -284,20 +284,26 @@ export class BlueprintRepository {
         diagnosisICD10: ["M20.1", "M20.7"],
         therapy: "String describing the therapeutic intervention or procedure name",
         OPSCodes: ["5-788.5a", "5-789.0"], //Array of OPS codes relevant to the surgery
-        side: ["left", "right", "none"],
+        side: [],
         surgeryDate: "",
         surgeryTime: 30,
         tourniquet: 0,
-        anaesthesiaType: {
-          id: "Numeric identifier for anesthesia type",
-          type: "String enum: 'block', 'spinal', 'general anaesthesia', 'local'",
-          description: "Human-readable description of anesthesia method",
-        },
+        anaesthesiaType: [
+          { id: 1, type: "block" },
+          { id: 3, type: "general anaesthesia" },
+        ],
         roentgenDosis: "2",
         roentgenTime: "00:01:00",
         surgeons: [] as Array<string>, //Array of User ObjectId references for surgeons
         additionalData: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
         patientCase: "", //User ObjectId reference for the associated patient case
+        // array of ids for consultation blueprints that should be selected by default when using this surgery blueprint
+        consultations: [
+          "68c08903290365a33d085fcb",
+          "68c08903290365a33d085fcf",
+          // "68c08903290365a33d085fd0",
+          // "68c08903290365a33d085fd1",
+        ],
       },
       tags: ["surgery", "procedure", "documentation", "medical-coding"],
     },
