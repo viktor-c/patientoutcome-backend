@@ -107,99 +107,111 @@ export class ConsultationRepository {
     return cons;
   }
 
-  public _mockConsultations: Consultation[] = [
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a1",
-      __v: 0,
-      patientCaseId: "677da5d8cb4569ad1c65515f",
-      dateAndTime: new Date(),
-      reasonForConsultation: ["planned"],
-      notes: [
-        {
-          _id: "507f1f77bcf86cd799439011",
-          dateCreated: faker.date.soon(),
-          createdBy: faker.helpers.arrayElement(userRepository.mockUsers)._id || "",
-          note: faker.lorem.paragraph(),
-        },
-      ],
-      proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"],
-      formAccessCode: "682f7de54ef4eb7a14be67f6",
-      images: [],
-      visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a2",
-      __v: 0,
-      patientCaseId: "677da5d8cb4569ad1c65515f",
-      dateAndTime: faker.date.past(),
-      reasonForConsultation: ["emergency"],
-      notes: [
-        {
-          _id: "60d5ec49f1b2c12d88f1e8b5",
-          dateCreated: faker.date.past(),
-          createdBy: faker.helpers.arrayElement(userRepository.mockUsers)._id || "",
-          note: faker.lorem.paragraph(),
-        },
-      ],
-      proms: ["6832337195b15e2d7e223d55", "6832337395b15e2d7e223d56"],
-      images: [],
-      visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a3",
-      __v: 0,
-      patientCaseId: "677da5efcb4569ad1c655160",
-      dateAndTime: faker.date.past(),
-      reasonForConsultation: ["pain"],
-      notes: [
-        {
-          _id: "60d5ec49f1b2c12d88f1e8b6",
-          dateCreated: faker.date.past(),
-          createdBy: faker.helpers.arrayElement(userRepository.mockUsers)._id || "",
-          note: faker.lorem.paragraph(),
-        },
-      ],
-      proms: [],
-      images: [],
-      visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a4",
-      __v: 0,
-      patientCaseId: "677da5efcb4569ad1c655160",
-      dateAndTime: faker.date.past(),
-      reasonForConsultation: ["followup"],
-      notes: [
-        {
-          _id: "60d5ec49f1b2c12d88f1e8b7",
-          dateCreated: faker.date.past(),
-          createdBy: faker.helpers.arrayElement(userRepository.mockUsers)._id || "",
-          note: faker.lorem.paragraph(),
-        },
-      ],
-      proms: [],
-      images: [],
-      visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
-    },
-    {
-      _id: "60d5ec49f1b2c12d88f1e8a5",
-      __v: 0,
-      patientCaseId: "677da5efcb4569ad1c655160",
-      dateAndTime: new Date(),
-      reasonForConsultation: ["followup"],
-      notes: [
-        {
-          _id: "60d5ec49f1b2c12d88f1e8b7",
-          dateCreated: faker.date.soon(),
-          createdBy: faker.helpers.arrayElement(userRepository.mockUsers)._id || "",
-          note: faker.lorem.paragraph(),
-        },
-      ],
-      proms: [],
-      images: [],
-      visitedBy: [faker.helpers.arrayElement(userRepository.mockUsers)._id || ""],
-    },
-  ];
+  public _mockConsultations: Consultation[] = [];
+
+  /**
+   * Lazy initialization of mock data to avoid accessing userRepository.mockUsers
+   * during module loading in production environment
+   */
+  private initializeMockData(): Consultation[] {
+    if (env.NODE_ENV === "production") {
+      return [];
+    }
+
+    return [
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a1",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: new Date(),
+        reasonForConsultation: ["planned"],
+        notes: [
+          {
+            _id: "507f1f77bcf86cd799439011",
+            dateCreated: faker.date.soon(),
+            createdBy: userRepository.mockUsers?.[0]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"],
+        formAccessCode: "682f7de54ef4eb7a14be67f6",
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a2",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: faker.date.past(),
+        reasonForConsultation: ["emergency"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b5",
+            dateCreated: faker.date.past(),
+            createdBy: userRepository.mockUsers?.[1]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: ["6832337195b15e2d7e223d55", "6832337395b15e2d7e223d56"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a3",
+        __v: 0,
+        patientCaseId: "677da5efcb4569ad1c655160",
+        dateAndTime: faker.date.past(),
+        reasonForConsultation: ["pain"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b6",
+            dateCreated: faker.date.past(),
+            createdBy: userRepository.mockUsers?.[2]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: [],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[2]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a4",
+        __v: 0,
+        patientCaseId: "677da5efcb4569ad1c655160",
+        dateAndTime: faker.date.past(),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b7",
+            dateCreated: faker.date.past(),
+            createdBy: userRepository.mockUsers?.[0]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: [],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a5",
+        __v: 0,
+        patientCaseId: "677da5efcb4569ad1c655160",
+        dateAndTime: new Date(),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b7",
+            dateCreated: faker.date.soon(),
+            createdBy: userRepository.mockUsers?.[1]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: [],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
+      },
+    ];
+  }
 
   /**
    * Creates mock data for testing and development purposes.
@@ -233,6 +245,12 @@ export class ConsultationRepository {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
+
+    // Lazy initialization
+    if (this._mockConsultations.length === 0) {
+      this._mockConsultations = this.initializeMockData();
+    }
+
     return this._mockConsultations;
   }
 }
