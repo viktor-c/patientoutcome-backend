@@ -130,6 +130,28 @@ export class UserRepository {
     }
   }
 
+  async findAllFilteredAsync(department?: string, role?: string): Promise<UserNoPassword[]> {
+    try {
+      const query: any = {};
+
+      // If department is specified, filter by department
+      if (department) {
+        query.department = department;
+      }
+
+      // If role is specified, filter by role
+      if (role) {
+        query.roles = { $in: [role] };
+      }
+
+      const users = (await userModel.find(query).select("-password").lean()) as unknown as UserNoPassword[];
+      return users;
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Error finding filtered users");
+      return Promise.reject(error);
+    }
+  }
+
   async findAllByRoleAsync(role: string): Promise<UserNoPassword[]> {
     try {
       const users = (await userModel

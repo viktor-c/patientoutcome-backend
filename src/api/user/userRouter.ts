@@ -111,8 +111,14 @@ userRegistry.registerPath({
   path: "/user",
   tags: ["User"],
   operationId: "getUsers",
-  description: "Get all users",
-  summary: "Get all users",
+  description:
+    "Get users from the same department. If user has admin role, get all users. Optional role query parameter to filter by role.",
+  summary: "Get users by department and role",
+  request: {
+    query: z.object({
+      role: z.string().optional(),
+    }),
+  },
   responses: createApiResponses([
     {
       schema: z.array(UserSchema),
@@ -129,11 +135,23 @@ userRegistry.registerPath({
       description: "Validation error",
       statusCode: 400,
     },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Unauthorized",
+      statusCode: 401,
+    },
   ]),
 });
 
+// Define schema for get users query validation
+const GetUsersSchema = z.object({
+  query: z.object({
+    role: z.string().optional(),
+  }),
+});
+
 // add this path with the function getUsers from userController
-userRouter.get("/", AclMiddleware(), userController.getUsers);
+userRouter.get("/", AclMiddleware(), validateRequest(GetUsersSchema), userController.getUsers);
 
 // register the path get /user/kiosk-users
 userRegistry.registerPath({

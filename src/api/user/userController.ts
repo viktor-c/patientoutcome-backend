@@ -11,8 +11,17 @@ import { userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
 
 class UserController {
-  public getUsers: RequestHandler = async (_req: Request, res: Response) => {
-    const serviceResponse = await userService.findAll();
+  public getUsers: RequestHandler = async (req: Request, res: Response) => {
+    // Check if user is logged in
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized: Not logged in." });
+    }
+
+    const { role } = req.query;
+    const userId = req.session.userId;
+    const userRoles = req.session.roles || [];
+
+    const serviceResponse = await userService.findAllFiltered(userId, userRoles, role as string | undefined);
     return handleServiceResponse(serviceResponse, res);
   };
 

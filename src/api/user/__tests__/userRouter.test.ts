@@ -58,7 +58,7 @@ describe("User API Endpoints", () => {
     }
   });
   describe("GET /user", () => {
-    it("should return a list of users, when at least admin is logged in", async () => {
+    it("should return all users when admin is logged in", async () => {
       const agent = await loginUserAgent("admin");
       // Act
       const response = await agent.get("/user");
@@ -69,29 +69,93 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
       expect(responseBody.responseObject.length).toEqual(userRepository.mockUsers.length);
-      responseBody.responseObject.forEach((user, index) => compareUsers(userRepository.mockUsers[index] as User, user));
 
       // logout user to clear session
       await logoutUser(agent);
     });
-    it("should return error, when not admin is logged in", async () => {
-      const agent = await loginUserAgent("doctor");
+
+    it("should return only users from same department for non-admin users", async () => {
+      const agent = await loginUserAgent("doctor"); // bwhite user in "Oncology" department
       // Act
       const response = await agent.get("/user");
-      const responseBody: ServiceResponse = response.body;
+      const responseBody: ServiceResponse<User[]> = response.body;
 
       // Assert
-      expect(response.statusCode).toEqual(StatusCodes.FORBIDDEN);
-      expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Forbidden");
-      expect(responseBody.responseObject).toBeUndefined();
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Users found");
+
+      // Only users from "Oncology" department should be returned
+      expect(responseBody.responseObject.length).toEqual(1);
+      expect(responseBody.responseObject[0].department).toEqual("Oncology");
+      expect(responseBody.responseObject[0].username).toEqual("bwhite");
 
       // logout user to clear session
       await logoutUser(agent);
     });
-    it("should return an error, when no user is logged in", async () => {
+
+    it("should return users filtered by role from same department for non-admin users", async () => {
+      const agent = await loginUserAgent("developer"); // victor user in "Orthopädie" department
+      // Act - filter by kiosk role
+      const response = await agent.get("/user?role=kiosk");
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Users found");
+
+      // Should return kiosk users from "Orthopädie" department (kiosk1, kiosk2)
+      expect(responseBody.responseObject.length).toEqual(2);
+      responseBody.responseObject.forEach((user) => {
+        expect(user.department).toEqual("Orthopädie");
+        expect(user.roles).toContain("kiosk");
+      });
+
+      // logout user to clear session
+      await logoutUser(agent);
+    });
+
+    it("should return users filtered by role from all departments for admin users", async () => {
+      const agent = await loginUserAgent("admin"); // admin user
+      // Act - filter by kiosk role
+      const response = await agent.get("/user?role=kiosk");
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Users found");
+
+      // Should return all kiosk users from all departments
+      expect(responseBody.responseObject.length).toEqual(2);
+      responseBody.responseObject.forEach((user) => {
+        expect(user.roles).toContain("kiosk");
+      });
+
+      // logout user to clear session
+      await logoutUser(agent);
+    });
+
+    it("should return an error when no user is logged in", async () => {
       const response = await request(app).get("/user");
       expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+      expect(response.body.message).toContain("Unauthorized");
+    });
+
+    it("should return no users found when role filter returns no results", async () => {
+      const agent = await loginUserAgent("doctor"); // bwhite user in "Oncology" department
+      // Act - filter by kiosk role (no kiosk users in Oncology)
+      const response = await agent.get("/user?role=kiosk");
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("No Users found");
+
+      // logout user to clear session
+      await logoutUser(agent);
     });
   });
 

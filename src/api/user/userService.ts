@@ -38,6 +38,43 @@ export class UserService {
     }
   }
 
+  // Retrieves users filtered by department and role based on current user's permissions
+  async findAllFiltered(
+    currentUserId: string,
+    currentUserRoles: string[],
+    roleFilter?: string,
+  ): Promise<ServiceResponse<UserNoPassword[] | null>> {
+    try {
+      // First get the current user to check their department
+      const currentUser = await this.userRepository.findByIdAsync(currentUserId);
+      if (!currentUser) {
+        return ServiceResponse.failure("Current user not found", null, StatusCodes.UNAUTHORIZED);
+      }
+
+      const isAdmin = currentUserRoles.includes("admin");
+
+      // If user is admin, get all users (optionally filtered by role)
+      // If not admin, get users from same department (optionally filtered by role)
+      const users = await this.userRepository.findAllFilteredAsync(
+        isAdmin ? undefined : currentUser.department,
+        roleFilter,
+      );
+
+      if (!users || users.length === 0) {
+        return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success<UserNoPassword[]>("Users found", users);
+    } catch (ex) {
+      const errorMessage = `Error finding filtered users: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while retrieving users.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // Retrieves all users with kiosk role from the database
   async getAllKioskUsers(): Promise<ServiceResponse<UserNoPassword[] | null>> {
     try {
