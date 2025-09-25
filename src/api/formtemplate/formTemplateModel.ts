@@ -31,6 +31,7 @@ export const FormTemplate = z
     formSchemaUI: z.object({}).passthrough(),
     // formData: CustomFormDataSchema //this does not work when validating mongoose model. But zod validates.
     formData: z.object({}).passthrough(),
+    translations: z.object({}).passthrough().optional(),
   })
   .strict();
 

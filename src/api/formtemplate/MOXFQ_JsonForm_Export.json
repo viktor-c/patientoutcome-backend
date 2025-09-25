@@ -1,0 +1,525 @@
+{
+  "formName": "MOXFQ",
+  "formTitle": "Manchester-Oxford Foot Questionnaire",
+  "version": "2.0.0",
+  "description": "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities with integrated scoring system",
+  "lastUpdated": "2025-09-25",
+  "metadata": {
+    "questions": 16,
+    "scoringRange": "0-4 for each question",
+    "totalScoreRange": "0-64 (raw), 0-100 (normalized)",
+    "specialQuestions": [15, 16],
+    "languages": ["en", "de"],
+    "features": [
+      "Real-time scoring",
+      "Subscale analysis",
+      "Table renderer",
+      "Progress tracking",
+      "Clinical interpretation"
+    ]
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "moxfq": {
+        "type": "object",
+        "title": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+        "i18n": "moxfq.title",
+        "properties": {
+          "q1": {
+            "type": "integer",
+            "title": "I have pain in my foot/ankle",
+            "i18n": "moxfq.q1",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q2": {
+            "type": "integer",
+            "title": "I avoid walking long distances because of pain in my foot/ankle",
+            "i18n": "moxfq.q2",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q3": {
+            "type": "integer",
+            "title": "I change the way I walk due to pain in my foot/ankle",
+            "i18n": "moxfq.q3",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q4": {
+            "type": "integer",
+            "title": "I walk slowly because of pain in my foot/ankle",
+            "i18n": "moxfq.q4",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q5": {
+            "type": "integer",
+            "title": "I have to stop and rest my foot/ankle because of pain",
+            "i18n": "moxfq.q5",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q6": {
+            "type": "integer",
+            "title": "I avoid some hard or rough surfaces because of pain in my foot/ankle",
+            "i18n": "moxfq.q6",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q7": {
+            "type": "integer",
+            "title": "I avoid standing for a long time because of pain in my foot/ankle",
+            "i18n": "moxfq.q7",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q8": {
+            "type": "integer",
+            "title": "I catch the bus or use the car instead of walking, because of pain in my foot/ankle",
+            "i18n": "moxfq.q8",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q9": {
+            "type": "integer",
+            "title": "I feel self-conscious about my foot/ankle",
+            "i18n": "moxfq.q9",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q10": {
+            "type": "integer",
+            "title": "I feel self-conscious about the shoes I have to wear",
+            "i18n": "moxfq.q10",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q11": {
+            "type": "integer",
+            "title": "The pain in my foot/ankle is more painful in the evening",
+            "i18n": "moxfq.q11",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q12": {
+            "type": "integer",
+            "title": "I get shooting pains in my foot/ankle",
+            "i18n": "moxfq.q12",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q13": {
+            "type": "integer",
+            "title": "The pain in my foot/ankle prevents me from carrying out my work/everyday activities",
+            "i18n": "moxfq.q13",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q14": {
+            "type": "integer",
+            "title": "I am unable to do all my social or recreational activities because of pain in my foot/ankle",
+            "i18n": "moxfq.q14",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q15": {
+            "type": "integer",
+            "title": "During the past 4 weeks how would you describe the pain you usually have in your foot/ankle? (please tick one box)",
+            "i18n": "moxfq.q15",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "painSeverity",
+            "subscale": "pain",
+            "specialQuestion": true
+          },
+          "q16": {
+            "type": "integer",
+            "title": "During the past 4 weeks have you been troubled by pain from your foot/ankle in bed at night? (please tick one box)",
+            "i18n": "moxfq.q16",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "nightPain",
+            "subscale": "socialInteraction",
+            "specialQuestion": true
+          }
+        },
+        "required": [
+          "q1",
+          "q2",
+          "q3",
+          "q4",
+          "q5",
+          "q6",
+          "q7",
+          "q8",
+          "q9",
+          "q10",
+          "q11",
+          "q12",
+          "q13",
+          "q14",
+          "q15",
+          "q16"
+        ]
+      }
+    },
+    "required": ["moxfq"]
+  },
+  "uischema": {
+    "type": "VerticalLayout",
+    "elements": [
+      {
+        "type": "Group",
+        "label": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+        "elements": [
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q1",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q2",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q3",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q4",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q5",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q6",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q7",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q8",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q9",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q10",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q11",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q12",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q13",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q14",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q15",
+            "options": {
+              "format": "radio"
+            }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q16",
+            "options": {
+              "format": "radio"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "data": {
+    "moxfq": {
+      "q1": null,
+      "q2": null,
+      "q3": null,
+      "q4": null,
+      "q5": null,
+      "q6": null,
+      "q7": null,
+      "q8": null,
+      "q9": null,
+      "q10": null,
+      "q11": null,
+      "q12": null,
+      "q13": null,
+      "q14": null,
+      "q15": null,
+      "q16": null
+    }
+  },
+  "translations": {
+    "en": {
+      "moxfq.title.label": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+      "moxfq.q1.label": "I have pain in my foot/ankle",
+      "moxfq.q2.label": "I avoid walking long distances because of pain in my foot/ankle",
+      "moxfq.q3.label": "I change the way I walk due to pain in my foot/ankle",
+      "moxfq.q4.label": "I walk slowly because of pain in my foot/ankle",
+      "moxfq.q5.label": "I have to stop and rest my foot/ankle because of pain",
+      "moxfq.q6.label": "I avoid some hard or rough surfaces because of pain in my foot/ankle",
+      "moxfq.q7.label": "I avoid standing for a long time because of pain in my foot/ankle",
+      "moxfq.q8.label": "I catch the bus or use the car instead of walking, because of pain in my foot/ankle",
+      "moxfq.q9.label": "I feel self-conscious about my foot/ankle",
+      "moxfq.q10.label": "I feel self-conscious about the shoes I have to wear",
+      "moxfq.q11.label": "The pain in my foot/ankle is more painful in the evening",
+      "moxfq.q12.label": "I get shooting pains in my foot/ankle",
+      "moxfq.q13.label": "The pain in my foot/ankle prevents me from carrying out my work/everyday activities",
+      "moxfq.q14.label": "I am unable to do all my social or recreational activities because of pain in my foot/ankle",
+      "moxfq.q15.label": "During the past 4 weeks how would you describe the pain you usually have in your foot/ankle? (please tick one box)",
+      "moxfq.q16.label": "During the past 4 weeks have you been troubled by pain from your foot/ankle in bed at night? (please tick one box)",
+      "moxfq.q1.0": "None of the time",
+      "moxfq.q1.1": "Rarely",
+      "moxfq.q1.2": "Some of the time",
+      "moxfq.q1.3": "Most of the time",
+      "moxfq.q1.4": "All of the time",
+      "moxfq.q2.0": "None of the time",
+      "moxfq.q2.1": "Rarely",
+      "moxfq.q2.2": "Some of the time",
+      "moxfq.q2.3": "Most of the time",
+      "moxfq.q2.4": "All of the time",
+      "moxfq.q3.0": "None of the time",
+      "moxfq.q3.1": "Rarely",
+      "moxfq.q3.2": "Some of the time",
+      "moxfq.q3.3": "Most of the time",
+      "moxfq.q3.4": "All of the time",
+      "moxfq.q4.0": "None of the time",
+      "moxfq.q4.1": "Rarely",
+      "moxfq.q4.2": "Some of the time",
+      "moxfq.q4.3": "Most of the time",
+      "moxfq.q4.4": "All of the time",
+      "moxfq.q5.0": "None of the time",
+      "moxfq.q5.1": "Rarely",
+      "moxfq.q5.2": "Some of the time",
+      "moxfq.q5.3": "Most of the time",
+      "moxfq.q5.4": "All of the time",
+      "moxfq.q6.0": "None of the time",
+      "moxfq.q6.1": "Rarely",
+      "moxfq.q6.2": "Some of the time",
+      "moxfq.q6.3": "Most of the time",
+      "moxfq.q6.4": "All of the time",
+      "moxfq.q7.0": "None of the time",
+      "moxfq.q7.1": "Rarely",
+      "moxfq.q7.2": "Some of the time",
+      "moxfq.q7.3": "Most of the time",
+      "moxfq.q7.4": "All of the time",
+      "moxfq.q8.0": "None of the time",
+      "moxfq.q8.1": "Rarely",
+      "moxfq.q8.2": "Some of the time",
+      "moxfq.q8.3": "Most of the time",
+      "moxfq.q8.4": "All of the time",
+      "moxfq.q9.0": "None of the time",
+      "moxfq.q9.1": "Rarely",
+      "moxfq.q9.2": "Some of the time",
+      "moxfq.q9.3": "Most of the time",
+      "moxfq.q9.4": "All of the time",
+      "moxfq.q10.0": "None of the time",
+      "moxfq.q10.1": "Rarely",
+      "moxfq.q10.2": "Some of the time",
+      "moxfq.q10.3": "Most of the time",
+      "moxfq.q10.4": "All of the time",
+      "moxfq.q11.0": "None of the time",
+      "moxfq.q11.1": "Rarely",
+      "moxfq.q11.2": "Some of the time",
+      "moxfq.q11.3": "Most of the time",
+      "moxfq.q11.4": "All of the time",
+      "moxfq.q12.0": "None of the time",
+      "moxfq.q12.1": "Rarely",
+      "moxfq.q12.2": "Some of the time",
+      "moxfq.q12.3": "Most of the time",
+      "moxfq.q12.4": "All of the time",
+      "moxfq.q13.0": "None of the time",
+      "moxfq.q13.1": "Rarely",
+      "moxfq.q13.2": "Some of the time",
+      "moxfq.q13.3": "Most of the time",
+      "moxfq.q13.4": "All of the time",
+      "moxfq.q14.0": "None of the time",
+      "moxfq.q14.1": "Rarely",
+      "moxfq.q14.2": "Some of the time",
+      "moxfq.q14.3": "Most of the time",
+      "moxfq.q14.4": "All of the time",
+      "moxfq.q15.0": "None",
+      "moxfq.q15.1": "Very mild",
+      "moxfq.q15.2": "Mild",
+      "moxfq.q15.3": "Moderate",
+      "moxfq.q15.4": "Severe",
+      "moxfq.q16.0": "No nights",
+      "moxfq.q16.1": "Only 1 or 2 nights",
+      "moxfq.q16.2": "Some nights",
+      "moxfq.q16.3": "Most nights",
+      "moxfq.q16.4": "Every night"
+    },
+    "de": {
+      "moxfq.title.label": "MANCHESTER-OXFORD FUSS FRAGEBOGEN (MOXFQ)",
+      "moxfq.q1.label": "Ich habe Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q2.label": "Ich vermeide es, längere Strecken zu gehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q3.label": "Ich verändere meine Gangart aufgrund der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q4.label": "Ich gehe langsam aufgrund der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q5.label": "Ich muss anhalten und meinen Fuß/Knöchel ausruhen lassen wegen der Schmerzen",
+      "moxfq.q6.label": "Ich vermeide harte oder unebene Oberflächen wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q7.label": "Ich vermeide es, lange zu stehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q8.label": "Ich nehme den Bus oder das Auto anstatt zu gehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q9.label": "Ich bin unsicher wegen meines Fußes/Knöchels",
+      "moxfq.q10.label": "Ich bin unsicher wegen der Schuhe, die ich tragen muss",
+      "moxfq.q11.label": "Die Schmerzen in meinem Fuß/Knöchel sind abends stärker",
+      "moxfq.q12.label": "Ich bekomme stechende Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q13.label": "Die Schmerzen in meinem Fuß/Knöchel hindern mich daran, meine Arbeit/alltäglichen Aktivitäten auszuführen",
+      "moxfq.q14.label": "Ich kann nicht alle meine sozialen oder Freizeitaktivitäten ausführen wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.q15.label": "Wie würden Sie in den letzten 4 Wochen die Schmerzen beschreiben, die Sie normalerweise in Ihrem Fuß/Knöchel haben? (Bitte kreuzen Sie ein Kästchen an)",
+      "moxfq.q16.label": "Wurden Sie in den letzten 4 Wochen nachts im Bett von Schmerzen in Ihrem Fuß/Knöchel gestört? (Bitte kreuzen Sie ein Kästchen an)",
+      "moxfq.q1.0": "Niemals",
+      "moxfq.q1.1": "Selten",
+      "moxfq.q1.2": "Manchmal",
+      "moxfq.q1.3": "Meistens",
+      "moxfq.q1.4": "Immer",
+      "moxfq.q2.0": "Niemals",
+      "moxfq.q2.1": "Selten",
+      "moxfq.q2.2": "Manchmal",
+      "moxfq.q2.3": "Meistens",
+      "moxfq.q2.4": "Immer",
+      "moxfq.q3.0": "Niemals",
+      "moxfq.q3.1": "Selten",
+      "moxfq.q3.2": "Manchmal",
+      "moxfq.q3.3": "Meistens",
+      "moxfq.q3.4": "Immer",
+      "moxfq.q4.0": "Niemals",
+      "moxfq.q4.1": "Selten",
+      "moxfq.q4.2": "Manchmal",
+      "moxfq.q4.3": "Meistens",
+      "moxfq.q4.4": "Immer",
+      "moxfq.q5.0": "Niemals",
+      "moxfq.q5.1": "Selten",
+      "moxfq.q5.2": "Manchmal",
+      "moxfq.q5.3": "Meistens",
+      "moxfq.q5.4": "Immer",
+      "moxfq.q6.0": "Niemals",
+      "moxfq.q6.1": "Selten",
+      "moxfq.q6.2": "Manchmal",
+      "moxfq.q6.3": "Meistens",
+      "moxfq.q6.4": "Immer",
+      "moxfq.q7.0": "Niemals",
+      "moxfq.q7.1": "Selten",
+      "moxfq.q7.2": "Manchmal",
+      "moxfq.q7.3": "Meistens",
+      "moxfq.q7.4": "Immer",
+      "moxfq.q8.0": "Niemals",
+      "moxfq.q8.1": "Selten",
+      "moxfq.q8.2": "Manchmal",
+      "moxfq.q8.3": "Meistens",
+      "moxfq.q8.4": "Immer",
+      "moxfq.q9.0": "Niemals",
+      "moxfq.q9.1": "Selten",
+      "moxfq.q9.2": "Manchmal",
+      "moxfq.q9.3": "Meistens",
+      "moxfq.q9.4": "Immer",
+      "moxfq.q10.0": "Niemals",
+      "moxfq.q10.1": "Selten",
+      "moxfq.q10.2": "Manchmal",
+      "moxfq.q10.3": "Meistens",
+      "moxfq.q10.4": "Immer",
+      "moxfq.q11.0": "Niemals",
+      "moxfq.q11.1": "Selten",
+      "moxfq.q11.2": "Manchmal",
+      "moxfq.q11.3": "Meistens",
+      "moxfq.q11.4": "Immer",
+      "moxfq.q12.0": "Niemals",
+      "moxfq.q12.1": "Selten",
+      "moxfq.q12.2": "Manchmal",
+      "moxfq.q12.3": "Meistens",
+      "moxfq.q12.4": "Immer",
+      "moxfq.q13.0": "Niemals",
+      "moxfq.q13.1": "Selten",
+      "moxfq.q13.2": "Manchmal",
+      "moxfq.q13.3": "Meistens",
+      "moxfq.q13.4": "Immer",
+      "moxfq.q14.0": "Niemals",
+      "moxfq.q14.1": "Selten",
+      "moxfq.q14.2": "Manchmal",
+      "moxfq.q14.3": "Meistens",
+      "moxfq.q14.4": "Immer",
+      "moxfq.q15.0": "Keine",
+      "moxfq.q15.1": "Sehr leicht",
+      "moxfq.q15.2": "Leicht",
+      "moxfq.q15.3": "Mäßig",
+      "moxfq.q15.4": "Stark",
+      "moxfq.q16.0": "Keine Nächte",
+      "moxfq.q16.1": "Nur 1 oder 2 Nächte",
+      "moxfq.q16.2": "Einige Nächte",
+      "moxfq.q16.3": "Die meisten Nächte",
+      "moxfq.q16.4": "Jede Nacht"
+    }
+  }
+}

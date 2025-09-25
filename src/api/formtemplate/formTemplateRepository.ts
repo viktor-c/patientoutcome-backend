@@ -1,5 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export class FormTemplateRepository {
@@ -471,6 +472,65 @@ export class FormTemplateRepository {
   ];
 
   /**
+   * Converts the MOXFQ JSON format to FormTemplate format
+   */
+  private convertMoxfqJsonToFormTemplate(): FormTemplate {
+    const moxfq = moxfqJsonForm as any;
+
+    // Create enumNames arrays for each question based on German translations
+    const createEnumNames = (questionKey: string, lang = "de"): string[] => {
+      const translations = moxfq.translations[lang];
+      return [0, 1, 2, 3, 4].map((value) => translations[`moxfq.${questionKey}.${value}`]);
+    };
+
+    // Use the raw schema but enhance it with enumNames for German language
+    const enhancedSchema = JSON.parse(JSON.stringify(moxfq.schema));
+
+    // Add enumNames to each question property for German translations
+    Object.keys(enhancedSchema.properties.moxfq.properties).forEach((questionKey) => {
+      const question = enhancedSchema.properties.moxfq.properties[questionKey];
+
+      // Add German title from translations
+      const germanTitle = moxfq.translations.de[`moxfq.${questionKey}.label`];
+      if (germanTitle) {
+        question.title = germanTitle;
+      }
+
+      // Add enumNames for German responses
+      const enumNames = createEnumNames(questionKey, "de");
+      if (enumNames && enumNames.length > 0 && enumNames.every((name) => name !== undefined)) {
+        question.enumNames = enumNames;
+      }
+    });
+
+    // Set the main title in German
+    enhancedSchema.properties.moxfq.title = moxfq.translations.de["moxfq.title.label"];
+
+    return {
+      _id: "6832337195b15e2d7e223d51",
+      title: moxfq.formTitle,
+      description: moxfq.description,
+      markdownHeader: `# ${moxfq.translations.de["moxfq.title.label"]}
+
+## Einleitung
+Auf der folgenden Seite finden Sie 16 Fragen zu Ihren Problemen am Fuß und/oder Sprunggelenk.
+
+Bitte beantworten Sie alle Fragen so, dass Sie Ihre Situation **innerhalb der letzten 4 Wochen** am passendsten beschreiben. 
+
+Jede Frage hat 5 Antwortmöglichkeiten.`,
+      markdownFooter: `## Sie haben den MOXFQ Fragebogen ausgefüllt
+
+**Vielen Dank für Ihre Teilnahme!**
+
+Ihre Antworten helfen uns dabei, Ihre Beschwerden besser zu verstehen und die bestmögliche Behandlung für Sie zu planen.`,
+      formSchema: enhancedSchema,
+      formSchemaUI: moxfq.uischema,
+      formData: moxfq.data,
+      translations: moxfq.translations,
+    };
+  }
+
+  /**
    * Getter to access mock data only in development or test environments.
    * In production, accessing this property will throw an error to prevent
    * accidental exposure of mock data.
@@ -480,7 +540,7 @@ export class FormTemplateRepository {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
-    return this._mockFormTemplateData;
+    return [...this._mockFormTemplateData, this.convertMoxfqJsonToFormTemplate()];
   }
 }
 
