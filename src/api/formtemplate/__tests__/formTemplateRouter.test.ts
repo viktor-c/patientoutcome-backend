@@ -77,4 +77,124 @@ describe("FormTemplate API", () => {
     const response = await request(app).delete(`/formtemplate/${response1.body.responseObject._id}`);
     expect(response.status).toBe(204);
   });
+
+  describe("MOXFQ Integration Tests", () => {
+    let moxfqTemplate: any;
+
+    beforeAll(() => {
+      // Get MOXFQ template from mock data
+      const templates = formTemplateRepository.mockFormTemplateData;
+      moxfqTemplate = templates.find((t) => t.title === "Manchester-Oxford Foot Questionnaire");
+    });
+
+    it("should load MOXFQ template from JSON integration", () => {
+      expect(moxfqTemplate).toBeDefined();
+      expect(moxfqTemplate.title).toBe("Manchester-Oxford Foot Questionnaire");
+      expect(moxfqTemplate._id).toBe("6832337195b15e2d7e223d51");
+    });
+
+    it("should have complete MOXFQ structure", () => {
+      expect(moxfqTemplate.formSchema).toBeDefined();
+      expect(moxfqTemplate.formSchemaUI).toBeDefined();
+      expect(moxfqTemplate.formData).toBeDefined();
+      expect(moxfqTemplate.translations).toBeDefined();
+      expect(moxfqTemplate.markdownHeader).toBeDefined();
+      expect(moxfqTemplate.markdownFooter).toBeDefined();
+    });
+
+    it("should have 16 questions in MOXFQ schema", () => {
+      expect(moxfqTemplate.formSchema.properties.moxfq.properties).toBeDefined();
+      const questions = Object.keys(moxfqTemplate.formSchema.properties.moxfq.properties);
+      expect(questions).toHaveLength(16);
+
+      // Verify all expected question keys exist
+      const expectedQuestions = Array.from({ length: 16 }, (_, i) => `q${i + 1}`);
+      expectedQuestions.forEach((question) => {
+        expect(questions).toContain(question);
+      });
+    });
+
+    it("should have German and English translations", () => {
+      expect(moxfqTemplate.translations.de).toBeDefined();
+      expect(moxfqTemplate.translations.en).toBeDefined();
+
+      // Test specific translation keys
+      expect(moxfqTemplate.translations.de["moxfq.q1.label"]).toBe("Ich habe Schmerzen in meinem Fuß/Knöchel");
+      expect(moxfqTemplate.translations.en["moxfq.q1.label"]).toBe("I have pain in my foot/ankle");
+    });
+
+    it("should apply German translations to all question titles", () => {
+      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
+      const questionsWithTitles = Object.keys(questions).filter((key) => questions[key].title);
+
+      expect(questionsWithTitles).toHaveLength(16);
+
+      // Verify specific German titles are applied
+      expect(questions.q1.title).toBe("Ich habe Schmerzen in meinem Fuß/Knöchel");
+      expect(questions.q15.title).toContain("Wie würden Sie in den letzten 4 Wochen");
+      expect(questions.q16.title).toContain("Wurden Sie in den letzten 4 Wochen nachts");
+    });
+
+    it("should have German enumNames for all questions", () => {
+      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
+      const questionsWithEnumNames = Object.keys(questions).filter((key) => questions[key].enumNames);
+
+      expect(questionsWithEnumNames).toHaveLength(16);
+
+      // Test specific enumNames content
+      expect(questions.q1.enumNames).toEqual(["Niemals", "Selten", "Manchmal", "Meistens", "Immer"]);
+      expect(questions.q15.enumNames).toEqual(["Keine", "Sehr leicht", "Leicht", "Mäßig", "Stark"]);
+      expect(questions.q16.enumNames).toEqual([
+        "Keine Nächte",
+        "Nur 1 oder 2 Nächte",
+        "Einige Nächte",
+        "Die meisten Nächte",
+        "Jede Nacht",
+      ]);
+    });
+
+    it("should have valid question schema structure", () => {
+      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
+
+      Object.keys(questions).forEach((questionKey) => {
+        const question = questions[questionKey];
+
+        // Each question should have required properties
+        expect(question.title).toBeDefined();
+        expect(question.type).toBe("integer");
+        expect(question.minimum).toBe(0);
+        expect(question.maximum).toBe(4);
+        expect(question.enumNames).toBeDefined();
+        expect(question.enumNames).toHaveLength(5);
+      });
+    });
+
+    it("should access MOXFQ template via API endpoint", async () => {
+      const response = await request(app).get("/formtemplate/id/6832337195b15e2d7e223d51");
+
+      expect(response.status).toBe(200);
+      expect(response.body.responseObject.title).toBe("Manchester-Oxford Foot Questionnaire");
+      expect(response.body.responseObject.translations).toBeDefined();
+    });
+
+    it("should include MOXFQ in template list", async () => {
+      const response = await request(app).get("/formtemplate");
+
+      expect(response.status).toBe(200);
+      const templates = response.body.responseObject;
+      const moxfqInList = templates.find((t: any) => t.title === "Manchester-Oxford Foot Questionnaire");
+
+      expect(moxfqInList).toBeDefined();
+      expect(moxfqInList._id).toBe("6832337195b15e2d7e223d51");
+    });
+
+    it("should have German markdown content", () => {
+      expect(moxfqTemplate.markdownHeader).toContain("Manchester-Oxford Fuß Fragebogen");
+      expect(moxfqTemplate.markdownHeader).toContain("Einleitung");
+      expect(moxfqTemplate.markdownHeader).toContain("innerhalb der letzten 4 Wochen");
+
+      expect(moxfqTemplate.markdownFooter).toContain("MOXFQ Fragebogen ausgefüllt");
+      expect(moxfqTemplate.markdownFooter).toContain("Vielen Dank für Ihre Teilnahme");
+    });
+  });
 });

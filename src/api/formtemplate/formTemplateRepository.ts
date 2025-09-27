@@ -1,6 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
+import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export class FormTemplateRepository {
@@ -507,7 +507,7 @@ export class FormTemplateRepository {
     enhancedSchema.properties.moxfq.title = moxfq.translations.de["moxfq.title.label"];
 
     return {
-      _id: "6832337195b15e2d7e223d51",
+      _id: "67b4e612d0feb4ad99ae2e85",
       title: moxfq.formTitle,
       description: moxfq.description,
       markdownHeader: `# ${moxfq.translations.de["moxfq.title.label"]}
