@@ -148,8 +148,8 @@ describe("User API Endpoints", () => {
     });
 
     it("should return no users found when role filter returns no results", async () => {
-      const agent = await loginUserAgent("doctor"); // bwhite user in "Orthopädie" department
-      // Act - filter by kiosk role (no kiosk users in Oncology)
+      const agent = await loginUserAgent("mfa"); // asmith user in "Neurology" department
+      // Act - filter by kiosk role (no kiosk users in Neurology)
       const response = await agent.get("/user?role=kiosk");
       const responseBody: ServiceResponse<User[]> = response.body;
 
