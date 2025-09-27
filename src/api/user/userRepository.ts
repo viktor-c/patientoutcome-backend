@@ -240,7 +240,7 @@ export class UserRepository {
     }
   }
 
-  async createMockUserData(): Promise<void> {
+  async createMockUserData(forceReset = false): Promise<void> {
     // Only allow mock data in development or test environments
     if (env.NODE_ENV === "production") {
       const error = new Error("Mock data is not allowed in production environment");
@@ -249,9 +249,23 @@ export class UserRepository {
     }
 
     try {
+      // If forceReset is false, check if mock users already exist to avoid duplicate key errors in parallel tests
+      if (!forceReset) {
+        const existingUserCount = await userModel.countDocuments({
+          _id: { $in: this.mockUsers.map((user) => user._id) },
+        });
+
+        // If all mock users already exist, skip insertion
+        if (existingUserCount === this.mockUsers.length) {
+          logger.info("Mock user data already exists, skipping insertion");
+          return;
+        }
+      }
+
+      // Clear existing data and insert fresh mock data
       await userModel.deleteMany({});
       const result = await userModel.insertMany(this.mockUsers);
-      logger.info({ count: result.length }, "Mock user data seeded successfully");
+      logger.info({ count: result.length }, `Mock user data ${forceReset ? "reset and " : ""}seeded successfully`);
     } catch (error) {
       logger.error({ error }, "Error seeding mock user data");
       return Promise.reject(error);
