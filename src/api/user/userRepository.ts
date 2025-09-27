@@ -13,7 +13,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8d",
       belongsToCenter: ["1"],
-      department: "UnitTesting",
+      department: "Orthopädie",
       email: "student@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "PJ Student",
@@ -37,13 +37,25 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8f",
       belongsToCenter: ["1"],
-      department: "Oncology",
+      department: "Orthopädie",
       email: "bwhite@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Bob White",
       roles: ["doctor"],
       permissions: [],
       username: "bwhite",
+      password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+    },
+    {
+      _id: "676336bea497301f6eff8a8f",
+      belongsToCenter: ["1"],
+      department: "Orthopädie",
+      email: "jdoe@example.com",
+      lastLogin: faker.date.recent().toISOString(),
+      name: "John Doe",
+      roles: ["doctor"],
+      permissions: [],
+      username: "jdoe",
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
     },
     {

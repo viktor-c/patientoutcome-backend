@@ -85,10 +85,14 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
 
-      // Only users from "Oncology" department should be returned
-      expect(responseBody.responseObject.length).toEqual(1);
-      expect(responseBody.responseObject[0].department).toEqual("Oncology");
-      expect(responseBody.responseObject[0].username).toEqual("bwhite");
+      const sameDepartmentUsers = userRepository.mockUsers.filter(
+        (user) => user.department === responseBody.responseObject[0].department,
+      );
+      expect(responseBody.responseObject.length).toEqual(sameDepartmentUsers.length);
+
+      expect(responseBody.responseObject[0].department).toEqual("Orthopädie");
+      const expectedUsername = sameDepartmentUsers[0].username;
+      expect(responseBody.responseObject[0].username).toEqual(expectedUsername);
 
       // logout user to clear session
       await logoutUser(agent);
@@ -144,7 +148,7 @@ describe("User API Endpoints", () => {
     });
 
     it("should return no users found when role filter returns no results", async () => {
-      const agent = await loginUserAgent("doctor"); // bwhite user in "Oncology" department
+      const agent = await loginUserAgent("doctor"); // bwhite user in "Orthopädie" department
       // Act - filter by kiosk role (no kiosk users in Oncology)
       const response = await agent.get("/user?role=kiosk");
       const responseBody: ServiceResponse<User[]> = response.body;
