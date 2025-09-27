@@ -48,7 +48,7 @@ This document provides a manual testing guide for the updated `getUsers` functio
 | -------- | ----------- | --------------- | ------------------------ |
 | student  | UnitTesting | student         | 676336bea497301f6eff8c8d |
 | asmith   | Neurology   | mfa             | 676336bea497301f6eff8c8e |
-| bwhite   | Oncology    | doctor          | 676336bea497301f6eff8c8f |
+| bwhite   | Orthopädie  | doctor          | 676336bea497301f6eff8c8f |
 | cjones   | Pediatrics  | study-nurse     | 676336bea497301f6eff8c90 |
 | dlee     | Dermatology | project-manager | 676336bea497301f6eff8c91 |
 | ewilson  | Radiology   | admin           | 676336bea497301f6eff8c92 |
