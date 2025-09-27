@@ -26,7 +26,7 @@ The Surgery API follows the same architectural pattern as other APIs in the syst
   side: "left" | "right" | "none",
   surgeryDate: Date,
   surgeryTime?: number,
-  tourniqet?: number,
+  tourniquet?: number,
   anaesthesiaType?: AnaesthesiaType,
   roentgenDosis?: number,
   roentgenTime?: string,

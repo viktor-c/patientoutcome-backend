@@ -44,7 +44,7 @@ export const SurgerySchema = z.object({
   side: z.enum(["left", "right", "none"]),
   surgeryDate: dateSchema,
   surgeryTime: z.number().optional(),
-  tourniqet: z.number().optional(),
+  tourniquet: z.number().optional(),
   anaesthesiaType: AnaesthesiaTypeSchema.optional(),
   roentgenDosis: z.number().optional(),
   roentgenTime: z.string().optional(),
