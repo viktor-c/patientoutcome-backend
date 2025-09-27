@@ -103,7 +103,7 @@ export class FormRepository {
         // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
-        formTemplateId: "67b4e612d0feb4ad99ae2e83",
+        formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
         score: undefined,
         createdAt: new Date(),
         updatedAt: undefined,
@@ -123,7 +123,7 @@ export class FormRepository {
         // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
-        formTemplateId: "67b4e612d0feb4ad99ae2e84",
+        formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
         score: undefined,
         createdAt: new Date(),
         updatedAt: undefined,

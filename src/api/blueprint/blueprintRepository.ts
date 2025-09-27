@@ -266,7 +266,7 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -398,7 +398,7 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -418,7 +418,7 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -438,7 +438,7 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"], //Array of Form ObjectId references for associated PROMs
+        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
