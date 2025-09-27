@@ -157,6 +157,25 @@ seedRouter.get("/users", async (_req: Request, res: Response) => {
 });
 
 /**
+ * Force reset and seed database with fresh mock data for users
+ * @route GET /seed/users/reset
+ */
+seedRouter.get("/users/reset", async (_req: Request, res: Response) => {
+  try {
+    await userRepository.createMockUserData(true); // Force reset
+    const serviceResponse = ServiceResponse.success("User mock data reset and inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to reset mock user data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+/**
  * seed database with mock data for clinical study
  * @route GET /seed/clinicalStudy
  */
@@ -272,7 +291,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
     await consultationRepository.createMockData();
     await formTemplateRepository.createMockDataFormTemplate();
     await formRepository.createFormMockData();
-    await userRepository.createMockUserData();
+    await userRepository.createMockUserData(true); // Force reset users
     await clinicalStudyRepository.createMockDataClinicalStudies();
     await codeRepository.createMockDataFormAccessCodes();
     await kioskRepository.createMockData();
