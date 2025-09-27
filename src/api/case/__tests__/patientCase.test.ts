@@ -73,22 +73,7 @@ describe("PatientCase API", () => {
       StudyDiagnosis: ["Hallux valgus"],
       MainDiagnosisICD10: ["M20.5"],
       StudyDiagnosisICD10: ["M20.1"],
-      surgeries: [
-        {
-          _id: "677da5efcb4569ad1c655560",
-          externalId: "23a9618a-456a-49e3-8156-e2189f888bdb",
-          diagnosis: ["M78.7", "M73.8"],
-          side: "none",
-          surgeryDate: "2025-03-01T04:11:41.154Z",
-          anaesthesiaType: {
-            id: 1,
-            type: "block",
-          },
-          roentgenDosis: 76.89170063405697,
-          roentgenTime: "00:00:03.000",
-          surgeons: ["676336bea497301f6eff8c91"],
-        },
-      ],
+      surgeries: [],
       supervisors: ["676336bea497301f6eff8c91"],
       notes: [
         {
