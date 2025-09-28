@@ -14,6 +14,10 @@ export const Form = FormTemplate.extend({
   formFillStatus: z.enum(["draft", "incomplete", "completed"]).default("draft"),
   updatedAt: z.date().optional(),
   completedAt: z.date().optional(),
+  // Form fill timing fields
+  formStartTime: z.date().optional(),
+  formEndTime: z.date().optional(),
+  completionTimeSeconds: z.number().positive().optional(),
 }).strict();
 
 // Infer TypeScript type from Zod schema

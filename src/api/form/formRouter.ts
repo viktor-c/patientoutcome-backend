@@ -30,7 +30,18 @@ const createFormSchema = z.object({
   }),
 });
 
-const updateFormSchema = z.object({}).passthrough().optional();
+const updateFormSchema = z.object({
+  body: z
+    .object({
+      formData: z.object({}).passthrough().optional(),
+      completionTimeSeconds: z.number().positive().optional(),
+      formStartTime: z.date().optional(),
+      formEndTime: z.date().optional(),
+      formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
+      score: z.number().optional(),
+    })
+    .passthrough(),
+});
 
 // Register path for getting a form by patient ID, case ID, consultation ID and form Id
 formRegistry.registerPath({
