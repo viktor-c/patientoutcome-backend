@@ -133,7 +133,7 @@ export class ConsultationRepository {
             note: faker.lorem.paragraph(),
           },
         ],
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54"],
+        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54", "6832337595b15e2d7e223d57"],
         formAccessCode: "682f7de54ef4eb7a14be67f6",
         images: [],
         visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
@@ -160,12 +160,12 @@ export class ConsultationRepository {
         _id: "60d5ec49f1b2c12d88f1e8a3",
         __v: 0,
         patientCaseId: "677da5efcb4569ad1c655160",
-        dateAndTime: faker.date.past(),
+        dateAndTime: faker.date.soon(),
         reasonForConsultation: ["pain"],
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b6",
-            dateCreated: faker.date.past(),
+            dateCreated: faker.date.soon(),
             createdBy: userRepository.mockUsers?.[2]?._id || "",
             note: faker.lorem.paragraph(),
           },

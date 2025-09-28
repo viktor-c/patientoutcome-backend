@@ -241,12 +241,7 @@ export class BlueprintRepository {
         notes: [],
         medicalHistory: "String containing patient's medical history",
         // array of ids for consultation blueprints
-        consultations: [
-          "68c08903290365a33d085fcb",
-          "68c08903290365a33d085fcf",
-          "68c08903290365a33d085fd0",
-          "68c08903290365a33d085fd1",
-        ],
+        consultations: ["68c08903290365a33d085fcb", "68c08903290365a33d085fcf"],
       },
       tags: ["case", "patient-care", "orthopedics", "template"],
     },
@@ -266,7 +261,7 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
+        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84", "67b4e612d0feb4ad99ae2e85"], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },

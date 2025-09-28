@@ -116,6 +116,7 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: formTemplateRepository.mockFormTemplateData[0].formData,
+        translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
 
       this.mockForms.push({
@@ -136,6 +137,7 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: formTemplateRepository.mockFormTemplateData[1].formData,
+        translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
       // forms for the second consultation
@@ -157,6 +159,7 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: formTemplateRepository.mockFormTemplateData[0].formData,
+        translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
 
       this.mockForms.push({
@@ -177,6 +180,27 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: formTemplateRepository.mockFormTemplateData[1].formData,
+        translations: formTemplateRepository.mockFormTemplateData[1].translations,
+      });
+
+      this.mockForms.push({
+        _id: "6832337595b15e2d7e223d57",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a1",
+        formTemplateId: "67b4e612d0feb4ad99ae2e85", //vsa
+        score: undefined,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[2].title,
+        description: formTemplateRepository.mockFormTemplateData[2].description,
+        markdownHeader: formTemplateRepository.mockFormTemplateData[2].markdownHeader,
+        markdownFooter: formTemplateRepository.mockFormTemplateData[2].markdownFooter,
+        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
+        formData: formTemplateRepository.mockFormTemplateData[2].formData,
+        translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
       logger.info("Mock forms populated with template data successfully");
