@@ -15,6 +15,8 @@ export const UserNoPasswordSchema = z.object({
   email: z.string().email(),
   lastLogin: z.string().datetime().optional(),
   belongsToCenter: z.array(z.string()),
+  // per-user frontend setting: how many days to look back for consultations
+  daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
 });
 
 // Define the User schema by extending UserNoPasswordSchema
@@ -58,6 +60,7 @@ export const UpdateUserSchema = z
     department: z.string().min(3).max(50).optional(),
     email: z.string().email().optional(),
     belongsToCenter: z.array(z.string()).optional(),
+    daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   })
   .strict();
 // Input Validation for 'POST user' endpoint
