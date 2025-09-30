@@ -14,35 +14,58 @@
             "title": "Wie oft haben Sie Schmerzen bzw. wie stark ist der Schmerz am Vorfuß?",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating"
+            "xrenderinghint": "aofasRating",
+            "i18n": "q1"
           },
           "q2": {
             "title": "Funktion, Einschränkung der Aktivität",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating"
+            "xrenderinghint": "aofasRating",
+            "i18n": "q2"
           },
-          "q3": { "title": "Schuhwerk", "description": "", "type": "number", "xrenderinghint": "aofasRating" },
+          "q3": {
+            "title": "Schuhwerk",
+            "description": "",
+            "type": "number",
+            "xrenderinghint": "aofasRating",
+            "i18n": "q3"
+          },
           "q4": {
             "title": "Beweglichkeit im Großzehengrundgelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating"
+            "xrenderinghint": "aofasRating",
+            "i18n": "q4"
           },
           "q5": {
             "title": "Beweglichkeit im Großzehengelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating"
+            "xrenderinghint": "aofasRating",
+            "i18n": "q5"
           },
           "q6": {
             "title": "Stabilität im Großzehengrundgelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating"
+            "xrenderinghint": "aofasRating",
+            "i18n": "q6"
           },
-          "q7": { "title": "Schwiele am Hallux", "description": "", "type": "number", "xrenderinghint": "aofasRating" },
-          "q8": { "title": "Achsenfehlstellung", "description": "", "type": "number", "xrenderinghint": "aofasRating" }
+          "q7": {
+            "title": "Schwiele am Hallux",
+            "description": "",
+            "type": "number",
+            "xrenderinghint": "aofasRating",
+            "i18n": "q7"
+          },
+          "q8": {
+            "title": "Achsenfehlstellung",
+            "description": "",
+            "type": "number",
+            "xrenderinghint": "aofasRating",
+            "i18n": "q8"
+          }
         }
       }
     }
@@ -105,17 +128,31 @@
     }
   },
   "translations": {
+    "de": {
+      "aofas.title": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
+      "aofas.title.label": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
+      "aofas.title.description": "AOFAS Fragebogen zur Vorfußbeurteilung.",
+      "q1.label": "Wie oft haben Sie Schmerzen oder wie stark sind die Schmerzen im Vorfuß?",
+      "q2.label": "Funktion, Einschränkung der Aktivität",
+      "q3.label": "Schuhwerk",
+      "q4.label": "Beweglichkeit im Großzehengrundgelenk",
+      "q5.label": "Beweglichkeit im Großzehengelenk",
+      "q6.label": "Stabilität im Großzehengrundgelenk",
+      "q7.label": "Schwiele am Hallux",
+      "q8.label": "Achsenfehlstellung"
+    },
     "en": {
+      "aofas.title": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.label": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.description": "AOFAS questionnaire for forefoot assessment.",
-      "aofas.q1.label": "How often do you have pain or how severe is the pain in the forefoot?",
-      "aofas.q2.label": "Function, limitation of activity",
-      "aofas.q3.label": "Footwear",
-      "aofas.q4.label": "Range of motion in the first MTP joint",
-      "aofas.q5.label": "Range of motion in the first MTP joint",
-      "aofas.q6.label": "Stability in the first MTP joint",
-      "aofas.q7.label": "Callus on the hallux",
-      "aofas.q8.label": "Axis deformity"
+      "q1.label": "How often do you have pain or how severe is the pain in the forefoot?",
+      "q2.label": "Function, limitation of activity",
+      "q3.label": "Footwear",
+      "q4.label": "Range of motion in the first MTP joint",
+      "q5.label": "Range of motion in the first MTP joint",
+      "q6.label": "Stability in the first MTP joint",
+      "q7.label": "Callus on the hallux",
+      "q8.label": "Axis deformity"
     }
   }
 }
