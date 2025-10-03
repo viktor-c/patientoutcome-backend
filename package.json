@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
     "build": "tsup",
-    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist/types src/types/index.ts",
+    "build:types": "node scripts/copy-types.js",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
     "lint": "biome check src/",
