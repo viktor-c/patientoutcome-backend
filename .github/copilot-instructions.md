@@ -1,3 +1,7 @@
 - For testing use vitest.
 - Use zod to create mongoose schemas.
 - use openapi registry, zod-to-openapi and zod validation when setting up a router.
+- Use the logger utility for logging.
+- do not remove existing comments unless they explicitly say to do so.
+- after changing backend code with impact on the frontend, also regenerate the types in the frontend and regenerate API client code in the frontend.
+- when changing the backend API, also update the OpenAPI spec.
