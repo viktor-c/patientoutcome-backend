@@ -2,8 +2,9 @@ import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ServiceResponseSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
+import { logger } from "@/server";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
-import { Router } from "express";
+import { type NextFunction, type Request, type Response, Router } from "express";
 import { z } from "zod";
 import { formController } from "./formController";
 import { Form } from "./formModel";
@@ -24,23 +25,34 @@ const formIdSchema = z.object({
   }),
 });
 
-const createFormSchema = z.object({
-  body: z.object({
-    formData: z.object({}).passthrough(),
-  }),
+// Schema for the body content only (used in OpenAPI docs)
+const createFormBodySchema = z.object({
+  formData: z.object({}).passthrough(),
 });
 
+// Full validation schema (used in validateRequest middleware)
+const createFormSchema = z.object({
+  body: createFormBodySchema,
+});
+
+// Schema for the update body content only (used in OpenAPI docs)
+const updateFormBodySchema = z
+  .object({
+    formData: z.object({}).passthrough().optional(),
+    completionTimeSeconds: z.number().positive().optional(),
+    formStartTime: z.coerce.date().optional(),
+    formEndTime: z.coerce.date().optional(),
+    formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
+    scoring: z.object({}).passthrough().optional(), // Accept ScoringData structure
+  })
+  .passthrough();
+
+// Full validation schema (used in validateRequest middleware)
 const updateFormSchema = z.object({
-  body: z
-    .object({
-      formData: z.object({}).passthrough().optional(),
-      completionTimeSeconds: z.number().positive().optional(),
-      formStartTime: z.date().optional(),
-      formEndTime: z.date().optional(),
-      formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
-      score: z.number().optional(),
-    })
-    .passthrough(),
+  params: z.object({
+    formId: commonValidations.id,
+  }),
+  body: updateFormBodySchema,
 });
 
 // Register path for getting a form by patient ID, case ID, consultation ID and form Id
@@ -93,7 +105,7 @@ formRegistry.registerPath({
   request: {
     body: {
       content: {
-        "application/json": { schema: createFormSchema },
+        "application/json": { schema: createFormBodySchema },
       },
     },
   },
@@ -159,7 +171,7 @@ formRegistry.registerPath({
     params: z.object({ formId: commonValidations.id }),
     body: {
       content: {
-        "application/json": { schema: updateFormSchema },
+        "application/json": { schema: updateFormBodySchema },
       },
     },
   },
@@ -187,7 +199,18 @@ formRegistry.registerPath({
   ]),
 });
 
-router.put("/form/:formId", validateRequest(updateFormSchema), formController.updateForm);
+// Debug middleware to log raw request body
+const debugRequestBody = (req: Request, res: Response, next: NextFunction) => {
+  console.debug("=== BACKEND ROUTER: Raw Request ===");
+  console.debug("Method:", req.method);
+  console.debug("URL:", req.url);
+  console.debug("Content-Type:", req.headers["content-type"]);
+  console.debug("Raw req.body:", JSON.stringify(req.body, null, 2));
+  console.debug("===================================");
+  next();
+};
+
+router.put("/form/:formId", debugRequestBody, validateRequest(updateFormSchema), formController.updateForm);
 
 // Register the path for deleting a form
 formRegistry.registerPath({

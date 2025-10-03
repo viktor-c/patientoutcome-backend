@@ -53,14 +53,18 @@ export class FormService {
     }
   }
 
-  /**
-   *
-   * @param formId
-   * @param updatedForm this only has the data answered for this form, nothing else.
-   * @returns
-   */
   async updateForm(formId: string, updatedForm: Partial<Form>): Promise<ServiceResponse<Form | null>> {
     try {
+      // Debug: Log what service received
+      console.debug("=== BACKEND SERVICE: Received data ===");
+      console.debug("formId:", formId);
+      console.debug("updatedForm type:", typeof updatedForm);
+      console.debug("updatedForm keys:", Object.keys(updatedForm));
+      console.debug("updatedForm:", JSON.stringify(updatedForm, null, 2));
+      console.debug("updatedForm.formData:", JSON.stringify(updatedForm.formData, null, 2));
+      console.debug("updatedForm.scoring:", JSON.stringify(updatedForm.scoring, null, 2));
+      console.debug("======================================");
+
       // get the form by id
       const existingForm = await formRepository.getFormById(formId);
       if (!existingForm) {
@@ -68,40 +72,61 @@ export class FormService {
       }
 
       // Extract formData from the updatedForm if it exists
-      const formData = updatedForm.formData || updatedForm;
+      // Handle the case where the client sends { body: { formData: {...} } } or just { formData: {...} }
+      let formData: any;
+
+      if (updatedForm.formData) {
+        // Check if formData has a 'body' wrapper (incorrect structure from old API client)
+        if (typeof updatedForm.formData === "object" && "body" in updatedForm.formData) {
+          const nested = (updatedForm.formData as any).body;
+          // If body.formData exists, use that, otherwise use body directly
+          formData = nested?.formData || nested;
+          console.log("⚠️  WARNING: Detected nested body structure in formData");
+        } else {
+          formData = updatedForm.formData;
+        }
+      } else {
+        // Fallback to using updatedForm directly (for backward compatibility)
+        formData = updatedForm;
+      }
+
+      console.log("=== BACKEND SERVICE: After extraction ===");
+      console.log("formData extracted:", JSON.stringify(formData, null, 2));
+      console.log("formData type:", typeof formData);
+      console.log("formData keys:", formData && typeof formData === "object" ? Object.keys(formData) : "N/A");
+      console.log("=========================================");
+
+      // Prepare update data
+      const updateData: Partial<Form> = {};
 
       // Handle form timing data
-      if (updatedForm.completionTimeSeconds) {
-        existingForm.completionTimeSeconds = updatedForm.completionTimeSeconds;
+      if (updatedForm.completionTimeSeconds !== undefined) {
+        updateData.completionTimeSeconds = updatedForm.completionTimeSeconds;
       }
 
-      if (updatedForm.formStartTime) {
-        existingForm.formStartTime = updatedForm.formStartTime;
+      if (updatedForm.formStartTime !== undefined) {
+        updateData.formStartTime = updatedForm.formStartTime;
       }
 
-      if (updatedForm.formEndTime) {
-        existingForm.formEndTime = updatedForm.formEndTime;
+      if (updatedForm.formEndTime !== undefined) {
+        updateData.formEndTime = updatedForm.formEndTime;
       }
 
-      // first check if the fields in the formData are completely filled
+      // === SCORE CALCULATION POLICY ===
+      // The backend does NOT calculate or normalize any form scores (e.g., MOXFQ normalization).
+      // All score calculations must be performed on the frontend and passed as updatedForm.score.
+      // The backend only stores the provided score value.
+      // ===============================
+      // Check if the fields in the formData are completely filled (for fill status only)
       const incompleteFields = [];
-      let score = 0;
-
       if (formData && typeof formData === "object") {
         const validationResult = CustomFormDataSchema.safeParse(formData);
         logger.debug({ isValid: validationResult.success }, "formService.ts Form validation");
-
-        // Iterate through each questionnaire section
         for (const [sectionName, answerValues] of Object.entries(formData)) {
           if (typeof answerValues === "object" && answerValues !== null) {
             for (const [question, answer] of Object.entries(answerValues)) {
               if (answer === null || answer === undefined || answer === "") {
                 incompleteFields.push(`${sectionName}.${question}`);
-              } else {
-                const numericAnswer = Number(answer);
-                if (!Number.isNaN(numericAnswer)) {
-                  score += numericAnswer;
-                }
               }
             }
           }
@@ -110,36 +135,57 @@ export class FormService {
 
       if (incompleteFields.length > 0) {
         logger.debug({ incompleteFields }, "formService.ts Form validation failed");
-        existingForm.formFillStatus = "incomplete";
-        existingForm.updatedAt = new Date(); // update updatedAt to current date
+        updateData.formFillStatus = "incomplete";
+        updateData.updatedAt = new Date();
       } else {
         logger.debug("formService.ts Form validation passed, all fields are complete.");
-        existingForm.formFillStatus = "completed";
-        existingForm.updatedAt = new Date(); // update updatedAt to current date
-        existingForm.completedAt = new Date(); // update completedAt to current date
-
-        // Set form end time if not already set and the form is being completed
+        updateData.formFillStatus = "completed";
+        updateData.updatedAt = new Date();
+        updateData.completedAt = new Date();
         if (!existingForm.formEndTime) {
-          existingForm.formEndTime = new Date();
+          updateData.formEndTime = new Date();
         }
       }
 
       // Update the form data
-      if (updatedForm.formData) {
-        existingForm.formData = updatedForm.formData;
-      } else if (formData) {
-        existingForm.formData = formData;
+      // Only use the properly extracted formData, ignore any direct questionnaire properties on updatedForm
+      if (formData && typeof formData === "object" && Object.keys(formData).length > 0) {
+        // Ensure we're not including the malformed 'body' wrapper
+        if ("body" in formData) {
+          console.log("⚠️  WARNING: Removing body wrapper from formData before saving");
+          const { body, ...cleanFormData } = formData;
+          updateData.formData = Object.keys(cleanFormData).length > 0 ? cleanFormData : body?.formData || body;
+        } else {
+          updateData.formData = formData;
+        }
       }
 
       // Calculate completion time if not provided but start and end times are available
-      if (!existingForm.completionTimeSeconds && existingForm.formStartTime && existingForm.formEndTime) {
-        const diffMs = existingForm.formEndTime.getTime() - existingForm.formStartTime.getTime();
-        existingForm.completionTimeSeconds = Math.round(diffMs / 1000);
+      if (
+        !updateData.completionTimeSeconds &&
+        existingForm.formStartTime &&
+        (updateData.formEndTime || existingForm.formEndTime)
+      ) {
+        const endTime = updateData.formEndTime || existingForm.formEndTime!;
+        const diffMs = endTime.getTime() - existingForm.formStartTime.getTime();
+        updateData.completionTimeSeconds = Math.round(diffMs / 1000);
       }
 
-      // update the score
-      existingForm.score = score;
-      const response = await formRepository.updateForm(formId, existingForm);
+      // Store the scoring data provided by the frontend (do not calculate here)
+      // The frontend is responsible for all scoring calculations, including MOXFQ normalization
+      if (updatedForm.scoring && typeof updatedForm.scoring === "object") {
+        updateData.scoring = updatedForm.scoring;
+      }
+      // If no scoring is provided, do not set/update the scoring field
+      // This ensures backend never overwrites frontend-calculated scores
+
+      console.log("=== BACKEND SERVICE: Final updateData ===");
+      console.log("updateData:", JSON.stringify(updateData, null, 2));
+      console.log("updateData.formData:", JSON.stringify(updateData.formData, null, 2));
+      console.log("updateData.scoring:", JSON.stringify(updateData.scoring, null, 2));
+      console.log("=========================================");
+
+      const response = await formRepository.updateForm(formId, updateData);
       return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
       logger.error({ error }, "Error in updateForm service");
