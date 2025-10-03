@@ -42,6 +42,7 @@ export class FormTemplateRepository {
     }
   }
 
+<<<<<<< HEAD
   // Include EFAS, AOFAS, MOXFQ, and VAS JSON templates
   private _mockFormTemplateData: any[] = [
     efasJsonForm as any,
@@ -51,6 +52,16 @@ export class FormTemplateRepository {
   ];
 
   public get mockFormTemplateData() {
+=======
+  // Include EFAS and AOFAS JSON templates as-is
+  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any];
+
+  public get mockFormTemplateData() {
+    if (env.NODE_ENV === "production") {
+      logger.error("Attempted to access mock data in production environment");
+      throw new Error("Mock data is not available in production environment");
+    }
+>>>>>>> 78e8b5e (refactor: update form repository and templates for ScoringData)
     return this._mockFormTemplateData;
   }
 }

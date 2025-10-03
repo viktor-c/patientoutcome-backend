@@ -2,6 +2,8 @@
   "_id": "67b4e612d0feb4ad99ae2e85",
   "title": "Manchester-Oxford Foot Questionnaire",
   "description": "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities with integrated scoring system",
+  "markdownHeader": "## Einleitung\nAuf der folgenden Seite finden Sie 16 Fragen zu Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation **innerhalb der letzten 4 Wochen** am passendsten beschreiben. \n\nJede Frage hat 5 Antwortmöglichkeiten. Bitte kreuzen Sie die Antwort an, die am besten auf Sie zutrifft. \n\nFalls Sie eine Frage nicht beantworten können, lassen Sie diese bitte frei.",
+  "markdownFooter": "## Sie haben den MOXFQ Fragebogen ausgefüllt\n\nVielen Dank für Ihre Teilnahme!\n\nIhr Arzt wird die Ergebnisse mit Ihnen besprechen.",
   "formSchema": {
     "type": "object",
     "properties": {

@@ -6,6 +6,7 @@ import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
+<<<<<<< HEAD
 interface SubscaleScore {
   name: string;
   description?: string | null;
@@ -25,6 +26,10 @@ interface ScoringData {
   };
   total: SubscaleScore | null;
 }
+=======
+// Import scoring calculation utilities
+import { calculateAofasScore, calculateEfasScore, calculateMoxfqScore } from "@scripts/calculate-form-scores.js";
+>>>>>>> 78e8b5e (refactor: update form repository and templates for ScoringData)
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
@@ -155,6 +160,10 @@ export class FormRepository {
       const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
       const aofasScoring1 = aofasFormData1 ? calculateAofasScore(aofasFormData1) : undefined;
 
+      // AOFAS Form 1
+      const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
+      const aofasScoring1 = aofasFormData1 ? calculateAofasScore(aofasFormData1) : undefined;
+
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
         // patientId: "6771d9d410ede2552b7bba40",
@@ -175,6 +184,7 @@ export class FormRepository {
       });
 
       // forms for the second consultation
+<<<<<<< HEAD
 
       // VAS Form 2
       const vasFormData2 = formTemplateRepository.mockFormTemplateData[3].formData;
@@ -196,6 +206,8 @@ export class FormRepository {
         formData: vasFormData2 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[3].translations,
       });
+=======
+>>>>>>> 78e8b5e (refactor: update form repository and templates for ScoringData)
       // EFAS Form 2
       const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData;
       const efasScoring2 = efasFormData2 ? calculateEfasScore(efasFormData2) : undefined;
@@ -259,6 +271,7 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
+<<<<<<< HEAD
         translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
@@ -278,6 +291,8 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
+=======
+>>>>>>> 78e8b5e (refactor: update form repository and templates for ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
