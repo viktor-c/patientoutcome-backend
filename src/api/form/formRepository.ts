@@ -6,6 +6,9 @@ import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import type { ObjectId } from "mongoose";
 
+// Import scoring calculation utilities
+import { calculateAofasScore, calculateEfasScore, calculateMoxfqScore } from "@scripts/calculate-form-scores.js";
+
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
     return FormModel.find().lean();
@@ -43,7 +46,7 @@ export class FormRepository {
       caseId,
       consultationId,
       formTemplateId: formTemplateId,
-      score: null,
+      scoring: undefined,
       createdAt: new Date(),
       completedAt: null,
       ...deepCopy,
@@ -53,7 +56,10 @@ export class FormRepository {
   }
 
   async updateForm(id: string, data: Partial<Form>): Promise<Form | null> {
-    return FormModel.findByIdAndUpdate(id, data, { new: true }).lean();
+    const updated = await FormModel.findByIdAndUpdate(id, data, { new: true }).populate(
+      "caseId consultationId formTemplateId",
+    );
+    return updated ? updated.toObject() : null;
   }
 
   async deleteForm(id: string): Promise<boolean> {
@@ -98,13 +104,17 @@ export class FormRepository {
 
     this.mockForms = [];
     try {
+      // EFAS Form 1
+      const efasFormData1 = formTemplateRepository.mockFormTemplateData[0].formData;
+      const efasScoring1 = efasFormData1 ? calculateEfasScore(efasFormData1) : undefined;
+
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
         // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
-        score: undefined,
+        scoring: efasScoring1,
         createdAt: new Date(),
         updatedAt: undefined,
         completedAt: undefined,
@@ -115,9 +125,13 @@ export class FormRepository {
         markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
-        formData: formTemplateRepository.mockFormTemplateData[0].formData,
+        formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
+
+      // AOFAS Form 1
+      const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
+      const aofasScoring1 = aofasFormData1 ? calculateAofasScore(aofasFormData1) : undefined;
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
@@ -125,7 +139,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
-        score: undefined,
+        scoring: aofasScoring1,
         createdAt: new Date(),
         updatedAt: undefined,
         completedAt: undefined,
@@ -136,18 +150,22 @@ export class FormRepository {
         markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
-        formData: formTemplateRepository.mockFormTemplateData[1].formData,
+        formData: aofasFormData1 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
       // forms for the second consultation
+      // EFAS Form 2
+      const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData;
+      const efasScoring2 = efasFormData2 ? calculateEfasScore(efasFormData2) : undefined;
+
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d55",
         // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
-        score: undefined,
+        scoring: efasScoring2,
         createdAt: new Date(),
         updatedAt: undefined,
         completedAt: undefined,
@@ -158,9 +176,13 @@ export class FormRepository {
         markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
-        formData: formTemplateRepository.mockFormTemplateData[0].formData,
+        formData: efasFormData2 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
+
+      // AOFAS Form 2
+      const aofasFormData2 = formTemplateRepository.mockFormTemplateData[1].formData;
+      const aofasScoring2 = aofasFormData2 ? calculateAofasScore(aofasFormData2) : undefined;
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d56",
@@ -168,7 +190,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
-        score: undefined,
+        scoring: aofasScoring2,
         createdAt: new Date(),
         updatedAt: undefined,
         completedAt: undefined,
@@ -179,16 +201,19 @@ export class FormRepository {
         markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
-        formData: formTemplateRepository.mockFormTemplateData[1].formData,
+        formData: aofasFormData2 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
+      const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData;
+      const moxfqScoring1 = moxfqFormData1 ? calculateMoxfqScore(moxfqFormData1) : undefined;
+      // This is the moxfq Form
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d57",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
-        formTemplateId: "67b4e612d0feb4ad99ae2e85", //vsa
-        score: undefined,
+        formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
+        scoring: moxfqScoring1,
         createdAt: new Date(),
         updatedAt: undefined,
         completedAt: undefined,
@@ -199,7 +224,7 @@ export class FormRepository {
         markdownFooter: formTemplateRepository.mockFormTemplateData[2].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
-        formData: formTemplateRepository.mockFormTemplateData[2].formData,
+        formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 

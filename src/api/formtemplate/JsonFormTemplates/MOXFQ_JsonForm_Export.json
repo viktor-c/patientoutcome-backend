@@ -1,30 +1,16 @@
 {
-  "formName": "MOXFQ",
-  "formTitle": "Manchester-Oxford Foot Questionnaire",
-  "version": "2.0.0",
+  "_id": "67b4e612d0feb4ad99ae2e85",
+  "title": "Manchester-Oxford Foot Questionnaire",
   "description": "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities with integrated scoring system",
-  "lastUpdated": "2025-09-25",
-  "metadata": {
-    "questions": 16,
-    "scoringRange": "0-4 for each question",
-    "totalScoreRange": "0-64 (raw), 0-100 (normalized)",
-    "specialQuestions": [15, 16],
-    "languages": ["en", "de"],
-    "features": [
-      "Real-time scoring",
-      "Subscale analysis",
-      "Table renderer",
-      "Progress tracking",
-      "Clinical interpretation"
-    ]
-  },
-  "schema": {
+  "markdownHeader": "## Einleitung\nAuf der folgenden Seite finden Sie 16 Fragen zu Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation **innerhalb der letzten 4 Wochen** am passendsten beschreiben. \n\nJede Frage hat 5 Antwortmöglichkeiten. Bitte kreuzen Sie die Antwort an, die am besten auf Sie zutrifft. \n\nFalls Sie eine Frage nicht beantworten können, lassen Sie diese bitte frei.",
+  "markdownFooter": "## Sie haben den MOXFQ Fragebogen ausgefüllt\n\nVielen Dank für Ihre Teilnahme!\n\nIhr Arzt wird die Ergebnisse mit Ihnen besprechen.",
+  "formSchema": {
     "type": "object",
     "properties": {
       "moxfq": {
-        "type": "object",
         "title": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
         "i18n": "moxfq.title",
+        "type": "object",
         "properties": {
           "q1": {
             "type": "integer",
@@ -156,32 +142,12 @@
             "subscale": "socialInteraction",
             "specialQuestion": true
           }
-        },
-        "required": [
-          "q1",
-          "q2",
-          "q3",
-          "q4",
-          "q5",
-          "q6",
-          "q7",
-          "q8",
-          "q9",
-          "q10",
-          "q11",
-          "q12",
-          "q13",
-          "q14",
-          "q15",
-          "q16"
-        ]
+        }
       }
-    },
-    "required": ["moxfq"]
+    }
   },
-  "uischema": {
+  "formSchemaUI": {
     "type": "MOXFQTable",
-    "scope": "#/properties/moxfq",
     "elements": [
       {
         "type": "Group",
@@ -190,120 +156,88 @@
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q1",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q2",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q3",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q4",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q5",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q6",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q7",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q8",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q9",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q10",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q11",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q12",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q13",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q14",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q15",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           },
           {
             "type": "Control",
             "scope": "#/properties/moxfq/properties/q16",
-            "options": {
-              "format": "radio"
-            }
+            "options": { "format": "radio" }
           }
         ]
       }
     ]
   },
-  "data": {
+  "formData": {
     "moxfq": {
       "q1": null,
       "q2": null,

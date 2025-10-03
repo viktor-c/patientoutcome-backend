@@ -49,68 +49,14 @@ export class FormTemplateRepository {
   }
 
   // Include EFAS and AOFAS JSON templates as-is
-  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any];
-
-  /**
-   * Converts the MOXFQ JSON format to FormTemplate format (kept as before)
-   */
-  private convertMoxfqJsonToFormTemplate(): FormTemplate {
-    const moxfq = moxfqJsonForm as any;
-
-    const createEnumNames = (questionKey: string): string[] => {
-      const deTrans = moxfq.translations?.de ?? {};
-      const enTrans = moxfq.translations?.en ?? {};
-      return [0, 1, 2, 3, 4].map(
-        (value) => deTrans[`moxfq.${questionKey}.${value}`] ?? enTrans[`moxfq.${questionKey}.${value}`] ?? undefined,
-      );
-    };
-
-    const enhancedSchema = JSON.parse(JSON.stringify(moxfq.schema));
-
-    if (enhancedSchema?.properties?.moxfq?.properties) {
-      Object.keys(enhancedSchema.properties.moxfq.properties).forEach((questionKey) => {
-        const question = enhancedSchema.properties.moxfq.properties[questionKey];
-
-        const germanTitle =
-          moxfq.translations?.de?.[`moxfq.${questionKey}.label`] ??
-          moxfq.translations?.en?.[`moxfq.${questionKey}.label`] ??
-          question.title;
-        if (germanTitle) {
-          question.title = germanTitle;
-        }
-
-        const enumNames = createEnumNames(questionKey);
-        if (enumNames && enumNames.length > 0 && enumNames.every((name) => name !== undefined)) {
-          question.enumNames = enumNames as any;
-        }
-      });
-
-      enhancedSchema.properties.moxfq.title =
-        moxfq.translations?.de?.["moxfq.title.label"] ??
-        moxfq.translations?.en?.["moxfq.title.label"] ??
-        moxfq.formTitle;
-    }
-
-    return {
-      _id: "67b4e612d0feb4ad99ae2e85",
-      title: moxfq.formTitle,
-      description: moxfq.description,
-      markdownHeader: `# ${moxfq.translations?.de?.["moxfq.title.label"] ?? moxfq.formTitle}\n\n## Einleitung\nAuf der folgenden Seite finden Sie 16 Fragen zu Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation **innerhalb der letzten 4 Wochen** am passendsten beschreiben. \n\nJede Frage hat 5 Antwortmöglichkeiten.`,
-      markdownFooter:
-        "## Sie haben den MOXFQ Fragebogen ausgefüllt\n\n**Vielen Dank für Ihre Teilnahme!**\n\nIhre Antworten helfen uns dabei, Ihre Beschwerden besser zu verstehen und die bestmögliche Behandlung für Sie zu planen.",
-      formSchema: enhancedSchema,
-      formSchemaUI: moxfq.uischema,
-      formData: moxfq.data,
-      translations: moxfq.translations,
-    } as FormTemplate;
-  }
+  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any];
 
   public get mockFormTemplateData() {
     if (env.NODE_ENV === "production") {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
-    return [...this._mockFormTemplateData, this.convertMoxfqJsonToFormTemplate()];
+    return this._mockFormTemplateData;
   }
 }
 
