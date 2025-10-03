@@ -17,8 +17,11 @@ export { Form as FormSchema } from "../api/form/formModel";
 export { SurgerySchema, CreateSurgerySchema } from "../api/surgery/surgeryModel";
 export { UserSchema, UserNoPasswordSchema } from "../api/user/userModel";
 
+// Shared scoring types
+export * from "./scoring";
+
+// Frontend-safe versions of backend types
 /**
- * Frontend-safe versions of backend types
  * These convert Mongoose ObjectId references to strings for frontend consumption
  */
 
@@ -36,7 +39,7 @@ export interface FrontendForm {
   caseId?: string | null;
   consultationId?: string | null;
   formTemplateId?: string | null;
-  score?: number;
+  scoring?: import("./scoring").ScoringData;
   createdAt?: string;
   formFillStatus?: "draft" | "incomplete" | "completed";
   updatedAt?: string;
@@ -120,18 +123,6 @@ export interface FrontendUser {
   daysBeforeConsultations?: number;
   createdAt?: string;
   updatedAt?: string;
-}
-
-// Legacy form data types for backward compatibility
-export interface FormData {
-  [key: string]: {
-    [key: string]: string | number;
-  };
-}
-
-export interface FormScore {
-  [key: string]: number;
-  totalScore: number;
 }
 
 // API Response wrappers
