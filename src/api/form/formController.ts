@@ -37,6 +37,7 @@ class FormController {
     const { formId } = req.params;
     const updatedForm = req.body;
 
+<<<<<<< HEAD
     // // Debug: Log what we received
     // console.debug("=== BACKEND CONTROLLER: Received data ===");
     // console.debug("formId:", formId);
@@ -48,6 +49,18 @@ class FormController {
 
     const userContext = this.getUserContext(req);
     const serviceResponse = await formService.updateForm(formId, updatedForm, userContext);
+=======
+    // Debug: Log what we received
+    console.debug("=== BACKEND CONTROLLER: Received data ===");
+    console.debug("formId:", formId);
+    console.debug("req.body type:", typeof req.body);
+    console.debug("req.body keys:", Object.keys(req.body));
+    console.debug("req.body:", JSON.stringify(req.body, null, 2));
+    console.debug("updatedForm:", JSON.stringify(updatedForm, null, 2));
+    console.debug("=========================================");
+
+    const serviceResponse = await formService.updateForm(formId, updatedForm);
+>>>>>>> b9b05b5 (refactor: update form API to handle ScoringData)
     return handleServiceResponse(serviceResponse, res);
   };
 

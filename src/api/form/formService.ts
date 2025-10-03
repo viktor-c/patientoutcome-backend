@@ -135,6 +135,7 @@ export class FormService {
     }
   }
 
+<<<<<<< HEAD
   async updateForm(
     formId: string,
     updatedForm: Partial<Form>,
@@ -150,6 +151,19 @@ export class FormService {
       // console.debug("updatedForm.formData:", JSON.stringify(updatedForm.formData, null, 2));
       // console.debug("updatedForm.scoring:", JSON.stringify(updatedForm.scoring, null, 2));
       // console.debug("======================================");
+=======
+  async updateForm(formId: string, updatedForm: Partial<Form>): Promise<ServiceResponse<Form | null>> {
+    try {
+      // Debug: Log what service received
+      console.debug("=== BACKEND SERVICE: Received data ===");
+      console.debug("formId:", formId);
+      console.debug("updatedForm type:", typeof updatedForm);
+      console.debug("updatedForm keys:", Object.keys(updatedForm));
+      console.debug("updatedForm:", JSON.stringify(updatedForm, null, 2));
+      console.debug("updatedForm.formData:", JSON.stringify(updatedForm.formData, null, 2));
+      console.debug("updatedForm.scoring:", JSON.stringify(updatedForm.scoring, null, 2));
+      console.debug("======================================");
+>>>>>>> b9b05b5 (refactor: update form API to handle ScoringData)
 
       // get the form by id
       const existingForm = await formRepository.getFormById(formId);
@@ -230,6 +244,7 @@ export class FormService {
         updateData.completedAt = new Date();
         if (!existingForm.formEndTime) {
           updateData.formEndTime = new Date();
+<<<<<<< HEAD
         }
       }
 
@@ -271,6 +286,8 @@ export class FormService {
         } catch (error) {
           logger.debug({ error, userId: userContext.userId }, "Could not calculate relative creation date for form");
           // Fall through - use default timestamps if calculation fails
+=======
+>>>>>>> b9b05b5 (refactor: update form API to handle ScoringData)
         }
       }
 
@@ -296,6 +313,7 @@ export class FormService {
         const endTime = updateData.formEndTime || existingForm.formEndTime!;
         const diffMs = endTime.getTime() - existingForm.formStartTime.getTime();
         updateData.completionTimeSeconds = Math.round(diffMs / 1000);
+<<<<<<< HEAD
       }
 
       // Store the scoring data provided by the frontend (do not calculate here)
@@ -325,6 +343,25 @@ export class FormService {
         });
       }
 
+=======
+      }
+
+      // Store the scoring data provided by the frontend (do not calculate here)
+      // The frontend is responsible for all scoring calculations, including MOXFQ normalization
+      if (updatedForm.scoring && typeof updatedForm.scoring === "object") {
+        updateData.scoring = updatedForm.scoring;
+      }
+      // If no scoring is provided, do not set/update the scoring field
+      // This ensures backend never overwrites frontend-calculated scores
+
+      console.log("=== BACKEND SERVICE: Final updateData ===");
+      console.log("updateData:", JSON.stringify(updateData, null, 2));
+      console.log("updateData.formData:", JSON.stringify(updateData.formData, null, 2));
+      console.log("updateData.scoring:", JSON.stringify(updateData.scoring, null, 2));
+      console.log("=========================================");
+
+      const response = await formRepository.updateForm(formId, updateData);
+>>>>>>> b9b05b5 (refactor: update form API to handle ScoringData)
       return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
       logger.error({ error }, "Error in updateForm service");
