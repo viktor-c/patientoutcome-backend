@@ -14,57 +14,70 @@
             "title": "Wie oft haben Sie Schmerzen bzw. wie stark ist der Schmerz am Vorfuß?",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q1"
+            "i18n": "q1",
+            "enum": [40, 30, 20, 0],
+            "enumLabels": ["aofas.q1.none", "aofas.q1.mild", "aofas.q1.moderate", "aofas.q1.severe"]
           },
           "q2": {
             "title": "Funktion, Einschränkung der Aktivität",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q2"
+            "i18n": "q2",
+            "enum": [10, 7, 4, 0],
+            "enumLabels": [
+              "aofas.q2.noLimitation",
+              "aofas.q2.noLimitationDaily",
+              "aofas.q2.limitationDaily",
+              "aofas.q2.severeLimitation"
+            ]
           },
           "q3": {
             "title": "Schuhwerk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q3"
+            "i18n": "q3",
+            "enum": [10, 5, 0],
+            "enumLabels": ["aofas.q3.fashionable", "aofas.q3.comfortable", "aofas.q3.modified"]
           },
           "q4": {
             "title": "Beweglichkeit im Großzehengrundgelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q4"
+            "i18n": "q4",
+            "enum": [15, 8, 0],
+            "enumLabels": ["aofas.q4.normal", "aofas.q4.moderate", "aofas.q4.severe"]
           },
           "q5": {
             "title": "Beweglichkeit im Großzehengelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q5"
+            "i18n": "q5",
+            "enum": [5, 0],
+            "enumLabels": ["aofas.q5.noRestriction", "aofas.q5.restriction"]
           },
           "q6": {
             "title": "Stabilität im Großzehengrundgelenk",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q6"
+            "i18n": "q6",
+            "enum": [5, 0],
+            "enumLabels": ["aofas.q6.stable", "aofas.q6.unstable"]
           },
           "q7": {
             "title": "Schwiele am Hallux",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q7"
+            "i18n": "q7",
+            "enum": [5, 0],
+            "enumLabels": ["aofas.q7.none", "aofas.q7.symptomatic"]
           },
           "q8": {
             "title": "Achsenfehlstellung",
             "description": "",
             "type": "number",
-            "xrenderinghint": "aofasRating",
-            "i18n": "q8"
+            "i18n": "q8",
+            "enum": [15, 8, 0],
+            "enumLabels": ["aofas.q8.good", "aofas.q8.moderate", "aofas.q8.severe"]
           }
         }
       }
