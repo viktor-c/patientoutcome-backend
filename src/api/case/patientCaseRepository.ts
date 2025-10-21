@@ -39,12 +39,14 @@ export class PatientCaseRepository {
     }
   }
 
-  async findPatientCaseById(patientId: string, caseId: string): Promise<PatientCase | null> {
+  async getPatientCaseById(patientId: string, caseId: string): Promise<PatientCase | null> {
     try {
       return PatientCaseModel.findById({
         _id: caseId,
         patient: patientId,
-      }).lean() as unknown as Promise<PatientCase | null>;
+      })
+        .populate(["patient", "surgeries", "supervisors", "consultations"])
+        .lean() as unknown as Promise<PatientCase | null>;
     } catch (error) {
       return Promise.reject(error);
     }

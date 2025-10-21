@@ -66,7 +66,7 @@ export class PatientCaseService {
    */
   async getPatientCaseById(patientId: string, caseId: string): Promise<ServiceResponse<PatientCase | null>> {
     try {
-      const patientCase = await this.repository.findPatientCaseById(patientId, caseId);
+      const patientCase = await this.repository.getPatientCaseById(patientId, caseId);
       if (!patientCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
       }

@@ -76,14 +76,13 @@ caseRouter.get(
  */
 patientCaseRegistry.registerPath({
   method: "get",
-  summary: "Get a patient case by patientId and caseId",
-  description: "Get a patient case by patientId and caseId",
+  summary: "Get a patient case by caseId",
+  description: "Get a patient case by caseId",
   operationId: "getPatientCaseById",
-  path: "/patient/{patientId}/case/{caseId}",
+  path: "/case/id/{caseId}",
   tags: ["patient case"],
   request: {
     params: z.object({
-      patientId: commonValidations.id,
       caseId: commonValidations.id,
     }),
   },
@@ -111,11 +110,10 @@ patientCaseRegistry.registerPath({
   ]),
 });
 caseRouter.get(
-  "/patient/:patientId/case/:caseId",
+  "/case/id/:caseId",
   validateRequest(
     z.object({
       params: z.object({
-        patientId: commonValidations.id,
         caseId: commonValidations.id,
       }),
     }),

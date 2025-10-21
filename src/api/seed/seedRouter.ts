@@ -15,9 +15,12 @@ import express, { type Router, type Request, type Response, type NextFunction } 
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { PatientRepository } from "../patient/patientRepository";
+import { SurgeryRepository } from "../surgery/surgeryRepository";
 import { UserRegistrationRepository } from "../user/userRegistrationRepository";
 
 const seedRouter: Router = express.Router();
+
+const surgeryRepository = new SurgeryRepository();
 const blueprintRepository = new BlueprintRepository();
 const patientRepository = new PatientRepository();
 const patientCaseRepository = new PatientCaseRepository();
@@ -284,28 +287,48 @@ seedRouter.get("/clear-all-sessions", async (_req, res) => {
 });
 
 seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
-  try {
-    await blueprintRepository.createMockData();
-    await patientRepository.createMockData();
-    await patientCaseRepository.createMockPatientCaseData();
-    await consultationRepository.createMockData();
-    await formTemplateRepository.createMockDataFormTemplate();
-    await formRepository.createFormMockData();
-    await userRepository.createMockUserData(true); // Force reset users
-    await clinicalStudyRepository.createMockDataClinicalStudies();
-    await codeRepository.createMockDataFormAccessCodes();
-    await kioskRepository.createMockData();
+  // When seeding all repositories, put each repository in a try/catch clause.
+  // Collect failures and return them so developers can see which seeds failed.
+  const failures: Array<{ repo: string; error: string; stack?: string | null }> = [];
 
-    const serviceResponse = ServiceResponse.success("All mock data reset successfully", null);
-    return handleServiceResponse(serviceResponse, res);
-  } catch (error) {
+  const run = async (repoName: string, fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+      logger.info({ repo: repoName }, `Seeded ${repoName} successfully`);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const errStack = err instanceof Error ? (err.stack ?? null) : null;
+      logger.error({ repo: repoName, err }, `Failed to seed ${repoName}: ${errMsg}`);
+      // Only include stack traces in development or test environments
+      const includeStack = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
+      failures.push({ repo: repoName, error: errMsg, stack: includeStack ? errStack : null });
+    }
+  };
+
+  await run("surgery", () => surgeryRepository.createMockSurgeryData());
+  await run("blueprint", () => blueprintRepository.createMockData());
+  await run("patient", () => patientRepository.createMockData());
+  await run("patientCase", () => patientCaseRepository.createMockPatientCaseData());
+  await run("consultation", () => consultationRepository.createMockData());
+  await run("formTemplate", () => formTemplateRepository.createMockDataFormTemplate());
+  await run("form", () => formRepository.createFormMockData());
+  await run("users", () => userRepository.createMockUserData(true)); // Force reset users
+  await run("clinicalStudy", () => clinicalStudyRepository.createMockDataClinicalStudies());
+  await run("codes", () => codeRepository.createMockDataFormAccessCodes());
+  await run("kiosks", () => kioskRepository.createMockData());
+
+  if (failures.length > 0) {
+    // 207 Multi-Status indicates partial success; include failure details in payload
     const serviceResponse = ServiceResponse.failure(
-      "Failed to reset mock data",
-      null,
-      StatusCodes.INTERNAL_SERVER_ERROR,
+      "One or more seed operations failed",
+      { failures },
+      StatusCodes.MULTI_STATUS,
     );
     return handleServiceResponse(serviceResponse, res);
   }
+
+  const serviceResponse = ServiceResponse.success("All mock data reset successfully", null);
+  return handleServiceResponse(serviceResponse, res);
 });
 
 export {
