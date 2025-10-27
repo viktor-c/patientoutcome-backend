@@ -20,7 +20,7 @@ const SubscaleScoreSchema = z.object({
 // Use z.any() for rawData and subscales to allow flexible nested objects
 // This bypasses zodSchema's type inference and lets Mongoose store any structure
 const ScoringDataSchema = z.object({
-  rawData: z.any(), // Allow any structure for rawData (sections with questions)
+  rawData: z.any().optional(), // Allow any structure for rawData (sections with questions)
   subscales: z.any().optional(), // Allow any structure for subscales
   total: z.any().optional(), // Allow any structure for total
 });
