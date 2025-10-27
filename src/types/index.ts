@@ -53,7 +53,6 @@ export interface FrontendPatient {
   _id?: string;
   id?: string; // For OpenAPI compatibility
   externalPatientId: string[];
-  age?: number;
   sex?: string;
   cases?: string[]; // ObjectId references converted to strings
   createdAt?: string;

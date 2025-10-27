@@ -8,7 +8,6 @@ import { z } from "zod";
 export const PatientSchema = z.object({
   _id: zId().optional(),
   externalPatientId: z.array(z.string()),
-  age: z.number({ coerce: true }).optional(),
   sex: z.string().optional(),
   cases: z.array(zId("PatientCase")).optional(),
 });

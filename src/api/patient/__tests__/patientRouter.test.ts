@@ -11,7 +11,6 @@ let newPatientId: string | ObjectId = "";
 
 const newPatient = {
   externalPatientId: ["99999"],
-  age: 30,
   sex: "M",
 } as Patient;
 
@@ -163,7 +162,6 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.message).toContain("Patient created successfully");
       expect(responseBody.responseObject).toMatchObject({
         externalPatientId: newPatient.externalPatientId,
-        age: newPatient.age,
         sex: newPatient.sex,
       });
       newPatientId = responseBody.responseObject._id as string;
@@ -198,10 +196,10 @@ describe("Patient API Endpoints", () => {
     it("should update a patient successfully", async () => {
       // Arrange
       const testId = patientRepository.mockPatients[0]._id;
-      const updatedData = { age: 100 };
+      const updatedData = { sex: "diverse" };
       // does not work otherwise because copies are shallow
       const expectedPatient = JSON.parse(JSON.stringify(patientRepository.mockPatients[0])) as Patient;
-      expectedPatient.age = 100;
+      expectedPatient.sex = "diverse";
 
       // Act
       const response = await request(app).put(`/patient/${testId}`).send(updatedData);
@@ -272,6 +270,5 @@ function comparePatients(mockPatient: Patient, responsePatient: Patient) {
 
   expect(responsePatient._id).toEqual(mockPatient._id);
   expect(responsePatient.externalPatientId).toEqual(mockPatient.externalPatientId);
-  expect(responsePatient.age).toEqual(mockPatient.age);
   expect(responsePatient.sex).toEqual(mockPatient.sex);
 }
