@@ -1,7 +1,7 @@
 {
   "name": "patientoutcome-backend",
   "version": "0.4.0",
-  "description": "Backend for patient outcome app. Based on boilerplate of Edwin Hernández.",
+  "description": "Backend for patient outcome app.",
   "author": "Victor Cighir",
   "repository": "edwinhern/express-typescript-2024",
   "license": "MIT",
