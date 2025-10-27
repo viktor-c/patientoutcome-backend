@@ -44,7 +44,7 @@
             "description": "",
             "type": "number",
             "i18n": "q4",
-            "enum": [15, 8, 0],
+            "enum": [10, 5, 0],
             "enumLabels": ["aofas.q4.normal", "aofas.q4.moderate", "aofas.q4.severe"]
           },
           "q5": {
