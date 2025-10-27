@@ -25,7 +25,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8e",
       belongsToCenter: ["1"],
-      department: "Neurology",
+      department: "Orthopädie",
       email: "asmith@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Alice Smith",
@@ -61,7 +61,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c90",
       belongsToCenter: ["2"],
-      department: "Pediatrics",
+      department: "Orthopädie",
       email: "cjones@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Carol Jones",
@@ -73,7 +73,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c91",
       belongsToCenter: ["2"],
-      department: "Dermatology",
+      department: "Orthopädie",
       email: "dlee@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "David Lee",
