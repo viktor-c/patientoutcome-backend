@@ -44,14 +44,14 @@ export class UserRegistrationService {
       // if we have no success, return errors and reject the promise
       if (!result.success) {
         await this.userRegistrationRepository.resetDeactivatedCode(userData.registrationCode);
-        return ServiceResponse.failure("Error creating user", { errors: result.responseObject }, StatusCodes.CONFLICT);
+        return ServiceResponse.failure("Error creating user", result.responseObject, StatusCodes.CONFLICT);
       }
 
       // if the user is created successfully, set the userCreatedWith field in the registration code
-      await this.userRegistrationRepository.setActivatedUserForCode(
-        registrationCodeInfo.code,
-        result.responseObject?._id?.toString(),
-      );
+      const userId = (result.responseObject as UserNoPassword)?._id?.toString();
+      if (userId) {
+        await this.userRegistrationRepository.setActivatedUserForCode(registrationCodeInfo.code, userId);
+      }
       return Promise.resolve(result);
     } catch (error) {
       // reactivate code if user creation fails

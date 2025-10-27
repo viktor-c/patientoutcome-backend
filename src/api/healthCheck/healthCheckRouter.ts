@@ -43,7 +43,6 @@ healthCheckRouter.get("/", (_req: Request, res: Response) => {
   return handleServiceResponse(serviceResponse, res);
 });
 
-
 healthCheckRouter.get("/all-routes", (_req: Request, res: Response) => {
   if (process.env.NODE_ENV !== "development") {
     return res.status(403).send("This route is only available in development mode.");
@@ -51,40 +50,38 @@ healthCheckRouter.get("/all-routes", (_req: Request, res: Response) => {
   let response = "<h1>All routes</h1><table><tr><th>Method</th><th>Path</th><th>name</th></tr>";
   let iRow = 0;
 
-  const split = (thing) => {
-    if (typeof thing === 'string') {
-      return thing.split('/')
+  const split = (thing: any): string[] | string => {
+    if (typeof thing === "string") {
+      return thing.split("/");
     } else if (thing.fast_slash) {
-      return ''
+      return "";
     } else {
-      var match = thing.toString()
-        .replace('\\/?', '')
-        .replace('(?=\\/|$)', '$')
-        .match(/^\/\^((?:\\[.*+?^${}()|[\]\\\/]|[^.*+?^${}()|[\]\\\/])*)\$\//)
-      return match
-        ? match[1].replace(/\\(.)/g, '$1').split('/')
-        : '<complex:' + thing.toString() + '>'
+      const match = thing
+        .toString()
+        .replace("\\/?", "")
+        .replace("(?=\\/|$)", "$")
+        .match(/^\/\^((?:\\[.*+?^${}()|[\]\\\/]|[^.*+?^${}()|[\]\\\/])*)\$\//);
+      return match ? match[1].replace(/\\(.)/g, "$1").split("/") : `<complex:${thing.toString()}>`;
     }
-  }
+  };
 
-  const print = (path, layer) => {
+  const print = (path: any[], layer: any): void => {
     if (layer.route) {
-      layer.route.stack.forEach(print.bind(null, path.concat(split(layer.route.path))))
-    } else if (layer.name === 'router' && layer.handle.stack) {
-      layer.handle.stack.forEach(print.bind(null, path.concat(split(layer.regexp))))
+      layer.route.stack.forEach(print.bind(null, path.concat(split(layer.route.path))));
+    } else if (layer.name === "router" && layer.handle.stack) {
+      layer.handle.stack.forEach(print.bind(null, path.concat(split(layer.regexp))));
     } else if (layer.method) {
       if (iRow % 2 === 0) {
-        response += `<tr style="background-color: #f2f2f2;">`
+        response += `<tr style="background-color: #f2f2f2;">`;
       } else {
-        response += `<tr style="background-color: #ffffff;">`
+        response += `<tr style="background-color: #ffffff;">`;
       }
       iRow++;
-      response += `<td>${layer.method.toUpperCase()}</td><td>${path.concat(split(layer.regexp)).filter(Boolean).join('/')}</td><td>${layer.name}</td></tr>\n`
+      response += `<td>${layer.method.toUpperCase()}</td><td>${path.concat(split(layer.regexp)).filter(Boolean).join("/")}</td><td>${layer.name}</td></tr>\n`;
     }
-  }
+  };
 
-  app._router.stack.forEach(print.bind(null, []))
-  response += "</table>"
+  app._router.stack.forEach(print.bind(null, []));
+  response += "</table>";
   res.status(200).send(response);
-
 });

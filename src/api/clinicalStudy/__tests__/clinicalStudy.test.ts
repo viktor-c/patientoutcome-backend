@@ -49,7 +49,7 @@ describe("ClinicalStudy API Endpoints", () => {
 
       // Act
       const response = await request(app).get(`/clinicalstudy/${studyId}`);
-      const responseBody: ServiceResponse<ClinicalStudy[]> = response.body;
+      const responseBody: ServiceResponse<ClinicalStudy> = response.body;
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);

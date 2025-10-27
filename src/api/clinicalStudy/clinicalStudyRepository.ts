@@ -31,9 +31,12 @@ export class ClinicalStudyRepository {
     }
   }
 
-  async updateClinicalStudyById(id: string, studyData: Partial<ClinicalStudy>): Promise<ClinicalStudy> {
+  async updateClinicalStudyById(id: string, studyData: Partial<ClinicalStudy>): Promise<ClinicalStudy | null> {
     try {
-      const updatedStudy = clinicalStudyModel.findByIdAndUpdate(id, studyData, { new: true, lean: true });
+      const updatedStudy = (await clinicalStudyModel.findByIdAndUpdate(id, studyData, {
+        new: true,
+        lean: true,
+      })) as ClinicalStudy | null;
       return updatedStudy;
     } catch (error: any) {
       return Promise.reject(error);
