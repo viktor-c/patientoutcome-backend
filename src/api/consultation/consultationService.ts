@@ -32,10 +32,22 @@ export class ConsultationService {
    */
   async createConsultation(caseId: string, data: CreateConsultation): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const newConsultation = await this.consultationRepository.createConsultation(caseId, data);
+      // Step 1: Create consultation with empty proms array to satisfy validation
+      const consultationData = {
+        ...data,
+        proms: [], // Initialize with empty array
+      };
+
+      const newConsultation = await this.consultationRepository.createConsultation(caseId, consultationData);
       if (!newConsultation) {
         return ServiceResponse.failure("Failed to create consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
+
+      // Ensure newConsultation._id exists for subsequent operations
+      if (!newConsultation._id) {
+        return ServiceResponse.failure("Failed to get consultation ID", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+
       //after creating the consultation, we can check if the code is valid
       if (data.formAccessCode) {
         // Find code by the code ID (not by code string)
@@ -46,10 +58,6 @@ export class ConsultationService {
         if (code.activatedOn) {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
-        // Ensure newConsultation._id exists
-        if (!newConsultation._id) {
-          return ServiceResponse.failure("Failed to get consultation ID", null, StatusCodes.INTERNAL_SERVER_ERROR);
-        }
         // Pass the code string to activateCode
         const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString());
         if (typeof activatedCode === "string") {
@@ -57,11 +65,11 @@ export class ConsultationService {
         }
       }
 
-      //** process form creation based on given form templates */
-      if (data.formTemplates && data.formTemplates.length > 0 && newConsultation._id) {
-        // based on the array of id in formTemplates, create a new form for each template
-        // use the form API to create a new form
-        // if there are multiple templates, create a new form for each template
+      // Step 2: Process form creation based on given form templates now that we have consultation ID
+      if (data.formTemplates && data.formTemplates.length > 0) {
+        const createdFormIds: string[] = [];
+
+        // Create a form for each template
         for (let i = 0; i < data.formTemplates.length; i++) {
           let formTemplateId = "";
           if (typeof data.formTemplates[i] === "string") {
@@ -76,15 +84,22 @@ export class ConsultationService {
             formTemplateId,
           );
           if (newCreatedForm?._id) {
-            newConsultation.proms.push(newCreatedForm._id.toString());
+            createdFormIds.push(newCreatedForm._id.toString());
+          }
+        }
+
+        // Update the consultation with the created form IDs
+        if (createdFormIds.length > 0) {
+          const updatedConsultation = await this.consultationRepository.updateConsultation(
+            newConsultation._id.toString(),
+            { proms: createdFormIds },
+          );
+          if (updatedConsultation) {
+            return ServiceResponse.created("Consultation created successfully", updatedConsultation);
           }
         }
       }
-      //BUG why do we need to save the consultation again? Why this error?
-      // we get a consultation document, which has save()
-      //@ts-expect-error newConsultation is a mongoose document
-      await newConsultation.save();
-      // after saving the consultation, links its id to user kiosk1
+
       return ServiceResponse.created("Consultation created successfully", newConsultation);
     } catch (ex) {
       const errorMessage = `Error creating consultation: ${(ex as Error).message}`;
