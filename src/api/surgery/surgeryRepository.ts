@@ -24,7 +24,9 @@ export class SurgeryRepository {
 
   async getSurgeriesByPatientCaseId(patientCaseId: string): Promise<Surgery[]> {
     try {
-      return SurgeryModel.find({ patientCase: patientCaseId }).lean() as unknown as Promise<Surgery[]>;
+      return SurgeryModel.find({ patientCase: patientCaseId }).populate(["surgeons"]).lean() as unknown as Promise<
+        Surgery[]
+      >;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -253,7 +255,7 @@ export class SurgeryRepository {
   private _mockSurgeries = [
     {
       _id: "677da5d8cb4569ad1c655260",
-      externalId: "SUR-001-2024",
+      externalId: "SUR-001-2025",
       diagnosis: ["Hallux valgus deformity"],
       diagnosisICD10: ["M20.1"],
       therapy: "Chevron osteotomy with bunionectomy",
