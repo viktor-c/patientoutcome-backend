@@ -51,8 +51,13 @@ kioskRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized: User must have 'kiosk' role",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires 'kiosk' role)",
+      statusCode: 403,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -93,8 +98,13 @@ kioskRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized: User must have 'kiosk' role",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires 'kiosk' role)",
+      statusCode: 403,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -139,8 +149,13 @@ kioskRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized: User must have at least 'mfa' role",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires at least 'mfa' role)",
+      statusCode: 403,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -185,8 +200,13 @@ kioskRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized: User must have at least 'mfa' role",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires at least 'mfa' role)",
+      statusCode: 403,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -236,8 +256,13 @@ kioskRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized: User must have at least 'mfa' role",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires at least 'mfa' role)",
+      statusCode: 403,
     },
     {
       schema: z.object({ message: z.string() }),

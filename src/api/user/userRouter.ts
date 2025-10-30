@@ -137,8 +137,13 @@ userRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions",
+      statusCode: 403,
     },
   ]),
 });
@@ -179,8 +184,13 @@ userRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized",
+      description: "Authentication required - No active session",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions",
+      statusCode: 403,
     },
   ]),
 });
@@ -409,8 +419,13 @@ userRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
-      description: "Unauthorized.",
+      description: "Authentication required - Not logged in",
       statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions",
+      statusCode: 403,
     },
   ]),
 });
