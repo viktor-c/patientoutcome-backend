@@ -11,7 +11,7 @@ class KioskController {
     const kioskUserId = req.session?.userId;
 
     if (!kioskUserId) {
-      return res.status(401).json({ message: "Unauthorized: No user session found" });
+      return res.status(401).json({ message: "Authentication required: No active session" });
     }
 
     const serviceResponse = await kioskService.getConsultation(kioskUserId);
@@ -25,7 +25,7 @@ class KioskController {
     const kioskUserId = req.session?.userId;
 
     if (!kioskUserId) {
-      return res.status(401).json({ message: "Unauthorized: No user session found" });
+      return res.status(401).json({ message: "Authentication required: No active session" });
     }
 
     const statusData = req.body;

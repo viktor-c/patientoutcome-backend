@@ -14,7 +14,7 @@ class UserController {
   public getUsers: RequestHandler = async (req: Request, res: Response) => {
     // Check if user is logged in
     if (!req.session || !req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized: Not logged in." });
+      return res.status(401).json({ message: "Authentication required: Not logged in" });
     }
 
     const { role } = req.query;
@@ -48,7 +48,7 @@ class UserController {
     // Get user id from session (or JWT, adjust as needed)
     const id = req.session?.userId;
     if (!id) {
-      return res.status(401).json({ message: "Unauthorized: user id not found in session." });
+      return res.status(401).json({ message: "Authentication required: User id not found in session" });
     }
     const userData = req.body;
     const serviceResponse = await userService.updateUser(id, userData);
@@ -91,7 +91,7 @@ class UserController {
   public logoutUser: RequestHandler = async (req: Request, res: Response) => {
     if (!req.session || !req.session.userId) {
       return handleServiceResponse(
-        ServiceResponse.failure("Unauthorized: Not logged in.", null, StatusCodes.UNAUTHORIZED),
+        ServiceResponse.failure("Authentication required: Not logged in", null, StatusCodes.UNAUTHORIZED),
         res,
       );
     }
@@ -124,7 +124,7 @@ class UserController {
   public changePassword: RequestHandler = async (req, res) => {
     // Check if user is logged in
     if (!req.session || !req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized: Not logged in." });
+      return res.status(401).json({ message: "Authentication required: Not logged in" });
     }
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const userId = req.session.userId;
