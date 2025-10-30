@@ -144,7 +144,7 @@ describe("User API Endpoints", () => {
     it("should return an error when no user is logged in", async () => {
       const response = await request(app).get("/user");
       expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
-      expect(response.body.message).toContain("Unauthorized");
+      expect(response.body.message).toContain("Authentication required");
     });
 
     it("should return no users found when role filter returns no results", async () => {
@@ -408,7 +408,7 @@ describe("User API Endpoints", () => {
         confirmPassword: "newPassword!456",
       });
       expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
-      expect(res.body.message).toContain("Unauthorized");
+      expect(res.body.message).toContain("Authentication required");
     });
     it("should change password successfully for logged in user", async () => {
       const agent = await loginUserAgent("admin");
