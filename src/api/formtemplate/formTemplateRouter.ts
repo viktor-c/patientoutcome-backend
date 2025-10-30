@@ -23,7 +23,7 @@ formTemplateRegistry.register("FormTemplateList", FormTemplateListSchema);
 formTemplateRegistry.registerPath({
   method: "post",
   path: "/formtemplate",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "createFormTemplate",
   summary: "Create a new form template",
   description: "Create a new form template",
@@ -59,7 +59,7 @@ formTemplateRouter.post("/", validateRequest(CreateFormTemplateSchema), formTemp
 formTemplateRegistry.registerPath({
   method: "get",
   path: "/formtemplate",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "getFormTemplates",
   summary: "Get all form templates",
   description: "Get all form templates",
@@ -88,7 +88,7 @@ formTemplateRouter.get("/", formTemplateController.getFormTemplates);
 formTemplateRegistry.registerPath({
   method: "get",
   path: "/formtemplate/id/{templateId}",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "getFormTemplateById",
   summary: "Get a form template by ID",
   description: "Get a form template by ID",
@@ -130,7 +130,7 @@ formTemplateRouter.get(
 formTemplateRegistry.registerPath({
   method: "get",
   path: "/formtemplate/shortlist",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "getFormTemplatesShortlist",
   summary: "Get all form templates in a succint list",
   description: "Useful for displaying a list of form templates in the UI, without the full details.",
@@ -159,7 +159,7 @@ formTemplateRouter.get("/shortlist", formTemplateController.getFormTemplatesShor
 formTemplateRegistry.registerPath({
   method: "put",
   path: "/formtemplate/{templateId}",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "updateFormTemplate",
   summary: "Update a form template",
   description: "Update a form template",
@@ -205,7 +205,7 @@ formTemplateRouter.put(
 formTemplateRegistry.registerPath({
   method: "delete",
   path: "/formtemplate/{templateId}",
-  tags: ["form", "form template"],
+  tags: ["formtemplate"],
   operationId: "deleteFormTemplate",
   summary: "Delete a form template",
   description: "Delete a form template by ID",
