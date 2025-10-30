@@ -29,7 +29,7 @@ export function acl({
     const anonymousAllowed =
       roles.includes("anonymous") || permissions.includes("anonymous") || atLeastAuthenticationLevel === "anonymous";
     if (!user.userId && !anonymousAllowed) {
-      return res.status(401).json({ message: "Unauthorized: No user" });
+      return res.status(401).json({ message: "Authentication required: No active session" });
     }
     // if user is not authenticated, check if anonymous is allowed
     if (!user.userId && anonymousAllowed) return next();
@@ -42,11 +42,11 @@ export function acl({
     }
     // Check roles
     if (roles.length > 0 && user.roles && !user.roles.some((role) => roles.includes(role))) {
-      return res.status(403).json({ message: "Forbidden: Insufficient role" });
+      return res.status(403).json({ message: "Access denied: Insufficient role permissions" });
     }
     // Check permissions
     if (permissions.length > 0 && (!user.permissions || !user.permissions.some((p) => permissions.includes(p)))) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permission" });
+      return res.status(403).json({ message: "Access denied: Insufficient permissions" });
     }
 
     // Check authentication level
@@ -62,7 +62,7 @@ export function acl({
         }
         // we found no roles at least as high as atLeastAuthenticationLevel
         if (!hasRequiredLevel) {
-          return res.status(403).json({ message: "Forbidden: Insufficient authentication level" });
+          return res.status(403).json({ message: "Access denied: Insufficient authentication level" });
         }
       } else {
         // do a last check, to see if atleastAuthenticationLevel is 'anonymous', if so, allow access
@@ -70,7 +70,7 @@ export function acl({
           return next();
         }
         //this means we need at leastAuthenticationLevel, but the user has no roles, means he is not authenticated
-        return res.status(403).json({ message: "Forbidden: Insufficient authentication level" });
+        return res.status(403).json({ message: "Access denied: Insufficient authentication level" });
       }
     }
     next();
