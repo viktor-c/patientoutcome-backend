@@ -51,7 +51,11 @@ app.set("trust proxy", true);
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+// Support a single origin or a comma-separated list in the CORS_ORIGIN env var
+const corsOriginValue = env.CORS_ORIGIN ?? "";
+logger.info(`server.ts: CORS Origin: ${corsOriginValue}`);
+const corsOrigins = corsOriginValue.includes(",") ? corsOriginValue.split(",").map((s) => s.trim()) : corsOriginValue;
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(helmet());
 app.use(rateLimiter);
 
