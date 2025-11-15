@@ -36,7 +36,7 @@ export const ConsultationSchema = z.object({
   images: z.array(ImageSchema),
   visitedBy: z.array(zId("User")),
   formAccessCode: zId("FormAccessCode").optional(),
-  kioskId: zId("User").optional(),
+  kioskId: zId("User").optional().nullable(),
 });
 
 // Define the PatientCaseConsultation schema for OpenAPI (with populated forms)
