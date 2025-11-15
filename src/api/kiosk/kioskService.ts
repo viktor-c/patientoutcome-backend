@@ -3,14 +3,32 @@ import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import type { Consultation } from "../consultation/consultationModel";
 import { consultationRepository } from "../consultation/consultationRepository";
-import type { CreateKiosk, Kiosk, UpdateKiosk } from "./kioskModel";
-import { type KioskRepository, kioskRepository } from "./kioskRepository";
+import type { UserNoPassword } from "../user/userModel";
+import { userRepository } from "../user/userRepository";
 
 export class KioskService {
-  private kioskRepository: KioskRepository;
+  /**
+   * Get all kiosk users (users with 'kiosk' role) with populated consultation data
+   * @returns ServiceResponse with array of all kiosk users
+   */
+  async getAllKiosks(): Promise<ServiceResponse<UserNoPassword[] | null>> {
+    try {
+      const kioskUsers = await userRepository.findAllByRoleAsync("kiosk");
 
-  constructor() {
-    this.kioskRepository = kioskRepository;
+      if (!kioskUsers || kioskUsers.length === 0) {
+        return ServiceResponse.failure("No kiosk users found", null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success("Kiosk users retrieved successfully", kioskUsers);
+    } catch (ex) {
+      const errorMessage = `Error getting all kiosk users: ${(ex as Error).message}`;
+      logger.error({ error: ex }, errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while retrieving kiosk users.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -20,15 +38,19 @@ export class KioskService {
    */
   async getConsultation(kioskUserId: string): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const kiosk = await this.kioskRepository.getKioskByUserId(kioskUserId);
-      if (!kiosk) {
+      const kioskUser = await userRepository.findByIdAsync(kioskUserId);
+      if (!kioskUser) {
+        return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      if (!kioskUser.consultationId) {
         return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
       }
-      // consultationid is already populated with the consultation. use this to return
-      if (!kiosk.consultationId) {
+
+      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
+      if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
-      const consultation = kiosk.consultationId as unknown as Consultation;
 
       return ServiceResponse.success("Consultation retrieved successfully", consultation);
     } catch (ex) {
@@ -53,20 +75,19 @@ export class KioskService {
     statusData: { status: string; notes?: string },
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const kiosk = await this.kioskRepository.getKioskByUserId(kioskUserId);
-      if (!kiosk) {
+      const kioskUser = await userRepository.findByIdAsync(kioskUserId);
+      if (!kioskUser || !kioskUser.consultationId) {
         return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
       }
 
-      // first get consultation, then push the note to the existing notes
-      const consultation = await consultationRepository.getConsultationById(kiosk.consultationId.toString());
+      // Get consultation, then add the note to the existing notes
+      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
 
       // Build the update data for consultation
       const updateData: any = {
-        // Add a note about the status change
         notes: consultation.notes || [],
       };
 
@@ -85,7 +106,7 @@ export class KioskService {
       }
 
       const updatedConsultation = await consultationRepository.updateConsultation(
-        kiosk.consultationId.toString(),
+        kioskUser.consultationId.toString(),
         updateData,
       );
 
@@ -112,12 +133,16 @@ export class KioskService {
    */
   async getConsultationFor(kioskUserId: string): Promise<ServiceResponse<Consultation | null>> {
     try {
-      const kiosk = await this.kioskRepository.getKioskByUserId(kioskUserId);
-      if (!kiosk) {
-        return ServiceResponse.failure("No kiosk found for the specified user", null, StatusCodes.NOT_FOUND);
+      const kioskUser = await userRepository.findByIdAsync(kioskUserId);
+      if (!kioskUser) {
+        return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
       }
 
-      const consultation = await consultationRepository.getConsultationById(kiosk.consultationId.toString());
+      if (!kioskUser.consultationId) {
+        return ServiceResponse.failure("No active consultation found for this kiosk user", null, StatusCodes.NOT_FOUND);
+      }
+
+      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
@@ -135,20 +160,30 @@ export class KioskService {
   }
 
   /**
-   * Delete (unlink) consultation for a specific kiosk user (admin/mfa access)
+   * Unlink consultation from a specific kiosk user (admin/mfa access)
+   * Sets consultationId to null, making the kiosk user available again
    * @param kioskUserId - The ID of the kiosk user
    * @returns ServiceResponse indicating success or failure
    */
   async deleteConsultationFor(kioskUserId: string): Promise<ServiceResponse<null>> {
     try {
-      const success = await this.kioskRepository.deleteKioskByUserId(kioskUserId);
-      if (!success) {
-        return ServiceResponse.failure("No kiosk found for the specified user", null, StatusCodes.NOT_FOUND);
+      const kioskUser = await userRepository.findByIdAsync(kioskUserId);
+      if (!kioskUser) {
+        return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
       }
+
+      // delete the kioskId from the consultation as well
+      if (kioskUser.consultationId) {
+        await consultationRepository.updateConsultation(kioskUser.consultationId.toString(), {
+          kioskId: null,
+        });
+      }
+      // Reset the consultationId to null
+      await userRepository.updateByIdAsync(kioskUserId, { consultationId: null });
 
       return ServiceResponse.success("Consultation unlinked successfully", null);
     } catch (ex) {
-      const errorMessage = `Error deleting consultation for kiosk user: ${(ex as Error).message}`;
+      const errorMessage = `Error unlinking consultation from kiosk user: ${(ex as Error).message}`;
       logger.error({ error: ex }, errorMessage);
       return ServiceResponse.failure(
         "An error occurred while unlinking consultation.",
@@ -159,37 +194,12 @@ export class KioskService {
   }
 
   /**
-   * Create a new kiosk entry (helper method)
-   * @param data - The kiosk data
-   * @returns ServiceResponse with the created kiosk
-   */
-  async createKiosk(data: CreateKiosk): Promise<ServiceResponse<Kiosk | null>> {
-    try {
-      const existingKiosk = await this.kioskRepository.getKioskByUserId(data.kioskUserId.toString());
-      if (existingKiosk) {
-        return ServiceResponse.failure("Kiosk already exists for this user", null, StatusCodes.CONFLICT);
-      }
-
-      const newKiosk = await this.kioskRepository.createKiosk(data);
-      return ServiceResponse.created("Kiosk created successfully", newKiosk);
-    } catch (ex) {
-      const errorMessage = `Error creating kiosk: ${(ex as Error).message}`;
-      logger.error({ error: ex }, errorMessage);
-      return ServiceResponse.failure(
-        "An error occurred while creating kiosk.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  /**
-   * Set consultation for a specific kiosk user (create kiosk entry)
+   * Set consultation for a specific kiosk user
    * @param kioskUserId - The ID of the kiosk user
    * @param consultationId - The ID of the consultation
-   * @returns ServiceResponse with the created kiosk
+   * @returns ServiceResponse with the updated user
    */
-  async setConsultation(kioskUserId: string, consultationId: string): Promise<ServiceResponse<Kiosk | null>> {
+  async setConsultation(kioskUserId: string, consultationId: string): Promise<ServiceResponse<UserNoPassword | null>> {
     try {
       // Check if consultation exists
       const consultation = await consultationRepository.getConsultationById(consultationId);
@@ -197,26 +207,34 @@ export class KioskService {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
 
-      // Check if kiosk already exists for this user
-      const existingKiosk = await this.kioskRepository.getKioskByUserId(kioskUserId);
-      if (existingKiosk) {
-        // Update existing kiosk with new consultation
-        const updatedKiosk = await this.kioskRepository.updateKioskByUserId(kioskUserId, {
-          consultationId: consultationId as any,
-        });
-        if (!updatedKiosk) {
-          return ServiceResponse.failure("Failed to update kiosk consultation", null, StatusCodes.NOT_FOUND);
-        }
-        return ServiceResponse.success("Kiosk consultation updated successfully", updatedKiosk);
+      // Check if kiosk user exists
+      const kioskUser = await userRepository.findByIdAsync(kioskUserId);
+      if (!kioskUser) {
+        return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
       }
 
-      // Create new kiosk entry
-      const newKiosk = await this.kioskRepository.createKiosk({
-        kioskUserId: kioskUserId as any,
+      // reset previous kiosk user from consultation
+      if (consultation.kioskId) {
+        await userRepository.updateByIdAsync(consultation.kioskId._id.toString(), {
+          consultationId: null,
+        });
+      }
+
+      // Update user with consultation ID
+      const updatedUser = await userRepository.updateByIdAsync(kioskUserId, {
         consultationId: consultationId as any,
       });
 
-      return ServiceResponse.created("Kiosk consultation set successfully", newKiosk);
+      // update consultation with the kioskId
+      const updatedConsultation = await consultationRepository.updateConsultation(consultationId, {
+        kioskId: kioskUserId,
+      });
+
+      if (!updatedUser) {
+        return ServiceResponse.failure("Failed to set consultation for kiosk user", null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success("Kiosk consultation set successfully", updatedUser);
     } catch (ex) {
       const errorMessage = `Error setting consultation for kiosk user: ${(ex as Error).message}`;
       logger.error({ error: ex }, errorMessage);

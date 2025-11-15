@@ -5,6 +5,14 @@ import { kioskService } from "./kioskService";
 
 class KioskController {
   /**
+   * Get all kiosk entries (admin/mfa access)
+   */
+  public getAllKiosks: RequestHandler = async (_req: Request, res: Response) => {
+    const serviceResponse = await kioskService.getAllKiosks();
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
    * Get the current active consultation for the logged-in kiosk user
    */
   public getConsultation: RequestHandler = async (req: Request, res: Response) => {
