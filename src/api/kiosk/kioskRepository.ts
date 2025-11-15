@@ -85,15 +85,16 @@ export class KioskRepository {
 
   /**
    * Delete kiosk by kiosk user ID (unlink consultation)
+   * Resets the consultationId to null, making the kiosk user available again
    * @param kioskUserId - The ID of the kiosk user
-   * @returns True if deleted successfully, false otherwise
+   * @returns True if updated successfully, false otherwise
    */
   async deleteKioskByUserId(kioskUserId: string): Promise<boolean> {
     try {
-      const result = await kioskModel.findOneAndDelete({ kioskUserId });
+      const result = await kioskModel.findOneAndUpdate({ kioskUserId }, { consultationId: null }, { new: true });
       return !!result;
     } catch (error) {
-      logger.error({ error }, "KioskRepository.deleteKioskByUserId: Error deleting kiosk");
+      logger.error({ error }, "KioskRepository.deleteKioskByUserId: Error unlinking consultation");
       throw error;
     }
   }
