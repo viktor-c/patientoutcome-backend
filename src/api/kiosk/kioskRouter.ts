@@ -5,29 +5,83 @@ import { z } from "zod";
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { validateRequest } from "@/common/utils/httpHandlers";
+import { zId } from "@zodyac/zod-mongoose";
 import { ConsultationWithFormsSchema } from "../consultation/consultationModel";
 import { UserNoPasswordSchema } from "../user/userModel";
 import { kioskController } from "./kioskController";
-import {
-  DeleteKioskSchema,
-  GetKioskSchema,
-  KioskSchema,
-  SetConsultationSchema,
-  UpdateConsultationStatusSchema,
-} from "./kioskModel";
 
 export const kioskRegistry = new OpenAPIRegistry();
 export const kioskRouter: Router = express.Router();
 
-// Create the Kiosk schema with populated consultation and user for OpenAPI
-const KioskWithPopulatedFieldsSchema = KioskSchema.extend({
-  consultationId: ConsultationWithFormsSchema,
-  kioskUserId: UserNoPasswordSchema,
+// Define validation schemas for kiosk routes
+const GetKioskSchema = z.object({
+  params: z.object({
+    kioskUserId: zId("User"),
+  }),
 });
 
-/* Define schemas and paths to create openapi */
-kioskRegistry.register("Kiosk", KioskSchema);
-kioskRegistry.register("KioskWithPopulatedFields", KioskWithPopulatedFieldsSchema);
+const DeleteKioskSchema = z.object({
+  params: z.object({
+    kioskUserId: zId("User"),
+  }),
+});
+
+const UpdateConsultationStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(["pending", "in-progress", "completed", "cancelled"]),
+    notes: z.string().optional(),
+  }),
+});
+
+const SetConsultationSchema = z.object({
+  params: z.object({
+    kioskUserId: zId("User"),
+    consultationId: zId("Consultation"),
+  }),
+});
+
+/* Register schemas for OpenAPI */
+kioskRegistry.register("KioskUser", UserNoPasswordSchema);
+
+// Register the path for getting all kiosks (admin access)
+kioskRegistry.registerPath({
+  method: "get",
+  path: "/kiosk/all",
+  tags: ["Kiosk"],
+  operationId: "getAllKiosks",
+  summary: "Get all kiosk entries",
+  description:
+    "Returns all kiosk entries with populated user and consultation data. Only accessible by users with at least 'mfa' role.",
+  responses: createApiResponses([
+    {
+      schema: z.array(UserNoPasswordSchema),
+      description: "Kiosk users retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "No kiosks found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Authentication required - No active session",
+      statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions (requires at least 'mfa' role)",
+      statusCode: 403,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving kiosks",
+      statusCode: 500,
+    },
+  ]),
+});
+
+kioskRouter.get("/all", AclMiddleware("kiosk:get-all"), kioskController.getAllKiosks);
 
 // Register the path for getting the current active consultation for the logged-in kiosk user
 kioskRegistry.registerPath({
@@ -240,12 +294,12 @@ kioskRegistry.registerPath({
   request: { params: SetConsultationSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: KioskWithPopulatedFieldsSchema,
+      schema: UserNoPasswordSchema,
       description: "Kiosk consultation set successfully",
       statusCode: 201,
     },
     {
-      schema: KioskWithPopulatedFieldsSchema,
+      schema: UserNoPasswordSchema,
       description: "Kiosk consultation updated successfully",
       statusCode: 200,
     },
