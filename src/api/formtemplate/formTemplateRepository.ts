@@ -1,8 +1,6 @@
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import * as aofasJsonForm from "./JsonFormTemplates/AOFAS_JsonForm_Export.json";
-import * as efasJsonForm from "./JsonFormTemplates/EFAS_JsonForm_Export.json";
-import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
-import * as vasJsonForm from "./JsonFormTemplates/VAS_JsonForm_Export.json";
+import { allFormPlugins } from "./formTemplatePlugins";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export class FormTemplateRepository {
@@ -42,26 +40,14 @@ export class FormTemplateRepository {
     }
   }
 
-<<<<<<< HEAD
-  // Include EFAS, AOFAS, MOXFQ, and VAS JSON templates
-  private _mockFormTemplateData: any[] = [
-    efasJsonForm as any,
-    aofasJsonForm as any,
-    moxfqJsonForm as any,
-    vasJsonForm as any,
-  ];
-
-  public get mockFormTemplateData() {
-=======
-  // Include EFAS and AOFAS JSON templates as-is
-  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any];
+  // Include form templates from plugins
+  private _mockFormTemplateData: any[] = allFormPlugins.map((plugin) => plugin.formTemplate);
 
   public get mockFormTemplateData() {
     if (env.NODE_ENV === "production") {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
->>>>>>> 78e8b5e (refactor: update form repository and templates for ScoringData)
     return this._mockFormTemplateData;
   }
 }
