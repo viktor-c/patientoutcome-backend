@@ -24,7 +24,15 @@ export class ConsultationRepository {
    * @returns consultation object
    */
   async getConsultationById(consultationId: string): Promise<Consultation | null> {
-    return consultationModel.findById(consultationId).populate(["proms", "visitedBy"]).lean();
+    return consultationModel
+      .findById(consultationId)
+      .populate([
+        { path: "proms" },
+        { path: "visitedBy" },
+        { path: "patientCaseId", populate: { path: "patient" } },
+        { path: "kioskId" },
+      ])
+      .lean();
   }
 
   /**
@@ -38,7 +46,12 @@ export class ConsultationRepository {
 
     return consultationModel
       .find({ dateAndTime: { $gte: from, $lt: to } })
-      .populate(["proms", "visitedBy", "patientCaseId"])
+      .populate([
+        { path: "proms" },
+        { path: "visitedBy" },
+        { path: "patientCaseId", populate: { path: "patient" } },
+        { path: "kioskId" },
+      ])
       .select("-__v")
       .lean();
   }
@@ -49,7 +62,15 @@ export class ConsultationRepository {
    */
   async getConsultationByFormAccessCode(formAccessCode: string): Promise<Consultation | null> {
     // formaccessCode is the internal code of the consultation or _id
-    return consultationModel.findById(formAccessCode).populate(["proms", "visitedBy"]).lean();
+    return consultationModel
+      .findById(formAccessCode)
+      .populate([
+        { path: "proms" },
+        { path: "visitedBy" },
+        { path: "patientCaseId", populate: { path: "patient" } },
+        { path: "kioskId" },
+      ])
+      .lean();
   }
 
   /**
@@ -103,7 +124,15 @@ export class ConsultationRepository {
    * @returns
    */
   async getAllConsultations(caseId: string): Promise<Consultation[]> {
-    const cons = consultationModel.find({ patientCaseId: caseId }).populate(["proms", "visitedBy"]).lean();
+    const cons = await consultationModel
+      .find({ patientCaseId: caseId })
+      .populate([
+        { path: "proms" },
+        { path: "visitedBy" },
+        { path: "patientCaseId", populate: { path: "patient" } },
+        { path: "kioskId" },
+      ])
+      .lean();
     return cons;
   }
 
@@ -128,7 +157,7 @@ export class ConsultationRepository {
         notes: [
           {
             _id: "507f1f77bcf86cd799439011",
-            dateCreated: faker.date.soon(),
+            dateCreated: faker.date.soon({ days: 6 }),
             createdBy: userRepository.mockUsers?.[0]?._id || "",
             note: faker.lorem.paragraph(),
           },
@@ -142,12 +171,12 @@ export class ConsultationRepository {
         _id: "60d5ec49f1b2c12d88f1e8a2",
         __v: 0,
         patientCaseId: "677da5d8cb4569ad1c65515f",
-        dateAndTime: faker.date.past(),
+        dateAndTime: faker.date.recent({ days: 3 }),
         reasonForConsultation: ["emergency"],
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b5",
-            dateCreated: faker.date.past(),
+            dateCreated: faker.date.recent({ days: 3 }),
             createdBy: userRepository.mockUsers?.[1]?._id || "",
             note: faker.lorem.paragraph(),
           },
@@ -160,12 +189,12 @@ export class ConsultationRepository {
         _id: "60d5ec49f1b2c12d88f1e8a3",
         __v: 0,
         patientCaseId: "677da5efcb4569ad1c655160",
-        dateAndTime: faker.date.soon(),
+        dateAndTime: faker.date.soon({ days: 3 }),
         reasonForConsultation: ["pain"],
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b6",
-            dateCreated: faker.date.soon(),
+            dateCreated: faker.date.soon({ days: 3 }),
             createdBy: userRepository.mockUsers?.[2]?._id || "",
             note: faker.lorem.paragraph(),
           },
@@ -178,12 +207,12 @@ export class ConsultationRepository {
         _id: "60d5ec49f1b2c12d88f1e8a4",
         __v: 0,
         patientCaseId: "677da5efcb4569ad1c655160",
-        dateAndTime: faker.date.past(),
+        dateAndTime: faker.date.recent({ days: 3 }),
         reasonForConsultation: ["followup"],
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b7",
-            dateCreated: faker.date.past(),
+            dateCreated: faker.date.recent({ days: 3 }),
             createdBy: userRepository.mockUsers?.[0]?._id || "",
             note: faker.lorem.paragraph(),
           },
@@ -201,7 +230,7 @@ export class ConsultationRepository {
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b7",
-            dateCreated: faker.date.soon(),
+            dateCreated: faker.date.soon({ days: 6 }),
             createdBy: userRepository.mockUsers?.[1]?._id || "",
             note: faker.lorem.paragraph(),
           },

@@ -5,6 +5,7 @@ import { logger } from "@/common/utils/logger";
 import { comparePasswords, hashPassword } from "@/utils/hashUtil";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
+
 /**
  * Service class for User operations
  * this uses the UserRepository to interact with the database
@@ -88,6 +89,34 @@ export class UserService {
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while retrieving kiosk users.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Retrieves all users with kiosk role that don't have an active consultation assigned
+  async getAvailableKioskUsers(): Promise<ServiceResponse<UserNoPassword[] | null>> {
+    try {
+      // Get all kiosk users
+      const kioskUsers = await this.userRepository.findAllByRoleAsync("kiosk");
+      if (!kioskUsers || kioskUsers.length === 0) {
+        return ServiceResponse.failure("No Kiosk users found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Filter out kiosk users that have an active consultation assigned
+      const availableKioskUsers = kioskUsers.filter((user) => !user.consultationId);
+
+      if (availableKioskUsers.length === 0) {
+        return ServiceResponse.failure("No available Kiosk users found", null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success<UserNoPassword[]>("Available kiosk users found", availableKioskUsers);
+    } catch (ex) {
+      const errorMessage = `Error finding available kiosk users: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while retrieving available kiosk users.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

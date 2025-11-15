@@ -198,6 +198,46 @@ userRegistry.registerPath({
 // add this path with the function getAllKioskUsers from userController
 userRouter.get("/kiosk-users", AclMiddleware("user:get-kiosk"), userController.getAllKioskUsers);
 
+// register the path get /user/kiosk-users/available
+userRegistry.registerPath({
+  method: "get",
+  path: "/user/kiosk-users/available",
+  tags: ["User"],
+  operationId: "getAvailableKioskUsers",
+  description: "Get all users with kiosk role that don't have an active consultation assigned",
+  summary: "Get available kiosk users",
+  responses: createApiResponses([
+    {
+      schema: z.array(UserNoPasswordSchema),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "No available Kiosk users found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving available kiosk users.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Authentication required - No active session",
+      statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions",
+      statusCode: 403,
+    },
+  ]),
+});
+
+// add this path with the function getAvailableKioskUsers from userController
+userRouter.get("/kiosk-users/available", AclMiddleware("user:get-kiosk"), userController.getAvailableKioskUsers);
+
 //************************************** */
 // register another path, get /user/{id}
 userRegistry.registerPath({
