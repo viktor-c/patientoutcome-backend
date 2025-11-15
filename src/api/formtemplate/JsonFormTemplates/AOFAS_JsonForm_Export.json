@@ -2,12 +2,10 @@
   "_id": "67b4e612d0feb4ad99ae2e84",
   "title": "AOFAS Forefoot Score",
   "description": "A form to calculate AOFAS score",
-  "markdownHeader": "# American Orthopaedic Foot and Ankle Society - AOFAS Score\n## Einleitung\nAuf der folgenden Seite finden Sie 8 Fragen zur Ihren Problemen am Großzeh.",
-  "markdownFooter": "## Sie haben den AOFAS Fragebogen ausgefüllt\n## Vielen Dank für Ihre Teilnahme!",
   "formSchema": {
     "type": "object",
     "properties": {
-      "vorfußfragebogen": {
+      "forefoot": {
         "type": "object",
         "properties": {
           "q1": {
@@ -88,7 +86,7 @@
     "scope": "#"
   },
   "formData": {
-    "vorfußfragebogen": {
+    "forefoot": {
       "q1": null,
       "q2": null,
       "q3": null,
@@ -101,9 +99,14 @@
   },
   "translations": {
     "de": {
+      "form.header": "# American Orthopaedic Foot and Ankle Society - AOFAS Score\n## Einleitung\nAuf der folgenden Seite finden Sie 8 Fragen zur Ihren Problemen am Großzeh.",
+      "form.footer": "## Sie haben den AOFAS Fragebogen ausgefüllt\n## Vielen Dank für Ihre Teilnahme!",
       "aofas.title": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.label": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.description": "AOFAS Fragebogen zur Vorfußbeurteilung.",
+      "aofas.instructions.title": "Anleitung",
+      "aofas.instructions.description": "Bitte beantworten Sie die folgenden Fragen zum Zustand Ihres Vorfußes und wählen Sie die passendste Antwort aus.",
+      "forefoot.title": "Vorfußfragebogen",
       "q1.label": "Wie oft haben Sie Schmerzen oder wie stark sind die Schmerzen im Vorfuß?",
       "q2.label": "Funktion, Einschränkung der Aktivität",
       "q3.label": "Schuhwerk",
@@ -137,9 +140,14 @@
       "aofas.q8.severe": "Schwer"
     },
     "en": {
+      "form.header": "# American Orthopaedic Foot and Ankle Society - AOFAS Score\n## Introduction\nOn the following page you will find 8 questions about your problems with your big toe.",
+      "form.footer": "## You have completed the AOFAS questionnaire\n## Thank you for your participation!",
       "aofas.title": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.label": "American Orthopaedic Foot and Ankle Society - AOFAS Score",
       "aofas.title.description": "AOFAS questionnaire for forefoot assessment.",
+      "aofas.instructions.title": "Instructions",
+      "aofas.instructions.description": "Please answer the following questions about the condition of your forefoot and select the most appropriate answer.",
+      "forefoot.title": "Forefoot questionnaire",
       "q1.label": "How often do you have pain or how severe is the pain in the forefoot?",
       "q2.label": "Function, limitation of activity",
       "q3.label": "Footwear",

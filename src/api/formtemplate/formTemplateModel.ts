@@ -25,8 +25,6 @@ export const FormTemplate = z
     _id: zId().optional(),
     title: z.string(),
     description: z.string(),
-    markdownHeader: z.string(),
-    markdownFooter: z.string(),
     formSchema: z.object({}).passthrough(),
     formSchemaUI: z.object({}).passthrough(),
     // formData: CustomFormDataSchema //this does not work when validating mongoose model. But zod validates.
