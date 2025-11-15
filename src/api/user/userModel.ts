@@ -17,6 +17,8 @@ export const UserNoPasswordSchema = z.object({
   belongsToCenter: z.array(z.string()),
   // per-user frontend setting: how many days to look back for consultations
   daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
+  // consultationId for kiosk users - links a kiosk user to an active consultation
+  consultationId: zId("Consultation").optional().nullable(),
 });
 
 // Define the User schema by extending UserNoPasswordSchema
