@@ -5,7 +5,6 @@ import { CodeRepository } from "@/api/code/codeRepository";
 import { type ConsultationRepository, consultationRepository } from "@/api/consultation/consultationRepository";
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
-import { KioskRepository } from "@/api/kiosk/kioskRepository";
 import { userRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -31,7 +30,6 @@ const codeRepository = new CodeRepository();
 const userRegistrationRepository = new UserRegistrationRepository();
 // const consultationRepository = new ConsultationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
-const kioskRepository = new KioskRepository();
 
 // Middleware to check if the environment is testing, if not we cannot use this route
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
@@ -218,25 +216,6 @@ seedRouter.get("/form-access-codes", async (_req: Request, res: Response) => {
 });
 
 /**
- * Seed database with mock data for kiosks
- * @route GET /seed/kiosks
- */
-seedRouter.get("/kiosks", async (_req: Request, res: Response) => {
-  try {
-    await kioskRepository.createMockData();
-    const serviceResponse = ServiceResponse.success("Kiosk mock data inserted successfully", null);
-    return handleServiceResponse(serviceResponse, res);
-  } catch (error) {
-    const serviceResponse = ServiceResponse.failure(
-      "Failed to insert kiosk mock data",
-      null,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-    );
-    return handleServiceResponse(serviceResponse, res);
-  }
-});
-
-/**
  * seed database with mock data for blueprints
  * @route GET /seed/blueprints
  */
@@ -315,7 +294,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
   await run("users", () => userRepository.createMockUserData(true)); // Force reset users
   await run("clinicalStudy", () => clinicalStudyRepository.createMockDataClinicalStudies());
   await run("codes", () => codeRepository.createMockDataFormAccessCodes());
-  await run("kiosks", () => kioskRepository.createMockData());
+  // Kiosks are no longer a separate collection - they're just users with the 'kiosk' role
 
   if (failures.length > 0) {
     // 207 Multi-Status indicates partial success; include failure details in payload
@@ -342,5 +321,4 @@ export {
   userRepository,
   clinicalStudyRepository,
   codeRepository,
-  kioskRepository,
 };
