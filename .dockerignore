@@ -16,10 +16,8 @@ logs
 
 # Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # IDE files
 .vscode
@@ -39,27 +37,27 @@ Thumbs.db
 # Git
 .git
 .gitignore
-README.md
 
 # Testing
 **/__tests__/**
 **/*.test.*
 **/*.spec.*
+vitest.config.ts
 
 # Development files
 .eslintrc*
 .prettierrc*
-biome.json
-eslint.config.ts
-vite.config.mts
-tsconfig.json
+.husky
+remote-debug-profile
+scripts
+examples
 
 # Docker
 Dockerfile*
 docker-compose*
 .dockerignore
 
-# Misc
+# Documentation
 *.md
+!README.md
 .github
-remote-debug-profile

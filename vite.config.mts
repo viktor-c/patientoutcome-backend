@@ -1,4 +1,3 @@
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -10,5 +9,5 @@ export default defineConfig({
     restoreMocks: true,
     sequence: {shuffle: {tests: false}},
   },
-  plugins: [tsconfigPaths()],
+  plugins: [],
 });

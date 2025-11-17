@@ -45,11 +45,11 @@ RUN chown -R appuser:appuser /usr/src/app
 USER appuser
 
 # Expose port (configurable via environment variable)
-EXPOSE 8080
+EXPOSE 40001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 8080) + '/health-check', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 40001) + '/health-check', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the app
 CMD ["node", "dist/index.js"]

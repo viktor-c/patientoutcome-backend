@@ -63,6 +63,7 @@ app.use(rateLimiter);
 app.use(
   session({
     secret: env.SESSION_SECRET, // Add SESSION_SECRET to your environment variables
+
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -70,9 +71,11 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      // In production: strict + secure cookies. In development: lax (works with localhost and IPv4 over HTTP)
-      sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
-      secure: env.NODE_ENV === "production", // Use secure cookies only in production (HTTPS)
+      sameSite: "none", // beacuse front-end and back-end are on different domains
+      // Note: When sameSite is "none", secure must be true. In development with localhost/IPv4,
+      // secure can be false only if sameSite is "lax" or "strict". For cross-origin requests,
+      // set secure: true (even in dev) or change sameSite to "lax"/"strict".
+      secure: env.NODE_ENV === "production" || env.NODE_ENV === "development", // true for both prod and dev to allow cross-origin cookies
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
