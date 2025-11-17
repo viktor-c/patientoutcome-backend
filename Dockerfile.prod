@@ -1,0 +1,74 @@
+# Production Dockerfile for Backend
+# Multi-stage build following pnpm best practices
+
+FROM node:24-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Dependencies stage
+FROM base AS deps
+WORKDIR /app
+
+# Copy only dependency-related files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --no-frozen-lockfile
+
+# Build stage
+FROM base AS build
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules /app/node_modules
+
+# Copy source code and build files
+COPY . .
+
+# Build the application
+RUN pnpm run build
+
+# Production dependencies stage
+FROM base AS prod-deps
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Instead of running a separate fresh install in prod stage (which can fail
+# in workspace setups), copy the already-installed node_modules from the
+# deps stage and prune dev dependencies. This is faster and more robust.
+COPY --from=deps /app/node_modules /app/node_modules
+
+# Ensure pnpm can prune to production-only
+RUN pnpm prune --prod || true
+
+# Final production stage
+FROM base AS production
+WORKDIR /app
+
+# Create non-root user for security before copying files so --chown works
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy production dependencies with proper ownership to avoid a separate chown step
+COPY --from=prod-deps --chown=appuser:appuser /app/node_modules /app/node_modules
+
+# Copy built application with ownership set during copy
+COPY --from=build --chown=appuser:appuser /app/dist /app/dist
+COPY --from=build --chown=appuser:appuser /app/package.json /app/package.json
+COPY --from=build --chown=appuser:appuser /app/tsconfig.json /app/tsconfig.json
+
+USER appuser
+
+# Expose port
+EXPOSE 40001
+
+# Ensure runtime path aliases from tsconfig are resolved
+#ENV NODE_OPTIONS="-r tsconfig-paths/register"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:' + (process.env.BACKEND_PORT || 40001) + '/health-check', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the application
+CMD ["node", "dist/index.js"]

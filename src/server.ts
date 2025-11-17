@@ -70,7 +70,9 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      secure: env.NODE_ENV === "production", // Use secure cookies in production
+      // In production: strict + secure cookies. In development: lax (works with localhost and IPv4 over HTTP)
+      sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: env.NODE_ENV === "production", // Use secure cookies only in production (HTTPS)
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
