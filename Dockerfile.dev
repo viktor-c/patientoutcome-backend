@@ -1,0 +1,22 @@
+# Development Dockerfile for Backend
+# This uses volume mounts for live reloading - see docker-compose.dev.yml
+
+FROM node:24-slim
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml ./
+
+# Install dependencies
+RUN pnpm install --no-frozen-lockfile
+
+# Expose port
+EXPOSE 40001
+
+# Start in dev mode with hot reload
+CMD ["pnpm", "run", "dev"]

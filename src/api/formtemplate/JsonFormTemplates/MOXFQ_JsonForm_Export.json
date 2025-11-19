@@ -1,0 +1,338 @@
+{
+  "_id": "67b4e612d0feb4ad99ae2e85",
+  "title": "Manchester-Oxford Foot Questionnaire",
+  "description": "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities with integrated scoring system",
+  "formSchema": {
+    "type": "object",
+    "properties": {
+      "moxfq": {
+        "title": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+        "i18n": "moxfq.title",
+        "type": "object",
+        "properties": {
+          "q1": {
+            "type": "integer",
+            "title": "I have pain in my foot/ankle",
+            "i18n": "moxfq.q1",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q2": {
+            "type": "integer",
+            "title": "I avoid walking long distances because of pain in my foot/ankle",
+            "i18n": "moxfq.q2",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q3": {
+            "type": "integer",
+            "title": "I change the way I walk due to pain in my foot/ankle",
+            "i18n": "moxfq.q3",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q4": {
+            "type": "integer",
+            "title": "I walk slowly because of pain in my foot/ankle",
+            "i18n": "moxfq.q4",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q5": {
+            "type": "integer",
+            "title": "I have to stop and rest my foot/ankle because of pain",
+            "i18n": "moxfq.q5",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q6": {
+            "type": "integer",
+            "title": "I avoid some hard or rough surfaces because of pain in my foot/ankle",
+            "i18n": "moxfq.q6",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q7": {
+            "type": "integer",
+            "title": "I avoid standing for a long time because of pain in my foot/ankle",
+            "i18n": "moxfq.q7",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q8": {
+            "type": "integer",
+            "title": "I catch the bus or use the car instead of walking, because of pain in my foot/ankle",
+            "i18n": "moxfq.q8",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "walkingStanding"
+          },
+          "q9": {
+            "type": "integer",
+            "title": "I feel self-conscious about my foot/ankle",
+            "i18n": "moxfq.q9",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q10": {
+            "type": "integer",
+            "title": "I feel self-conscious about the shoes I have to wear",
+            "i18n": "moxfq.q10",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q11": {
+            "type": "integer",
+            "title": "The pain in my foot/ankle is more painful in the evening",
+            "i18n": "moxfq.q11",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q12": {
+            "type": "integer",
+            "title": "I get shooting pains in my foot/ankle",
+            "i18n": "moxfq.q12",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "pain"
+          },
+          "q13": {
+            "type": "integer",
+            "title": "The pain in my foot/ankle prevents me from carrying out my work/everyday activities",
+            "i18n": "moxfq.q13",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q14": {
+            "type": "integer",
+            "title": "I am unable to do all my social or recreational activities because of pain in my foot/ankle",
+            "i18n": "moxfq.q14",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "likert",
+            "subscale": "socialInteraction"
+          },
+          "q15": {
+            "type": "integer",
+            "title": "During the past 4 weeks how would you describe the pain you usually have in your foot/ankle? (please tick one box)",
+            "i18n": "moxfq.q15",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "painSeverity",
+            "subscale": "pain",
+            "specialQuestion": true
+          },
+          "q16": {
+            "type": "integer",
+            "title": "During the past 4 weeks have you been troubled by pain from your foot/ankle in bed at night? (please tick one box)",
+            "i18n": "moxfq.q16",
+            "enum": [0, 1, 2, 3, 4],
+            "scaleType": "nightPain",
+            "subscale": "socialInteraction",
+            "specialQuestion": true
+          }
+        }
+      }
+    }
+  },
+  "formSchemaUI": {
+    "type": "MOXFQTable",
+    "elements": [
+      {
+        "type": "Group",
+        "label": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+        "elements": [
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q1",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q2",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q3",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q4",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q5",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q6",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q7",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q8",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q9",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q10",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q11",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q12",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q13",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q14",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q15",
+            "options": { "format": "radio" }
+          },
+          {
+            "type": "Control",
+            "scope": "#/properties/moxfq/properties/q16",
+            "options": { "format": "radio" }
+          }
+        ]
+      }
+    ]
+  },
+  "formData": {
+    "moxfq": {
+      "q1": null,
+      "q2": null,
+      "q3": null,
+      "q4": null,
+      "q5": null,
+      "q6": null,
+      "q7": null,
+      "q8": null,
+      "q9": null,
+      "q10": null,
+      "q11": null,
+      "q12": null,
+      "q13": null,
+      "q14": null,
+      "q15": null,
+      "q16": null
+    }
+  },
+  "translations": {
+    "de": {
+      "form.header": "## Einleitung\nAuf der folgenden Seite finden Sie 16 Fragen zu Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation **innerhalb der letzten 4 Wochen** am passendsten beschreiben. \n\nJede Frage hat 5 Antwortmöglichkeiten. Bitte kreuzen Sie die Antwort an, die am besten auf Sie zutrifft. \n\nFalls Sie eine Frage nicht beantworten können, lassen Sie diese bitte frei.",
+      "form.footer": "## Sie haben den MOXFQ Fragebogen ausgefüllt\n\nVielen Dank für Ihre Teilnahme!\n\nIhr Arzt wird die Ergebnisse mit Ihnen besprechen.",
+      "moxfq.title.label": "MANCHESTER-OXFORD FUSS FRAGEBOGEN (MOXFQ)",
+      "moxfq.title.description": "Der MANCHESTER-OXFORD FUSS FRAGEBOGEN (MOXFQ) ist ein Fragebogen zur Bewertung von Fuß- und Knöchelschmerzen.",
+      "moxfq.instructions.title": "Anleitung",
+      "moxfq.instructions.description": "Bitte wählen Sie für jede Frage eine Antwort aus, indem Sie auf die entsprechende Optionsschaltfläche klicken. Bitte beachten Sie, dass die Fragen 15 und 16 unterschiedliche Antwortskalen haben, wie in ihren jeweiligen Zeilen dargestellt.",
+      "moxfq.questions.q1": "Ich habe Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q2": "Ich vermeide es, längere Strecken zu gehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q3": "Ich verändere meine Gangart aufgrund der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q4": "Ich gehe langsam aufgrund der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q5": "Ich muss anhalten und meinen Fuß/Knöchel ausruhen lassen wegen der Schmerzen",
+      "moxfq.questions.q6": "Ich vermeide harte oder unebene Oberflächen wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q7": "Ich vermeide es, lange zu stehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q8": "Ich nehme den Bus oder das Auto anstatt zu gehen, wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q9": "Ich bin unsicher wegen meines Fußes/Knöchels",
+      "moxfq.questions.q10": "Ich bin unsicher wegen der Schuhe, die ich tragen muss",
+      "moxfq.questions.q11": "Die Schmerzen in meinem Fuß/Knöchel sind abends stärker",
+      "moxfq.questions.q12": "Ich bekomme stechende Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q13": "Die Schmerzen in meinem Fuß/Knöchel hindern mich daran, meine Arbeit/alltäglichen Aktivitäten auszuführen",
+      "moxfq.questions.q14": "Ich kann nicht alle meine sozialen oder Freizeitaktivitäten ausführen wegen der Schmerzen in meinem Fuß/Knöchel",
+      "moxfq.questions.q15": "Wie würden Sie in den letzten 4 Wochen die Schmerzen beschreiben, die Sie normalerweise in Ihrem Fuß/Knöchel haben? (Bitte kreuzen Sie ein Kästchen an)",
+      "moxfq.questions.q16": "Wurden Sie in den letzten 4 Wochen nachts im Bett von Schmerzen in Ihrem Fuß/Knöchel gestört? (Bitte kreuzen Sie ein Kästchen an)",
+      "moxfq.likertScale.noneOfTheTime": "Niemals",
+      "moxfq.likertScale.rarely": "Selten",
+      "moxfq.likertScale.someOfTheTime": "Manchmal",
+      "moxfq.likertScale.mostOfTheTime": "Meistens",
+      "moxfq.likertScale.allOfTheTime": "Immer",
+      "moxfq.painSeverity.none": "Keine",
+      "moxfq.painSeverity.veryMild": "Sehr leicht",
+      "moxfq.painSeverity.mild": "Leicht",
+      "moxfq.painSeverity.moderate": "Mäßig",
+      "moxfq.painSeverity.severe": "Stark",
+      "moxfq.nightPain.noNights": "Keine Nächte",
+      "moxfq.nightPain.only1or2Nights": "Nur 1 oder 2 Nächte",
+      "moxfq.nightPain.someNights": "Einige Nächte",
+      "moxfq.nightPain.mostNights": "Die meisten Nächte",
+      "moxfq.nightPain.everyNight": "Jede Nacht"
+    },
+    "en": {
+      "form.header": "## Introduction\nOn the following page, you will find 16 questions regarding your foot and/or ankle problems.\n\nPlease answer all questions in a way that best describes your situation **within the last 4 weeks**. \n\nEach question has 5 possible answers. Please tick the answer that best applies to you. \n\nIf you are unable to answer a question, please leave it blank.",
+      "form.footer": "## You have completed the MOXFQ questionnaire\n\nThank you for your participation!\n\nYour doctor will discuss the results with you.",
+      "moxfq.title.label": "MANCHESTER-OXFORD FOOT QUESTIONNAIRE (MOXFQ)",
+      "moxfq.title.description": "The Manchester-Oxford Foot Questionnaire (MOXFQ) is a questionnaire to assess foot and ankle pain and its impact on daily activities.",
+      "moxfq.instructions.title": "Instructions",
+      "moxfq.instructions.description": "Please select one answer for each question by clicking the appropriate radio button. Please note that questions 15 and 16 have different answer scales as shown in their respective rows.",
+      "moxfq.questions.q1": "I have pain in my foot/ankle",
+      "moxfq.questions.q2": "I avoid walking long distances because of pain in my foot/ankle",
+      "moxfq.questions.q3": "I change the way I walk due to pain in my foot/ankle",
+      "moxfq.questions.q4": "I walk slowly because of pain in my foot/ankle",
+      "moxfq.questions.q5": "I have to stop and rest my foot/ankle because of pain",
+      "moxfq.questions.q6": "I avoid some hard or rough surfaces because of pain in my foot/ankle",
+      "moxfq.questions.q7": "I avoid standing for a long time because of pain in my foot/ankle",
+      "moxfq.questions.q8": "I catch the bus or use the car instead of walking, because of pain in my foot/ankle",
+      "moxfq.questions.q9": "I feel self-conscious about my foot/ankle",
+      "moxfq.questions.q10": "I feel self-conscious about the shoes I have to wear",
+      "moxfq.questions.q11": "The pain in my foot/ankle is more painful in the evening",
+      "moxfq.questions.q12": "I get shooting pains in my foot/ankle",
+      "moxfq.questions.q13": "The pain in my foot/ankle prevents me from carrying out my work/everyday activities",
+      "moxfq.questions.q14": "I am unable to do all my social or recreational activities because of pain in my foot/ankle",
+      "moxfq.questions.q15": "During the past 4 weeks how would you describe the pain you usually have in your foot/ankle? (please tick one box)",
+      "moxfq.questions.q16": "During the past 4 weeks have you been troubled by pain from your foot/ankle in bed at night? (please tick one box)",
+      "moxfq.likertScale.noneOfTheTime": "Never",
+      "moxfq.likertScale.rarely": "Rarely",
+      "moxfq.likertScale.someOfTheTime": "Sometimes",
+      "moxfq.likertScale.mostOfTheTime": "Most of the time",
+      "moxfq.likertScale.allOfTheTime": "All of the time",
+      "moxfq.painSeverity.none": "None",
+      "moxfq.painSeverity.veryMild": "Very mild",
+      "moxfq.painSeverity.mild": "Mild",
+      "moxfq.painSeverity.moderate": "Moderate",
+      "moxfq.painSeverity.severe": "Severe",
+      "moxfq.nightPain.noNights": "No nights",
+      "moxfq.nightPain.only1or2Nights": "Only 1 or 2 nights",
+      "moxfq.nightPain.someNights": "Some nights",
+      "moxfq.nightPain.mostNights": "Most nights",
+      "moxfq.nightPain.everyNight": "Every night"
+    }
+  }
+}
