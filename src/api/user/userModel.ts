@@ -19,6 +19,8 @@ export const UserNoPasswordSchema = z.object({
   daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   // consultationId for kiosk users - links a kiosk user to an active consultation
   consultationId: zId("Consultation").optional().nullable(),
+  // postopWeek for kiosk users - sequential number indicating n-th kiosk user created
+  postopWeek: z.number().int().min(1).optional(),
 });
 
 // Define the User schema by extending UserNoPasswordSchema
