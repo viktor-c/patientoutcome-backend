@@ -47,6 +47,7 @@ const LoginResponseSchema = z.object({
   belongsToCenter: z.array(z.string()),
   email: z.string().email().optional(),
   roles: z.array(z.string()),
+  postopWeek: z.number().int().min(1).optional(),
 });
 
 // Register the path for login
@@ -79,6 +80,87 @@ userRegistry.registerPath({
 });
 
 userRouter.post("/login", AclMiddleware("user-login"), validateRequest(LoginSchema), userController.loginUser);
+
+// Kiosk Login Schema
+const KioskLoginSchema = z.object({
+  body: z.object({
+    username: z.string().startsWith("kiosk"),
+  }),
+});
+
+// Register the path for kiosk login
+userRegistry.registerPath({
+  method: "post",
+  path: "/user/kiosk-login",
+  tags: ["User"],
+  operationId: "kioskLoginUser",
+  description: "Passwordless login for kiosk users - automatically creates consultation",
+  summary: "Kiosk login (passwordless)",
+  request: {
+    body: {
+      content: {
+        "application/json": { schema: KioskLoginSchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: LoginResponseSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Invalid username",
+      statusCode: 400,
+    },
+  ]),
+});
+
+userRouter.post("/kiosk-login", AclMiddleware("user-login"), validateRequest(KioskLoginSchema), userController.kioskLoginUser);
+
+// Role Switch Schema
+const RoleSwitchSchema = z.object({
+  body: z.object({
+    username: z.string(),
+  }),
+});
+
+// Register the path for role switching
+userRegistry.registerPath({
+  method: "post",
+  path: "/user/role-switch",
+  tags: ["User"],
+  operationId: "roleSwitchUser",
+  description: "Passwordless role switching for kiosk and doctor users",
+  summary: "Switch user role (passwordless)",
+  request: {
+    body: {
+      content: {
+        "application/json": { schema: RoleSwitchSchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: LoginResponseSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "User not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Forbidden - Role switching not allowed for this user type",
+      statusCode: 403,
+    },
+  ]),
+});
+
+userRouter.post("/role-switch", AclMiddleware("user-login"), validateRequest(RoleSwitchSchema), userController.roleSwitchUser);
 
 // Register the path for logout
 userRegistry.registerPath({

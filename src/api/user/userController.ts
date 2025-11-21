@@ -2,9 +2,12 @@ import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import { userService } from "@/api/user/userService";
+import { kioskService } from "@/api/user/kioskService";
+import type { UserNoPassword } from "@/api/user/userModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
+import { activityLogService } from "@/common/services/activityLogService";
 import { StatusCodes } from "http-status-codes";
 import { isValidObjectId } from "mongoose";
 import { userRegistrationZod } from "./userRegistrationSchemas";
@@ -86,11 +89,126 @@ class UserController {
       req.session.lastLogin = new Date(); // Store last login time
       req.session.loggedIn = true; // Mark the user as logged in
       req.session.username = username;
+      
+      // Log the activity
+      activityLogService.log({
+        username,
+        action: "User logged in",
+        type: "login",
+        details: `Roles: ${serviceResponse.responseObject.roles.join(", ")}`,
+      });
+      
       //@ts-ignore-next-line
       serviceResponse.responseObject._id = undefined;
       await req.session.save(); // Save the session
     }
     return handleServiceResponse(serviceResponse, res);
+  };
+
+  public kioskLoginUser: RequestHandler = async (req: Request, res: Response) => {
+    const { username } = req.body;
+    
+    const serviceResponse = await kioskService.kioskLogin(username);
+    if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
+      if (serviceResponse.responseObject._id === undefined) {
+        req.session.userId = undefined;
+        await req.session.destroy(() => {});
+        return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
+      } else {
+        req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
+          ? serviceResponse.responseObject._id.toString()
+          : undefined;
+      }
+      req.session.roles = serviceResponse.responseObject.roles;
+      req.session.permissions = serviceResponse.responseObject.permissions;
+      req.session.lastLogin = new Date();
+      req.session.loggedIn = true;
+      req.session.username = username;
+      req.session.consultationId = serviceResponse.responseObject.consultationId?.toString();
+      
+      // Log the kiosk login activity
+      activityLogService.log({
+        username,
+        action: "Kiosk user logged in (passwordless)",
+        type: "login",
+        details: `Consultation ID: ${req.session.consultationId}`,
+      });
+      
+      //@ts-ignore-next-line
+      serviceResponse.responseObject._id = undefined;
+      await req.session.save();
+    }
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public roleSwitchUser: RequestHandler = async (req: Request, res: Response) => {
+    const { username } = req.body;
+    const previousUser = req.session?.username || "unknown";
+    
+    // Fetch the existing user without creating a new one
+    const user = await userService.findByUsername(username);
+    if (!user || !user._id) {
+      return handleServiceResponse(
+        ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND),
+        res
+      );
+    }
+
+    // Only allow role switching for kiosk and doctor roles
+    const allowedRoles = ["kiosk", "doctor"];
+    const hasAllowedRole = user.roles.some((role) => allowedRoles.includes(role));
+
+    if (!hasAllowedRole) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Role switching only allowed for kiosk and doctor users",
+          null,
+          StatusCodes.FORBIDDEN
+        ),
+        res
+      );
+    }
+
+    // Update session with the existing user's data (without altering the cookie)
+    req.session.userId = isValidObjectId(user._id) ? user._id.toString() : undefined;
+    req.session.roles = user.roles;
+    req.session.permissions = user.permissions;
+    req.session.lastLogin = new Date();
+    req.session.loggedIn = true;
+    req.session.username = username;
+    req.session.consultationId = user.consultationId?.toString();
+
+    // Log the role switch activity
+    activityLogService.log({
+      username,
+      action: "Role switched",
+      type: "roleSwitch",
+      details: `From: ${previousUser} → To: ${username} (${user.roles.join(", ")})`,
+    });
+
+    // Create UserNoPassword response object
+    const userWithoutPassword: UserNoPassword = {
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      department: user.department,
+      roles: user.roles,
+      permissions: user.permissions,
+      email: user.email,
+      lastLogin: user.lastLogin,
+      belongsToCenter: user.belongsToCenter,
+      consultationId: user.consultationId,
+      postopWeek: user.postopWeek,
+    };
+
+    await req.session.save();
+
+    logger.info({ username, previousUser, roles: user.roles }, "🔄 Role switch successful");
+
+    return handleServiceResponse(
+      ServiceResponse.success("Role switch successful", userWithoutPassword, StatusCodes.OK),
+      res
+    );
   };
 
   public logoutUser: RequestHandler = async (req: Request, res: Response) => {
