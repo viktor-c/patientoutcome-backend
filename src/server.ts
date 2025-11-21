@@ -9,6 +9,7 @@ import session from "express-session";
 import helmet from "helmet";
 
 //****************** Routers import ****************************** */
+import { activityLogRouter } from "@/api/activitylog/activityLogRouter";
 import { blueprintRouter } from "@/api/blueprint/blueprintRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
@@ -17,6 +18,7 @@ import { formTemplateRouter } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { kioskRouter } from "@/api/kiosk/kioskRouter";
 import { seedRouter } from "@/api/seed/seedRouter";
+import { statisticsRouter } from "@/api/statistics/statisticsRouter";
 import { surgeryRouter } from "@/api/surgery/surgeryRouter";
 import { userRouter } from "@/api/user/userRouter";
 
@@ -71,11 +73,12 @@ app.use(
       collectionName: "sessions",
     }),
     cookie: {
-      sameSite: "none", // beacuse front-end and back-end are on different domains
-      // Note: When sameSite is "none", secure must be true. In development with localhost/IPv4,
-      // secure can be false only if sameSite is "lax" or "strict". For cross-origin requests,
-      // set secure: true (even in dev) or change sameSite to "lax"/"strict".
-      secure: env.NODE_ENV === "production" || env.NODE_ENV === "development", // true for both prod and dev to allow cross-origin cookies
+      // For localhost development, use "lax" since both frontend and backend are on localhost (same-site)
+      // For production with different domains (cross-origin), use "none" with secure: true
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      // secure: true is required when sameSite is "none" (production)
+      // For development with HTTP localhost, use secure: false with sameSite: "lax"
+      secure: env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
@@ -86,6 +89,7 @@ app.use(
 app.use(requestLogger);
 
 // Routes
+app.use("/activitylog", activityLogRouter);
 app.use("/blueprints", blueprintRouter);
 app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
@@ -95,6 +99,7 @@ app.use("/user", userRouter);
 app.use("", consultationRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);
 app.use("/seed", seedRouter);
+app.use("/statistics", statisticsRouter);
 app.use("/formtemplate", formTemplateRouter);
 app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);

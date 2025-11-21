@@ -22,5 +22,6 @@ declare module "express-session" {
     lastLogin?: Date;
     loggedIn?: boolean;
     username?: string;
+    consultationId?: string;
   }
 }
