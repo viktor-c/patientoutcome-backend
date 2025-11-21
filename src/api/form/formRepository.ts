@@ -138,8 +138,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        markdownHeader: formTemplateRepository.mockFormTemplateData[0].markdownHeader,
-        markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
@@ -163,8 +161,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        markdownHeader: formTemplateRepository.mockFormTemplateData[1].markdownHeader,
-        markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData1 || {}, // Store raw form data (not ScoringData)
@@ -189,8 +185,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        markdownHeader: formTemplateRepository.mockFormTemplateData[0].markdownHeader,
-        markdownFooter: formTemplateRepository.mockFormTemplateData[0].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData2 || {}, // Store raw form data (not ScoringData)
@@ -214,8 +208,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        markdownHeader: formTemplateRepository.mockFormTemplateData[1].markdownHeader,
-        markdownFooter: formTemplateRepository.mockFormTemplateData[1].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData2 || {}, // Store raw form data (not ScoringData)
@@ -237,8 +229,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
-        markdownHeader: formTemplateRepository.mockFormTemplateData[2].markdownHeader,
-        markdownFooter: formTemplateRepository.mockFormTemplateData[2].markdownFooter,
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
@@ -393,7 +383,19 @@ function calculateAofasScore(data): ScoringData {
     // Questions exist, but no valid answers
     return {
       rawData: data,
-      subscales: {},
+      subscales: {
+        "aofas-forefoot": {
+          name: "AOFAS Forefoot",
+          description: "American Orthopedic Foot & Ankle Society Forefoot Score",
+          rawScore: null,
+          normalizedScore: null,
+          maxPossibleScore: 100,
+          answeredQuestions: 0,
+          totalQuestions: questionKeys.length,
+          completionPercentage: 0,
+          isComplete: false,
+        }
+      },
       total: {
         name: "AOFAS Total",
         description: "American Orthopedic Foot & Ankle Society Score",
@@ -430,7 +432,7 @@ function calculateAofasScore(data): ScoringData {
 
   return {
     rawData: data,
-    subscales: {}, // AOFAS doesn't have subscales
+    subscales: { "aofas-forefoot": totalScore }, // aofas does not have subscales, but the frontend expects at least one, so put the whole score
     total: totalScore,
   };
 }
