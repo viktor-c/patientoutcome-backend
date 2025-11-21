@@ -4,6 +4,13 @@ import { StatusCodes } from "http-status-codes";
 import { CustomFormDataSchema } from "../formtemplate/formTemplateModel";
 import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
+import { activityLogService } from "@/common/services/activityLogService";
+
+export interface UserContext {
+  username?: string;
+  userId?: string;
+  roles?: string[];
+}
 
 export class FormService {
   async getAllForms(): Promise<ServiceResponse<Form[] | null>> {
@@ -35,7 +42,7 @@ export class FormService {
     }
   }
 
-  async createForm(formData: Form): Promise<ServiceResponse<Form | null>> {
+  async createForm(formData: Form, userContext?: UserContext): Promise<ServiceResponse<Form | null>> {
     try {
       // Set the form start time if not already provided
       if (!formData.formStartTime) {
@@ -43,6 +50,17 @@ export class FormService {
       }
 
       const newForm = await formRepository.createForm(formData);
+
+      // Log form creation activity
+      if (userContext) {
+        activityLogService.log({
+          username: userContext.username || "Unknown",
+          action: `Created form`,
+          type: "formOpen",
+          details: `Form ID: ${newForm._id}, Template: ${newForm.formTemplateId}`,
+        });
+      }
+
       return ServiceResponse.created("Form created successfully", newForm);
     } catch (error) {
       return ServiceResponse.failure(
@@ -53,7 +71,7 @@ export class FormService {
     }
   }
 
-  async updateForm(formId: string, updatedForm: Partial<Form>): Promise<ServiceResponse<Form | null>> {
+  async updateForm(formId: string, updatedForm: Partial<Form>, userContext?: UserContext): Promise<ServiceResponse<Form | null>> {
     try {
       // Debug: Log what service received
       console.debug("=== BACKEND SERVICE: Received data ===");
@@ -186,6 +204,18 @@ export class FormService {
       console.log("=========================================");
 
       const response = await formRepository.updateForm(formId, updateData);
+
+      // Log form update/submission activity
+      if (userContext) {
+        const isCompleted = updateData.formFillStatus === "completed";
+        activityLogService.log({
+          username: userContext.username || "Unknown",
+          action: isCompleted ? `Submitted form` : `Updated form`,
+          type: isCompleted ? "formSubmit" : "formOpen",
+          details: `Form ID: ${formId}, Status: ${updateData.formFillStatus || "in-progress"}, Template: ${existingForm.formTemplateId}`,
+        });
+      }
+
       return ServiceResponse.success("Form updated successfully", response);
     } catch (error) {
       logger.error({ error }, "Error in updateForm service");
