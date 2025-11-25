@@ -4,6 +4,7 @@ import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepositor
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
+import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
 interface SubscaleScore {
@@ -143,7 +144,26 @@ export class FormRepository {
         formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
         translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
-
+      // VAS Form 1
+      const vasFormData1 = formTemplateRepository.mockFormTemplateData[3].formData;
+      const vasScoring1 = vasFormData1 ? calculateVAS(vasFormData1) : undefined;
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d53",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a1",
+        formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
+        scoring: vasScoring1,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[3].title,
+        description: formTemplateRepository.mockFormTemplateData[3].description,
+        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
+        formData: vasFormData1 || {}, // Store raw form data (not ScoringData)
+        translations: formTemplateRepository.mockFormTemplateData[3].translations,
+      });
       // AOFAS Form 1
       const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
       const aofasScoring1 = aofasFormData1 ? calculateAofasScore(aofasFormData1) : undefined;
@@ -168,13 +188,33 @@ export class FormRepository {
       });
 
       // forms for the second consultation
+
+      // VAS Form 2
+      const vasFormData2 = formTemplateRepository.mockFormTemplateData[3].formData;
+      const vasScoring2 = vasFormData2 ? calculateVAS(vasFormData2) : undefined;
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d54",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a2",
+        formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
+        scoring: vasScoring2,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[3].title,
+        description: formTemplateRepository.mockFormTemplateData[3].description,
+        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
+        formData: vasFormData2 || {}, // Store raw form data (not ScoringData)
+        translations: formTemplateRepository.mockFormTemplateData[3].translations,
+      });
       // EFAS Form 2
       const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData;
       const efasScoring2 = efasFormData2 ? calculateEfasScore(efasFormData2) : undefined;
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d55",
-        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
@@ -235,6 +275,25 @@ export class FormRepository {
         translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
+      // This is the moxfq Form
+      this.mockForms.push({
+        _id: "6832337595b15e2d7e223d58",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a2",
+        formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
+        scoring: moxfqScoring1,
+        createdAt: new Date(),
+        updatedAt: undefined,
+        completedAt: undefined,
+        formFillStatus: "draft",
+        title: formTemplateRepository.mockFormTemplateData[2].title,
+        description: formTemplateRepository.mockFormTemplateData[2].description,
+        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
+        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
+        formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
+        translations: formTemplateRepository.mockFormTemplateData[2].translations,
+      });
+
       logger.info("Mock forms populated with template data successfully");
     } catch (error) {
       logger.error({ error }, "Error populating mock forms with template data");
@@ -281,6 +340,32 @@ if (process.env.NODE_ENV === "test") {
  * These functions calculate scores for different form types (MOXFQ, AOFAS, EFAS)
  * Used by backend to initialize mock data with proper scoring structures
  */
+
+/**
+ * Calculate and fill data for VAS number scale
+ * @param {Object} data - Form data with question responses (may be nested in 'vas' section or flat)
+ * @returns {Object} ScoringData structure
+ */
+function calculateVAS(data: unknown): ScoringData {
+  const rawScore: number = (data as any).vas?.pain ?? (data as any).pain;
+  const totalScore = {
+    name: "VAS Total",
+    description: "Visual Analog Scale",
+    rawScore,
+    normalizedScore: rawScore, // VAS is already 0-10 scale
+    maxPossibleScore: 10,
+    answeredQuestions: 0,
+    totalQuestions: 1,
+    completionPercentage: 0,
+    isComplete: false,
+  };
+
+  return {
+    rawData: data,
+    subscales: { "vas": totalScore },
+    total: totalScore,
+  };
+}
 
 /**
  * Calculate MOXFQ score from form data

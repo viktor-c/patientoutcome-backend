@@ -153,7 +153,7 @@ export class ConsultationService {
    */
   async updateConsultation(
     consultationId: string,
-    data: Partial<Consultation>,
+    data: Partial<CreateConsultation>,
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
       const originalConsultation = await this.consultationRepository.getConsultationById(consultationId);
@@ -189,11 +189,13 @@ export class ConsultationService {
        * check if originalconsultation has formTemplates
        * only add new form templates if they are not already present.
        */
-      if (data.proms && data.proms.length > 0) {
+      if ((data.proms && data.proms.length > 0) || data.formTemplates) {
         // initialise proms in the original data if not present
         if (!originalConsultation.proms) {
           originalConsultation.proms = [];
         }
+        if (!data.proms) data.proms = [...data.formTemplates];
+        else data.proms = [...data.proms, ...data.formTemplates];
 
         //first intersect the originalConsultation.proms.formTemplateId with the ids from data.proms
         // BUG originalConsultation.proms will be populated with the forms and not the ids
@@ -224,13 +226,13 @@ export class ConsultationService {
         const newPromsById: string[] = [...remainingFormsById];
         // for each newProms create a new form by template id
         for (const templateId of newPromsByTemplateId) {
-          const formId = await formRepository.createFormByTemplateId(
-            originalConsultation.patientCaseId.toString(),
+          const form = await formRepository.createFormByTemplateId(
+            originalConsultation.patientCaseId._id.toString(),
             consultationId,
             templateId.toString(),
           );
-          if (formId) {
-            newPromsById.push(formId.toString());
+          if (form && form._id) {
+            newPromsById.push(form._id.toString());
           }
         }
         // now we have the newPromsById which contains the ids of the new forms and the existing forms

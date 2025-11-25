@@ -261,7 +261,7 @@ export class SurgeryRepository {
       therapy: "Chevron osteotomy with bunionectomy",
       OPSCodes: ["5-788.5a"],
       side: "left" as const,
-      surgeryDate: faker.date.past({ years: 2 }).toISOString(),
+      surgeryDate: faker.date.past({ years: 1 }).toISOString(),
       surgeryTime: 90,
       tourniquet: 60,
       anaesthesiaType: faker.helpers.arrayElement(this.anaesthesiaTypes),

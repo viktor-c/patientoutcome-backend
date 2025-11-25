@@ -44,6 +44,7 @@ export const ConsultationWithFormsSchema = ConsultationSchema.extend({
   proms: z.array(Form),
 });
 
+// when creating a consultation, no proms exist, but a list of formTemplates can be given, based on which forms/proms will be created
 export const CreateConsultationSchema = ConsultationSchema.omit({
   _id: true,
   __v: true,
@@ -56,9 +57,9 @@ export const CreateConsultationSchema = ConsultationSchema.omit({
   images: z.array(CreateImageSchema),
 });
 
-export const UpdateConsultationSchema = ConsultationSchema.partial().extend({
-  notes: z.array(CreateNoteSchema).optional(),
-  images: z.array(CreateImageSchema).optional(),
+// when updating a consulstation, a form list may already exist, but also the formtemplates can be given
+export const UpdateConsultationSchema = CreateConsultationSchema.partial().extend({
+  proms: z.array(zId("Form")).optional(),
 });
 
 export const GetConsultationRequestSchema = z.object({
