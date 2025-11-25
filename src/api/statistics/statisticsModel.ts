@@ -52,6 +52,8 @@ export const CaseStatisticsSchema = z.object({
   totalConsultations: z.number(),
   caseId: zId("PatientCase"),
   consultations: z.array(ConsultationWithScoresSchema),
+  surgeryDate: z.string().nullable().optional(),
+  caseCreatedAt: z.string().nullable().optional(),
 });
 
 /**

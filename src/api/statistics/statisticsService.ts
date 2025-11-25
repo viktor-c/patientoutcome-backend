@@ -3,6 +3,8 @@ import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { consultationModel } from "@/api/consultation/consultationModel";
 import { FormModel } from "@/api/form/formModel";
+import { PatientCaseModel } from "@/api/case/patientCaseModel"
+import { SurgeryModel } from "@/api/surgery/surgeryModel"
 import type {
   CaseStatistics,
   ConsultationWithScores,
@@ -32,9 +34,34 @@ export class StatisticsService {
             totalConsultations: 0,
             caseId,
             consultations: [],
+            surgeryDate: null,
+            caseCreatedAt: null,
           },
           StatusCodes.OK,
         );
+      }
+
+      // Fetch surgery date and case creation date for timeline reference
+      let surgeryDate: Date | null = null;
+      let caseCreatedAt: Date | null = null;
+      
+      try {
+        
+        const patientCase = await PatientCaseModel.findById(caseId).lean();
+        
+        if (patientCase) {
+          caseCreatedAt = patientCase.createdAt || null;
+          
+          if (patientCase.surgeries && patientCase.surgeries.length > 0) {
+            // Get the first (primary) surgery date
+            const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
+            if (surgery && surgery.surgeryDate) {
+              surgeryDate = new Date(surgery.surgeryDate);
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn({ error }, "Could not fetch surgery/case dates for statistics");
       }
 
       // Process consultations and extract scores with full scoring data
@@ -138,6 +165,8 @@ export class StatisticsService {
         totalConsultations: consultations.length,
         caseId,
         consultations: processedConsultations,
+        surgeryDate: surgeryDate ? surgeryDate.toISOString() : null,
+        caseCreatedAt: caseCreatedAt ? caseCreatedAt.toISOString() : null,
       };
       return ServiceResponse.success("Statistics retrieved successfully", stats, StatusCodes.OK);
     } catch (ex) {
