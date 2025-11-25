@@ -1,13 +1,13 @@
-import { StatusCodes } from "http-status-codes";
+import type { CreateConsultation } from "@/api/consultation/consultationModel";
+import { consultationService } from "@/api/consultation/consultationService";
+import { FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
+import { kioskService as kioskServiceApi } from "@/api/kiosk/kioskService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/common/utils/logger";
 import { hashPassword } from "@/utils/hashUtil";
+import { StatusCodes } from "http-status-codes";
 import { type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
-import { consultationService } from "@/api/consultation/consultationService";
-import { FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
-import type { CreateConsultation } from "@/api/consultation/consultationModel";
-import { kioskService as kioskServiceApi} from "@/api/kiosk/kioskService";
 /**
  * Service class for Kiosk-specific operations
  * Handles passwordless authentication and automatic consultation setup
@@ -20,11 +20,35 @@ export class KioskService {
   }
 
   /**
-   * Generate a random 2-character string for unique kiosk username
+   * Generate a random 3-character string for unique kiosk username
    */
   private generateRandomSuffix(): string {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    return Array.from({ length: 2 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    return Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }
+
+  /**
+   * Ensure a unique username by appending a random suffix when needed.
+   * If base === 'kiosk' the generated username will be 'kiosk<suffix>' (no hyphen).
+   */
+  private async ensureUniqueUsername(base: string): Promise<string> {
+    const maxAttempts = 20;
+    let attempts = 0;
+    let candidate = base;
+
+    while (attempts < maxAttempts) {
+      if (base === "kiosk") {
+        candidate = `kiosk${this.generateRandomSuffix()}`;
+      } else {
+        candidate = `${base}${this.generateRandomSuffix()}`;
+      }
+
+      const existing = await this.userRepository.getCompleteUserForLogin(candidate);
+      if (!existing) return candidate;
+      attempts++;
+    }
+
+    throw new Error("Could not generate unique username");
   }
 
   /**
@@ -34,12 +58,12 @@ export class KioskService {
    */
   private calculatePostopWeeks(userNumber: number): number {
     const weekArray = [2, 4, 6, 12];
-    
+
     // First 4 users get values from the array [2, 4, 6, 12]
     if (userNumber <= 4) {
       return weekArray[userNumber - 1];
     }
-    
+
     // After 4th user: continue in 4-week increments (1 month = 4 weeks)
     // User 5 -> 16 weeks (4 months), User 6 -> 20 weeks (5 months), etc.
     return 12 + (userNumber - 4) * 4;
@@ -124,35 +148,22 @@ export class KioskService {
         return ServiceResponse.failure("Username must start with 'kiosk' prefix", null, StatusCodes.BAD_REQUEST);
       }
 
-      // Check if user already exists
-      let kioskUser = await this.userRepository.getCompleteUserForLogin(username);
+      // Preserve original parameter and use a separate variable for the final username
+      const originalUsername = username.toLowerCase();
+      let finalUsername = originalUsername;
 
-      // If user exists, generate unique username with random suffix
-      if (kioskUser) {
-        let attempts = 0;
-        const maxAttempts = 10;
-        let uniqueUsername = username;
+      // kioskUser will hold the created or fetched user object later
+      let kioskUser: User | null = null;
 
-        while (attempts < maxAttempts) {
-          const suffix = this.generateRandomSuffix();
-          uniqueUsername = `${username}${suffix}`;
-
-          const existingUser = await this.userRepository.getCompleteUserForLogin(uniqueUsername);
-          if (!existingUser) {
-            break;
-          }
-          attempts++;
+      // If the original username is 'kiosk' OR the username already exists in DB,
+      // generate a unique username using the shared helper.
+      const alreadyExists = await this.userRepository.getCompleteUserForLogin(originalUsername);
+      if (originalUsername === "kiosk" || alreadyExists) {
+        try {
+          finalUsername = await this.ensureUniqueUsername(originalUsername);
+        } catch (err) {
+          return ServiceResponse.failure("Could not generate unique username", null, StatusCodes.INTERNAL_SERVER_ERROR);
         }
-
-        if (attempts === maxAttempts) {
-          return ServiceResponse.failure(
-            "Could not generate unique username",
-            null,
-            StatusCodes.INTERNAL_SERVER_ERROR,
-          );
-        }
-
-        username = uniqueUsername;
       }
 
       // Count existing kiosk users to determine postopWeek
@@ -166,9 +177,9 @@ export class KioskService {
       const hashedPassword = await hashPassword(randomPassword);
 
       const newKioskUser = new userModel({
-        username,
-        name: `Kiosk User ${username}`,
-        email: `${username}@kiosk.local`,
+        username: finalUsername,
+        name: `Kiosk User ${finalUsername}`,
+        email: `${finalUsername}@kiosk.local`,
         password: hashedPassword,
         department: "Orthopädie",
         belongsToCenter: ["1"],
@@ -180,13 +191,13 @@ export class KioskService {
       await newKioskUser.save();
 
       // Get the user without password
-      kioskUser = await this.userRepository.getCompleteUserForLogin(username);
+      kioskUser = await this.userRepository.getCompleteUserForLogin(finalUsername);
       if (!kioskUser || !kioskUser._id) {
         return ServiceResponse.failure("Failed to create kiosk user", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
 
       // Extract suffix from kiosk username for doctor user
-      const suffixMatch = username.match(/kiosk-?(.+)$/);
+      const suffixMatch = finalUsername.match(/^kiosk(.+)$/);
       const suffix = suffixMatch ? suffixMatch[1] : Math.random().toString(36).substring(2, 8);
 
       // Create corresponding doctor user
@@ -219,7 +230,9 @@ export class KioskService {
 
       // Get form template IDs for AOFAS, EFAS, MOXFQ, VAS
       const formTemplates = await FormTemplateModel.find({
-        title: { $in: ["EFAS Score", "AOFAS Forefoot Score", "Manchester-Oxford Foot Questionnaire", "VAS Pain Scale"] },
+        title: {
+          $in: ["EFAS Score", "AOFAS Forefoot Score", "Manchester-Oxford Foot Questionnaire", "VAS Pain Scale"],
+        },
       }).select("_id");
 
       if (formTemplates.length !== 4) {
@@ -230,25 +243,25 @@ export class KioskService {
 
       // Create consultation for the specified case
       const caseId = "677da5d8cb4569ad1c65515f";
-      
+
       // Try to fetch the surgery date for this case
       let consultationDate: Date;
       try {
         const { PatientCaseModel } = await import("@/api/case/patientCaseModel");
         const { SurgeryModel } = await import("@/api/surgery/surgeryModel");
-        
+
         const patientCase = await PatientCaseModel.findById(caseId).lean();
-        
-        if (patientCase && patientCase.surgeries && patientCase.surgeries.length > 0) {
+
+        if (patientCase?.surgeries && patientCase.surgeries.length > 0) {
           // Get the first surgery date
           const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
-          
-          if (surgery && surgery.surgeryDate) {
+
+          if (surgery?.surgeryDate) {
             // Calculate consultation date based on surgery date and postop weeks
             consultationDate = this.calculateConsultationDate(new Date(surgery.surgeryDate), postopWeek);
             logger.info(
               { surgeryDate: surgery.surgeryDate, postopWeek, consultationDate },
-              "📅 Consultation date calculated from surgery date"
+              "📅 Consultation date calculated from surgery date",
             );
           } else {
             // Fallback to random past date if surgery has no date
@@ -286,11 +299,7 @@ export class KioskService {
       const consultationResult = await consultationService.createConsultation(caseId, consultationData);
 
       if (!consultationResult.success || !consultationResult.responseObject) {
-        return ServiceResponse.failure(
-          "Failed to create consultation",
-          null,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        );
+        return ServiceResponse.failure("Failed to create consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
 
       // Update last login time
@@ -318,7 +327,7 @@ export class KioskService {
 
       logger.info(
         {
-          kioskUser: username,
+          kioskUser: finalUsername,
           doctorUser: doctorUsername,
           consultationId: consultationResult.responseObject._id,
         },
@@ -329,11 +338,7 @@ export class KioskService {
     } catch (ex) {
       const errorMessage = `Error during kiosk login: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure(
-        "An error occurred during kiosk login.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      return ServiceResponse.failure("An error occurred during kiosk login.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -389,11 +394,7 @@ export class KioskService {
     } catch (ex) {
       const errorMessage = `Error during passwordless login: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure(
-        "An error occurred during role switch.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      return ServiceResponse.failure("An error occurred during role switch.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }
