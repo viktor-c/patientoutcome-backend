@@ -70,6 +70,33 @@ export class KioskService {
   }
 
   /**
+   * Calculate consultation date based on surgery date and postop weeks
+   * @param surgeryDate - Date of the surgery
+   * @param weeksAfterSurgery - Number of weeks after surgery for the consultation
+   * @returns Date object for the consultation, adjusted to Monday or Wednesday
+   */
+  private calculateConsultationDate(surgeryDate: Date, weeksAfterSurgery: number): Date {
+    const consultationDate = new Date(surgeryDate);
+    consultationDate.setDate(consultationDate.getDate() + weeksAfterSurgery * 7);
+
+    // Get day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const dayOfWeek = consultationDate.getDay();
+
+    // Adjust to Monday (1) or Wednesday (3)
+    if (dayOfWeek === 0 || dayOfWeek === 2 || dayOfWeek === 4 || dayOfWeek === 5 || dayOfWeek === 6) {
+      // Sunday, Tuesday, Thursday, Friday, Saturday -> move to Monday
+      const daysToAdd = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7;
+      consultationDate.setDate(consultationDate.getDate() + daysToAdd);
+    } else if (dayOfWeek === 1) {
+      // Already Monday, keep it
+    } else {
+      // Already Wednesday (3), keep it
+    }
+
+    return consultationDate;
+  }
+
+  /**
    * Generate a random German description for the consultation note
    */
   private getRandomGermanNote(): string {
@@ -190,22 +217,58 @@ export class KioskService {
         return ServiceResponse.failure("Failed to create doctor user", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
 
-      // Get form template IDs for AOFAS, EFAS, MOXFQ
+      // Get form template IDs for AOFAS, EFAS, MOXFQ, VAS
       const formTemplates = await FormTemplateModel.find({
-        title: { $in: ["EFAS Score", "AOFAS Forefoot Score", "Manchester-Oxford Foot Questionnaire"] },
+        title: { $in: ["EFAS Score", "AOFAS Forefoot Score", "Manchester-Oxford Foot Questionnaire", "VAS Pain Scale"] },
       }).select("_id");
 
-      if (formTemplates.length !== 3) {
-        logger.warn(`Not all required form templates found: ${formTemplates.length}/3`);
+      if (formTemplates.length !== 4) {
+        logger.warn(`Not all required form templates found: ${formTemplates.length}/4`);
       }
 
       const formTemplateIds = formTemplates.map((template) => template._id.toString());
 
       // Create consultation for the specified case
       const caseId = "677da5d8cb4569ad1c65515f";
+      
+      // Try to fetch the surgery date for this case
+      let consultationDate: Date;
+      try {
+        const { PatientCaseModel } = await import("@/api/case/patientCaseModel");
+        const { SurgeryModel } = await import("@/api/surgery/surgeryModel");
+        
+        const patientCase = await PatientCaseModel.findById(caseId).lean();
+        
+        if (patientCase && patientCase.surgeries && patientCase.surgeries.length > 0) {
+          // Get the first surgery date
+          const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
+          
+          if (surgery && surgery.surgeryDate) {
+            // Calculate consultation date based on surgery date and postop weeks
+            consultationDate = this.calculateConsultationDate(new Date(surgery.surgeryDate), postopWeek);
+            logger.info(
+              { surgeryDate: surgery.surgeryDate, postopWeek, consultationDate },
+              "📅 Consultation date calculated from surgery date"
+            );
+          } else {
+            // Fallback to random past date if surgery has no date
+            consultationDate = new Date(this.getRandomPastDate());
+            logger.warn("Surgery found but no surgery date, using random date");
+          }
+        } else {
+          // Fallback to random past date if no surgery found
+          consultationDate = new Date(this.getRandomPastDate());
+          logger.warn("No surgery found for case, using random date");
+        }
+      } catch (error) {
+        // Fallback to random past date on error
+        consultationDate = new Date(this.getRandomPastDate());
+        logger.warn({ error }, "Error fetching surgery date, using random date");
+      }
+
       const consultationData: CreateConsultation = {
         patientCaseId: caseId as any,
-        dateAndTime: new Date(this.getRandomPastDate()),
+        dateAndTime: consultationDate,
         reasonForConsultation: this.getRandomConsultationReason(),
         notes: [
           {
