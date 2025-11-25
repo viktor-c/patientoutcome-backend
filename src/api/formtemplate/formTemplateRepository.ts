@@ -3,6 +3,7 @@ import { logger } from "@/common/utils/logger";
 import * as aofasJsonForm from "./JsonFormTemplates/AOFAS_JsonForm_Export.json";
 import * as efasJsonForm from "./JsonFormTemplates/EFAS_JsonForm_Export.json";
 import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
+import * as vasJsonForm from "./JsonFormTemplates/VAS_JsonForm_Export.json";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export class FormTemplateRepository {
@@ -48,8 +49,8 @@ export class FormTemplateRepository {
     }
   }
 
-  // Include EFAS and AOFAS JSON templates as-is
-  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any];
+  // Include EFAS, AOFAS, MOXFQ, and VAS JSON templates
+  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any, vasJsonForm as any];
 
   public get mockFormTemplateData() {
     if (env.NODE_ENV === "production") {
