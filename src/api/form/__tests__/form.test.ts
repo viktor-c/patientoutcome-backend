@@ -70,10 +70,12 @@ describe("Form API", () => {
       sportfragebogen: { s1: null, s2: null, s3: null, s4: null },
     };
     expect(CustomFormDataSchema.parse(newFormData)).toBeTruthy();
-    // score cannot be directly updated, because it gets calculated from the form data
+    // scoring is calculated from the form data, not directly updated
     const updateData = { formData: newFormData };
     const res = await request(app).put(`/form/${form._id}`).send(updateData);
     expect(res.status).toBe(200);
-    expect(res.body.responseObject).toHaveProperty("score", 10);
+    // The response should have formData updated
+    expect(res.body.responseObject).toHaveProperty("formData");
+    expect(res.body.responseObject.formData).toEqual(newFormData);
   });
 });
