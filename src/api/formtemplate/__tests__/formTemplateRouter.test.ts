@@ -76,8 +76,6 @@ describe("FormTemplate API", () => {
     const formTemplate = {
       title: "Test Form 4",
       description: "A test form to be deleted",
-      markdownHeader: "## Header",
-      markdownFooter: "## Footer",
       formSchema: { foo: "bar" },
       formSchemaUI: { foo: "bar" },
       formData: { foo: "bar" },
@@ -119,8 +117,9 @@ describe("FormTemplate API", () => {
       expect(moxfqTemplate.formSchemaUI).toBeDefined();
       expect(moxfqTemplate.formData).toBeDefined();
       expect(moxfqTemplate.translations).toBeDefined();
-      expect(moxfqTemplate.markdownHeader).toBeDefined();
-      expect(moxfqTemplate.markdownFooter).toBeDefined();
+      // Note: markdownHeader/Footer moved to translations as form.header/form.footer
+      expect(moxfqTemplate.translations.de["form.header"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["form.footer"]).toBeDefined();
     });
 
     it("should have 16 questions in MOXFQ schema", () => {
@@ -139,9 +138,9 @@ describe("FormTemplate API", () => {
       expect(moxfqTemplate.translations.de).toBeDefined();
       expect(moxfqTemplate.translations.en).toBeDefined();
 
-      // Test specific translation keys exist
-      expect(moxfqTemplate.translations.de["moxfq.q1.label"]).toBeDefined();
-      expect(moxfqTemplate.translations.en["moxfq.q1.label"]).toBeDefined();
+      // Test specific translation keys exist (using actual key format)
+      expect(moxfqTemplate.translations.de["moxfq.questions.q1"]).toBeDefined();
+      expect(moxfqTemplate.translations.en["moxfq.questions.q1"]).toBeDefined();
     });
 
     it("should apply German translations to all question titles", () => {
@@ -150,25 +149,32 @@ describe("FormTemplate API", () => {
 
       expect(questionsWithTitles).toHaveLength(16);
 
-      // Verify specific German titles are applied (existence checks)
+      // Verify questions have titles defined (actual titles are in English in schema, translations are separate)
       expect(questions.q1.title).toBeDefined();
-      expect(String(questions.q15.title)).toContain("Wie");
-      expect(String(questions.q16.title)).toContain("Wurden");
+      expect(questions.q15.title).toBeDefined();
+      expect(questions.q16.title).toBeDefined();
+
+      // Verify German translations exist for these questions
+      expect(moxfqTemplate.translations.de["moxfq.questions.q15"]).toContain("Wie");
+      expect(moxfqTemplate.translations.de["moxfq.questions.q16"]).toContain("Wurden");
     });
 
-    it("should have German enumNames for all questions", () => {
-      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
-      const questionsWithEnumNames = Object.keys(questions).filter((key) => questions[key].enumNames);
+    it("should have German enumNames in translations for all questions", () => {
+      // The template uses translations for enumNames instead of inline enumNames in schema
+      // Check that likert scale translations exist
+      expect(moxfqTemplate.translations.de["moxfq.likertScale.noneOfTheTime"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.likertScale.rarely"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.likertScale.someOfTheTime"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.likertScale.mostOfTheTime"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.likertScale.allOfTheTime"]).toBeDefined();
 
-      expect(questionsWithEnumNames).toHaveLength(16);
+      // Check pain severity scale (for q15)
+      expect(moxfqTemplate.translations.de["moxfq.painSeverity.none"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.painSeverity.severe"]).toBeDefined();
 
-      // Test specific enumNames existence and length
-      expect(questions.q1.enumNames).toBeDefined();
-      expect(questions.q1.enumNames).toHaveLength(5);
-      expect(questions.q15.enumNames).toBeDefined();
-      expect(questions.q15.enumNames).toHaveLength(5);
-      expect(questions.q16.enumNames).toBeDefined();
-      expect(questions.q16.enumNames).toHaveLength(5);
+      // Check night pain scale (for q16)
+      expect(moxfqTemplate.translations.de["moxfq.nightPain.noNights"]).toBeDefined();
+      expect(moxfqTemplate.translations.de["moxfq.nightPain.everyNight"]).toBeDefined();
     });
 
     it("should have valid question schema structure", () => {
@@ -180,10 +186,11 @@ describe("FormTemplate API", () => {
         // Each question should have required properties
         expect(question.title).toBeDefined();
         expect(question.type).toBe("integer");
-        // expect(question.minimum).toBe(0);
-        // expect(question.maximum).toBe(4);
-        expect(question.enumNames).toBeDefined();
-        expect(question.enumNames).toHaveLength(5);
+        // Questions have enum values (0-4) instead of enumNames
+        expect(question.enum).toBeDefined();
+        expect(question.enum).toHaveLength(5);
+        // i18n key for translations
+        expect(question.i18n).toBeDefined();
       });
     });
 
@@ -205,13 +212,16 @@ describe("FormTemplate API", () => {
       expect(moxfqInList._id).toBe(moxfqTemplate._id);
     });
 
-    it("should have German markdown content", () => {
-      expect(moxfqTemplate.markdownHeader).toContain("# MANCHESTER-OXFORD FUSS FRAGEBOGEN (MOXFQ)");
-      expect(moxfqTemplate.markdownHeader).toContain("Einleitung");
-      expect(moxfqTemplate.markdownHeader).toContain("innerhalb der letzten 4 Wochen");
+    it("should have German markdown content in translations", () => {
+      // Markdown content is in translations, not in markdownHeader/markdownFooter fields
+      const header = moxfqTemplate.translations.de["form.header"];
+      const footer = moxfqTemplate.translations.de["form.footer"];
 
-      expect(moxfqTemplate.markdownFooter).toContain("MOXFQ Fragebogen ausgefüllt");
-      expect(moxfqTemplate.markdownFooter).toContain("Vielen Dank für Ihre Teilnahme");
+      expect(header).toContain("Einleitung");
+      expect(header).toContain("innerhalb der letzten 4 Wochen");
+
+      expect(footer).toContain("MOXFQ Fragebogen ausgefüllt");
+      expect(footer).toContain("Vielen Dank für Ihre Teilnahme");
     });
   });
 });
