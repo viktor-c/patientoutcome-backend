@@ -11,7 +11,9 @@ export class PatientCaseRepository {
     try {
       return PatientCaseModel.find({
         externalId: { $regex: searchCasesById, $options: "i" },
-      }).lean() as unknown as Promise<PatientCase[]>;
+      })
+        .select("_id externalId")
+        .lean() as unknown as Promise<PatientCase[]>;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -252,7 +254,7 @@ export class PatientCaseRepository {
   private _mockPatientCases = [
     {
       _id: "677da5d8cb4569ad1c65515f",
-      externalId: "123456789",
+      externalId: "84612",
       createdAt: faker.date.past().toISOString(),
       patient: "6771d9d410ede2552b7bba40",
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
@@ -276,7 +278,7 @@ export class PatientCaseRepository {
     {
       _id: "677da5efcb4569ad1c655160",
       patient: "6771d9d410ede2552b7bba41",
-      externalId: "12345678a",
+      externalId: "68512",
       createdAt: faker.date.past().toISOString(),
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       studyDiagnosis: ["Hallux valgus"],

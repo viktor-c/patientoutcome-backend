@@ -9,6 +9,8 @@ import {
   GetPatientByExternalIdSchema,
   GetPatientSchema,
   PatientSchema,
+  PatientSearchResultSchema,
+  SearchPatientsByExternalIdSchema,
   UpdatePatientSchema,
 } from "@/api/patient/patientModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
@@ -120,6 +122,40 @@ patientRouter.get(
   "/externalId/:id",
   validateRequest(GetPatientByExternalIdSchema),
   patientController.getPatientByExternalId,
+);
+
+// Register the path for searching patients by external ID (partial match)
+patientRegistry.registerPath({
+  method: "get",
+  path: "/patient/search/externalId/{searchQuery}",
+  tags: ["Patient"],
+  operationId: "findPatientsByExternalId",
+  summary: "Search patients by externalPatientId (partial match)",
+  description:
+    "Search for patients by partial externalPatientId match. The search query has to be at least 3 characters long. The search is case-insensitive and returns an array of patients with only IDs and external IDs to minimize traffic.",
+  request: { params: SearchPatientsByExternalIdSchema.shape.params },
+  responses: createApiResponses([
+    {
+      schema: z.array(PatientSearchResultSchema),
+      description: "Success - returns array of matching patients with only IDs (may be empty)",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while searching patients by external ID.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+patientRouter.get(
+  "/search/externalId/:searchQuery",
+  validateRequest(SearchPatientsByExternalIdSchema),
+  patientController.findPatientsByExternalId,
 );
 
 // Register the path for creating a patient

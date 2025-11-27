@@ -57,5 +57,13 @@ export type PatientCaseWithPopulatedSurgeries = Omit<PatientCase, "surgeries"> &
   surgeries: import("../surgery/surgeryModel").Surgery[];
 };
 
+// Lightweight schema for search results - only returns IDs to minimize traffic
+export const PatientCaseSearchResultSchema = z.object({
+  _id: zId(),
+  externalId: z.string().optional(),
+});
+
+export type PatientCaseSearchResult = z.infer<typeof PatientCaseSearchResultSchema>;
+
 const MongoosePatientCaseSchema = zodSchema(PatientCaseSchema.omit({ _id: true }));
 export const PatientCaseModel = mongoose.models.PatientCase || mongoose.model("PatientCase", MongoosePatientCaseSchema);

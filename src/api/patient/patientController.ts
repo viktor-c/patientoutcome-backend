@@ -20,6 +20,12 @@ class PatientController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public findPatientsByExternalId: RequestHandler = async (req: Request, res: Response) => {
+    const { searchQuery } = req.params;
+    const serviceResponse = await patientService.searchByExternalId(searchQuery);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public createPatient: RequestHandler = async (req: Request, res: Response) => {
     const patientData = req.body;
     const serviceResponse = await patientService.createPatient(patientData);

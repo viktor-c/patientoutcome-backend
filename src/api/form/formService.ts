@@ -1,15 +1,79 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { activityLogService } from "@/common/services/activityLogService";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import { CustomFormDataSchema } from "../formtemplate/formTemplateModel";
 import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
-import { activityLogService } from "@/common/services/activityLogService";
 
 export interface UserContext {
   username?: string;
   userId?: string;
   roles?: string[];
+}
+
+/**
+ * Helper function to calculate the relative creation date for a form based on postopWeek.
+ * For kiosk users, the form's createdAt should reflect the consultation date (which is based on postopWeek),
+ * not the actual submission time.
+ *
+ * @param consultationId - The ID of the consultation this form belongs to
+ * @param postopWeek - The postoperative week number for kiosk users
+ * @returns The calculated relative date, or null if it cannot be determined
+ */
+async function calculateRelativeCreatedAtDate(
+  consultationId: string | undefined,
+  postopWeek: number | undefined,
+): Promise<Date | null> {
+  try {
+    if (!consultationId || !postopWeek) {
+      return null;
+    }
+
+    // Import dynamically to avoid circular dependencies
+    const { consultationModel } = await import("@/api/consultation/consultationModel");
+    const { SurgeryModel } = await import("@/api/surgery/surgeryModel");
+    const { PatientCaseModel } = await import("@/api/case/patientCaseModel");
+
+    // Get consultation to find the patient case
+    const consultation = await consultationModel.findById(consultationId).lean();
+    if (!consultation) {
+      logger.debug({ consultationId }, "Consultation not found for relative date calculation");
+      return null;
+    }
+
+    // Get the patient case
+    const patientCase = await PatientCaseModel.findById(consultation.patientCaseId).lean();
+    if (!patientCase || !patientCase.surgeries || patientCase.surgeries.length === 0) {
+      logger.debug({ patientCaseId: consultation.patientCaseId }, "No surgeries found for relative date calculation");
+      return null;
+    }
+
+    // Get the first surgery date
+    const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
+    if (!surgery || !surgery.surgeryDate) {
+      logger.debug({ surgeryId: patientCase.surgeries[0] }, "Surgery date not found for relative date calculation");
+      return null;
+    }
+
+    // Calculate the relative date: surgery date + (postopWeek * 7 days)
+    const relativeDate = new Date(surgery.surgeryDate);
+    relativeDate.setDate(relativeDate.getDate() + postopWeek * 7);
+
+    logger.debug(
+      {
+        surgeryDate: surgery.surgeryDate,
+        postopWeek,
+        calculatedDate: relativeDate,
+      },
+      "Calculated relative creation date for form based on postopWeek",
+    );
+
+    return relativeDate;
+  } catch (error) {
+    logger.debug({ error, consultationId, postopWeek }, "Error calculating relative creation date for form");
+    return null;
+  }
 }
 
 export class FormService {
@@ -55,7 +119,7 @@ export class FormService {
       if (userContext) {
         activityLogService.log({
           username: userContext.username || "Unknown",
-          action: `Created form`,
+          action: "Created form",
           type: "formOpen",
           details: `Form ID: ${newForm._id}, Template: ${newForm.formTemplateId}`,
         });
@@ -71,17 +135,21 @@ export class FormService {
     }
   }
 
-  async updateForm(formId: string, updatedForm: Partial<Form>, userContext?: UserContext): Promise<ServiceResponse<Form | null>> {
+  async updateForm(
+    formId: string,
+    updatedForm: Partial<Form>,
+    userContext?: UserContext,
+  ): Promise<ServiceResponse<Form | null>> {
     try {
-      // Debug: Log what service received
-      console.debug("=== BACKEND SERVICE: Received data ===");
-      console.debug("formId:", formId);
-      console.debug("updatedForm type:", typeof updatedForm);
-      console.debug("updatedForm keys:", Object.keys(updatedForm));
-      console.debug("updatedForm:", JSON.stringify(updatedForm, null, 2));
-      console.debug("updatedForm.formData:", JSON.stringify(updatedForm.formData, null, 2));
-      console.debug("updatedForm.scoring:", JSON.stringify(updatedForm.scoring, null, 2));
-      console.debug("======================================");
+      // // Debug: Log what service received
+      // console.debug("=== BACKEND SERVICE: Received data ===");
+      // console.debug("formId:", formId);
+      // console.debug("updatedForm type:", typeof updatedForm);
+      // console.debug("updatedForm keys:", Object.keys(updatedForm));
+      // console.debug("updatedForm:", JSON.stringify(updatedForm, null, 2));
+      // console.debug("updatedForm.formData:", JSON.stringify(updatedForm.formData, null, 2));
+      // console.debug("updatedForm.scoring:", JSON.stringify(updatedForm.scoring, null, 2));
+      // console.debug("======================================");
 
       // get the form by id
       const existingForm = await formRepository.getFormById(formId);
@@ -165,6 +233,47 @@ export class FormService {
         }
       }
 
+      // Calculate relative creation date for kiosk users based on postopWeek
+      // This ensures forms submitted by kiosk users have a createdAt date relative to their consultation date
+      if (userContext?.userId) {
+        try {
+          const { userModel } = await import("@/api/user/userModel");
+          const user = await userModel.findById(userContext.userId).select("postopWeek").lean();
+
+          if (user?.postopWeek) {
+            const relativeDate = await calculateRelativeCreatedAtDate(
+              existingForm.consultationId?._id.toString(),
+              user.postopWeek,
+            );
+
+            if (relativeDate) {
+              // For kiosk users, set createdAt to the relative date (surgery date + postopWeek)
+              // This is done only if the form doesn't already have a createdAt
+              //BUGFIX: Always update createdAt to reflect postopWeek date
+              updateData.createdAt = relativeDate;
+              // Also update the updatedAt and completedAt to match the relative date for consistency
+              updateData.updatedAt = relativeDate;
+              if (updateData.completedAt) {
+                updateData.completedAt = relativeDate;
+              }
+
+              logger.info(
+                {
+                  formId,
+                  postopWeek: user.postopWeek,
+                  relativeDate,
+                  userId: userContext.userId,
+                },
+                "📅 Form timestamps updated to relative date based on postopWeek",
+              );
+            }
+          }
+        } catch (error) {
+          logger.debug({ error, userId: userContext.userId }, "Could not calculate relative creation date for form");
+          // Fall through - use default timestamps if calculation fails
+        }
+      }
+
       // Update the form data
       // Only use the properly extracted formData, ignore any direct questionnaire properties on updatedForm
       if (formData && typeof formData === "object" && Object.keys(formData).length > 0) {
@@ -197,11 +306,11 @@ export class FormService {
       // If no scoring is provided, do not set/update the scoring field
       // This ensures backend never overwrites frontend-calculated scores
 
-      console.log("=== BACKEND SERVICE: Final updateData ===");
-      console.log("updateData:", JSON.stringify(updateData, null, 2));
-      console.log("updateData.formData:", JSON.stringify(updateData.formData, null, 2));
-      console.log("updateData.scoring:", JSON.stringify(updateData.scoring, null, 2));
-      console.log("=========================================");
+      // console.log("=== BACKEND SERVICE: Final updateData ===");
+      // console.log("updateData:", JSON.stringify(updateData, null, 2));
+      // console.log("updateData.formData:", JSON.stringify(updateData.formData, null, 2));
+      // console.log("updateData.scoring:", JSON.stringify(updateData.scoring, null, 2));
+      // console.log("=========================================");
 
       const response = await formRepository.updateForm(formId, updateData);
 
@@ -210,7 +319,7 @@ export class FormService {
         const isCompleted = updateData.formFillStatus === "completed";
         activityLogService.log({
           username: userContext.username || "Unknown",
-          action: isCompleted ? `Submitted form` : `Updated form`,
+          action: isCompleted ? "Submitted form" : "Updated form",
           type: isCompleted ? "formSubmit" : "formOpen",
           details: `Form ID: ${formId}, Status: ${updateData.formFillStatus || "in-progress"}, Template: ${existingForm.formTemplateId}`,
         });

@@ -61,6 +61,27 @@ export class PatientService {
     }
   }
 
+  /**
+   * Search patients by partial external ID match
+   * @param searchQuery - The partial external ID to search for
+   * @returns ServiceResponse with array of matching patients
+   */
+  async searchByExternalId(searchQuery: string): Promise<ServiceResponse<Patient[] | null>> {
+    try {
+      const patients = await this.patientRepository.searchByExternalIdAsync(searchQuery);
+      if (!patients || patients.length === 0) {
+        return ServiceResponse.success("No patients found matching the search query", []);
+      }
+      return ServiceResponse.success(`Found ${patients.length} patient(s)`, patients);
+    } catch (ex) {
+      return ServiceResponse.failure(
+        "An error occurred while searching patients by external ID.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async createPatient(patientData: Patient): Promise<ServiceResponse<Patient | null>> {
     try {
       //must check if external patient id already exists

@@ -15,6 +15,14 @@ export const PatientSchema = z.object({
 // Infer TypeScript type from the schema
 export type Patient = z.infer<typeof PatientSchema>;
 
+// Lightweight schema for search results - only returns IDs to minimize traffic
+export const PatientSearchResultSchema = z.object({
+  _id: zId().optional(),
+  externalPatientId: z.array(z.string()),
+});
+
+export type PatientSearchResult = z.infer<typeof PatientSearchResultSchema>;
+
 /** Create Mongoose Schema and Model */
 const MongoosePatientSchema = zodSchema(PatientSchema.omit({ _id: true }));
 export const patientModel = mongoose.model("Patient", MongoosePatientSchema, "patients");
@@ -29,6 +37,11 @@ export const GetPatientSchema = z.object({
 
 export const GetPatientByExternalIdSchema = z.object({
   params: z.object({ id: z.string() }),
+});
+
+// Input validation for 'GET patient/search/externalId/:searchQuery' endpoint (partial match)
+export const SearchPatientsByExternalIdSchema = z.object({
+  params: z.object({ searchQuery: z.string().min(3) }),
 });
 
 // Input validation for 'POST patient' endpoint

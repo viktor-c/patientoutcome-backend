@@ -23,14 +23,15 @@ export class PatientCaseService {
   /**
    * @description Get all patient cases for a given patient
    * @param patientId the ID of the patient
-   * @returns an array of patient cases, or null if no cases are found
+   * @returns an array of patient cases (may be empty if no cases exist)
    * @throws {ServiceResponse} if an error occurs while finding cases
    */
   async getAllPatientCases(patientId: string): Promise<ServiceResponse<PatientCaseWithPopulatedSurgeries[] | null>> {
     try {
       const cases = await this.repository.getAllPatientCases(patientId);
+      // Return empty array if no cases found - this is a valid state, not an error
       if (!cases || cases.length === 0) {
-        return ServiceResponse.failure("No case found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success("No cases found for this patient", []);
       }
       // For each case, we can populate additional fields if needed
       const casesWithPopulatedSurgeries: PatientCaseWithPopulatedSurgeries[] = [];
@@ -83,14 +84,17 @@ export class PatientCaseService {
   }
 
   /**
-   *
-   * @param searchQuery
+   * @description Search for patient cases by partial external ID match
+   * @param searchQuery the search query string
+   * @returns an array of matching patient cases (may be empty if no matches)
+   * @throws {ServiceResponse} if an error occurs while searching
    */
   async searchCasesByExternalId(searchQuery: string): Promise<ServiceResponse<PatientCase[] | null>> {
     try {
       const cases = await this.repository.searchCasesByExternalId(searchQuery);
+      // Return empty array if no cases found - this is a valid search result, not an error
       if (!cases || !cases.length) {
-        return ServiceResponse.failure("No cases match query", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success("No cases match query", []);
       }
       return ServiceResponse.success("Cases found", cases);
     } catch (ex) {

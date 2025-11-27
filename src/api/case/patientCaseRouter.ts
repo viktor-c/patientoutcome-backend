@@ -14,6 +14,7 @@ import { patientCaseController } from "./patientCaseController";
 import { CreatePatientCaseSchema, DiagnosisSchema, PatientCaseSchema } from "./patientCaseModel";
 
 import { CreateNoteSchema, NoteSchema } from "@/api/generalSchemas";
+import { PatientCaseSearchResultSchema } from "./patientCaseModel";
 
 export const patientCaseRegistry = new OpenAPIRegistry();
 export const caseRouter: Router = express.Router({ mergeParams: true });
@@ -127,15 +128,16 @@ caseRouter.get(
 patientCaseRegistry.registerPath({
   method: "get",
   summary: "Search patient cases by external id",
-  description: "Search patient cases by partial external id",
+  description:
+    "Search patient cases by partial external id - returns lightweight results with only IDs to minimize traffic",
   operationId: "searchCasesByExternalId",
   path: "/cases/searchById/{searchQuery}",
   tags: ["patient case"],
   request: { params: z.object({ searchQuery: z.string() }) },
   responses: createApiResponses([
     {
-      schema: z.array(PatientCaseWithPopulatedFieldsSchema),
-      description: "Returns a list of cases whose ids match the given query",
+      schema: z.array(PatientCaseSearchResultSchema),
+      description: "Returns a list of case IDs and external IDs matching the search query",
       statusCode: 200,
     },
     {

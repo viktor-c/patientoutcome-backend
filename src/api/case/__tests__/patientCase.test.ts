@@ -57,6 +57,16 @@ describe("PatientCase API", () => {
     //TODO add indepth compare of objects
   });
 
+  it("should return empty array when patient has no cases", async () => {
+    // Use a patient ID that exists but has no cases (from mock patients without cases)
+    const patientIdWithNoCases = "6771d9d410ede2552b7bba42"; // Patient with externalPatientId "q1w2e" has no cases
+    const res = await request(app).get(`/patient/${patientIdWithNoCases}/cases`);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.responseObject).toBeInstanceOf(Array);
+    expect(res.body.responseObject).toHaveLength(0);
+  });
+
   it("should get a case by ID", async () => {
     const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
