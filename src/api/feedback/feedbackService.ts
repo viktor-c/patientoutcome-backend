@@ -7,6 +7,8 @@ interface FeedbackData {
   name: string;
   email: string;
   message: string;
+  submittedAt: Date;
+  username?: string;
 }
 
 interface SendResult {
@@ -152,6 +154,15 @@ class FeedbackService {
     try {
       const transporter = this.getTransporter();
 
+      // Format the date/time
+      const formattedDateTime = data.submittedAt.toLocaleString("en-US", {
+        dateStyle: "full",
+        timeStyle: "long",
+      });
+
+      // Build user info line
+      const userInfo = data.username ? `Logged-in User: ${data.username}` : "User: Not logged in";
+
       const mailOptions = {
         from: feedbackEnv.SMTP_FROM_EMAIL,
         to: feedbackEnv.SMTP_TO_EMAIL,
@@ -159,6 +170,9 @@ class FeedbackService {
         subject: `[Patient Outcome Feedback] Message from ${data.name}`,
         text: `
 New feedback received from Patient Outcome application:
+
+Submitted: ${formattedDateTime}
+${userInfo}
 
 Name: ${data.name}
 Email: ${data.email}
@@ -190,6 +204,12 @@ This message was sent via the Patient Outcome feedback form.
       <h2>New Feedback Received</h2>
     </div>
     <div class="content">
+      <div class="field">
+        <span class="label">Submitted:</span> ${formattedDateTime}
+      </div>
+      <div class="field">
+        <span class="label">${data.username ? "Logged-in User:" : "User:"}</span> ${data.username || "Not logged in"}
+      </div>
       <div class="field">
         <span class="label">Name:</span> ${data.name}
       </div>

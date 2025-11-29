@@ -127,6 +127,8 @@ feedbackRouter.post("/", async (req: Request, res: Response) => {
       name: name || "Anonymous",
       email: email || "Not provided",
       message,
+      submittedAt: new Date(),
+      username: req.session?.username,
     });
 
     if (result.success) {
