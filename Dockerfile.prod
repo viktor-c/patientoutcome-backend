@@ -11,7 +11,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy only dependency-related files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 
 # Install all dependencies (including dev dependencies for build)
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --no-frozen-lockfile
@@ -33,7 +33,7 @@ RUN pnpm run build
 FROM base AS prod-deps
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 
 # Instead of running a separate fresh install in prod stage (which can fail
 # in workspace setups), copy the already-installed node_modules from the

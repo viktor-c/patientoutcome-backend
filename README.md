@@ -1,4 +1,20 @@
-# Workspace/folder/workflow design
+# PatientOutcome Backend
+
+Express.js API server for the PatientOutcome PROM (Patient Reported Outcome Measures) application.
+
+## Version
+
+**Current Version: 0.2**
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+# Architecture Overview
+
+## Workspace/folder/workflow design
 ## Routes #
   * a route is a specific endpoint that the application can respond to.
   * It represents a specific URL path and the HTTP method (GET, POST, PUT, DELETE, etc).

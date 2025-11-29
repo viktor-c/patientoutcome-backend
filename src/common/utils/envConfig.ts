@@ -11,12 +11,10 @@ export const env = cleanEnv(process.env, {
   COMMON_RATE_LIMIT_MAX_REQUESTS: num({ devDefault: testOnly(1000) }),
   COMMON_RATE_LIMIT_WINDOW_MS: num({ devDefault: testOnly(1000) }),
   MONGO_URI: str({
-    devDefault: testOnly("mongodb://patientmanager:1234Test@localhost:27017/clinical-patientoutcome?authSource=admin"),
+    devDefault: testOnly("mongodb://testuser:testpassword@localhost:27017/patientoutcome-test?authSource=admin"),
   }),
   SESSION_SECRET: str({
-    devDefault: testOnly(
-      "b07cb0c05d9f3d0a9a0e72daa52e6fcd37f50cc3bc370c1898aa16b5d5e2ba930546a04b32ad57970a820b9e6fdfe6e4",
-    ),
+    devDefault: testOnly("test-session-secret-do-not-use-in-production-replace-with-secure-random-value"),
   }),
 });
 

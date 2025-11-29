@@ -8,10 +8,10 @@ RUN npm install -g pnpm
 WORKDIR /usr/src/app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -32,10 +32,10 @@ WORKDIR /usr/src/app
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 
 # Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts && pnpm store prune
+RUN pnpm install --no-frozen-lockfile --prod --ignore-scripts && pnpm store prune
 
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist

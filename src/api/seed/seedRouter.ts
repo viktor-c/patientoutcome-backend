@@ -32,8 +32,12 @@ const userRegistrationRepository = new UserRegistrationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
 
 // Middleware to check if the environment is testing, if not we cannot use this route
+// In production, seeding can be enabled by setting ALLOW_SEED=true environment variable
 const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "test" && process.env.NODE_ENV !== "development") {
+  const isAllowedEnv = process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
+  const allowSeedInProd = process.env.ALLOW_SEED === "true";
+
+  if (!isAllowedEnv && !allowSeedInProd) {
     const serviceResponse = ServiceResponse.failure("Access denied", null, StatusCodes.FORBIDDEN);
     return handleServiceResponse(serviceResponse, res);
   }
