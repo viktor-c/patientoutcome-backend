@@ -2,6 +2,7 @@ import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import { faker, fakerDA } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
@@ -162,7 +163,12 @@ export class ConsultationRepository {
             note: faker.lorem.paragraph(),
           },
         ],
-        proms: ["6832337195b15e2d7e223d51", "6832337395b15e2d7e223d54", "6832337595b15e2d7e223d57", "6832337195b15e2d7e223d53"],
+        proms: [
+          "6832337195b15e2d7e223d51",
+          "6832337395b15e2d7e223d54",
+          "6832337595b15e2d7e223d57",
+          "6832337195b15e2d7e223d53",
+        ],
         formAccessCode: "682f7de54ef4eb7a14be67f6",
         images: [],
         visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
@@ -248,12 +254,7 @@ export class ConsultationRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       await consultationModel.deleteMany({});
@@ -270,7 +271,7 @@ export class ConsultationRepository {
    * accidental exposure of mock data.
    */
   public get mockConsultations(): Consultation[] {
-    if (env.NODE_ENV === "production") {
+    if (!isMockDataAccessAllowed()) {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }

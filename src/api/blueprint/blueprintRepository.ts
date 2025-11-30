@@ -1,6 +1,7 @@
 import { CreateNoteSchema, type NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { BlueprintModel } from "./blueprintModel";
@@ -196,12 +197,7 @@ export class BlueprintRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       // Clear existing blueprints

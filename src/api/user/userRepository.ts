@@ -1,6 +1,7 @@
 import { type User, type UserNoPassword, userModel } from "@/api/user/userModel";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 
 /**
@@ -241,12 +242,7 @@ export class UserRepository {
   }
 
   async createMockUserData(forceReset = false): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       // If forceReset is false, check if mock users already exist to avoid duplicate key errors in parallel tests
@@ -278,12 +274,7 @@ export class UserRepository {
    * Used during setup to preserve admin user created during initial setup.
    */
   async insertMockUsersPreserveExisting(): Promise<{ inserted: number; skipped: number }> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       let inserted = 0;
@@ -320,7 +311,7 @@ export class UserRepository {
    * accidental exposure of mock data.
    */
   public get mockUsers(): User[] {
-    if (env.NODE_ENV === "production") {
+    if (!isMockDataAccessAllowed()) {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }

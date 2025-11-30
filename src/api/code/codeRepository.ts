@@ -1,5 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { isPast } from "date-fns";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
@@ -52,12 +53,7 @@ export class CodeRepository {
    * Each code has a 3-letter and 2-number code and a unique mongodb ID
    */
   async createMockDataFormAccessCodes(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       const result = await codeModel.deleteMany();

@@ -1,5 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
 import { type RegistrationCode, RegistrationCodeModel } from "./registrationCodeModel";
@@ -73,12 +74,7 @@ export class UserRegistrationRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockUserRegistrationCodes(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       await RegistrationCodeModel.deleteMany({});

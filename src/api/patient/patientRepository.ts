@@ -1,5 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import mongoose from "mongoose";
 import { patientModel } from "./patientModel";
 import type { Patient } from "./patientModel";
@@ -105,12 +106,7 @@ export class PatientRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       // Add code to save mockCases to the database
@@ -252,7 +248,7 @@ export class PatientRepository {
    * accidental exposure of mock data.
    */
   public get mockPatients(): Patient[] {
-    if (env.NODE_ENV === "production") {
+    if (!isMockDataAccessAllowed()) {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }

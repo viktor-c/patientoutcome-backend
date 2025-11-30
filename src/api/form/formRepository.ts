@@ -3,6 +3,7 @@ import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplate
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
@@ -91,12 +92,7 @@ export class FormRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createFormMockData(): Promise<void> {
-    // Only allow mock data in development or test environments
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       await FormModel.deleteMany({});
@@ -115,7 +111,7 @@ export class FormRepository {
   // no need to be async, just populate the mock forms
   populateMockForms(): void {
     // Only allow mock data access in development or test environments
-    if (env.NODE_ENV === "production") {
+    if (!isMockDataAccessAllowed()) {
       logger.error("Attempted to populate mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
@@ -362,7 +358,7 @@ function calculateVAS(data: unknown): ScoringData {
 
   return {
     rawData: data,
-    subscales: { "vas": totalScore },
+    subscales: { vas: totalScore },
     total: totalScore,
   };
 }
@@ -479,7 +475,7 @@ function calculateAofasScore(data): ScoringData {
           totalQuestions: questionKeys.length,
           completionPercentage: 0,
           isComplete: false,
-        }
+        },
       },
       total: {
         name: "AOFAS Total",

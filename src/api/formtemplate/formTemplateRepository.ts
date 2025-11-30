@@ -1,5 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
+import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import * as aofasJsonForm from "./JsonFormTemplates/AOFAS_JsonForm_Export.json";
 import * as efasJsonForm from "./JsonFormTemplates/EFAS_JsonForm_Export.json";
 import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
@@ -34,11 +35,7 @@ export class FormTemplateRepository {
   }
 
   async createMockDataFormTemplate(): Promise<void> {
-    if (env.NODE_ENV === "production") {
-      const error = new Error("Mock data is not allowed in production environment");
-      logger.error({ error }, "Attempted to create mock data in production");
-      return Promise.reject(error);
-    }
+    await assertSeedingAllowed();
 
     try {
       await FormTemplateModel.deleteMany({});
@@ -50,10 +47,15 @@ export class FormTemplateRepository {
   }
 
   // Include EFAS, AOFAS, MOXFQ, and VAS JSON templates
-  private _mockFormTemplateData: any[] = [efasJsonForm as any, aofasJsonForm as any, moxfqJsonForm as any, vasJsonForm as any];
+  private _mockFormTemplateData: any[] = [
+    efasJsonForm as any,
+    aofasJsonForm as any,
+    moxfqJsonForm as any,
+    vasJsonForm as any,
+  ];
 
   public get mockFormTemplateData() {
-    if (env.NODE_ENV === "production") {
+    if (!isMockDataAccessAllowed()) {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
