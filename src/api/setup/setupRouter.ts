@@ -174,13 +174,22 @@ setupRouter.post("/seed", async (req: Request, res: Response) => {
     const isAllowedEnv = process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
     const allowSeedInProd = process.env.ALLOW_SEED === "true";
 
-    if (!isAllowedEnv && !allowSeedInProd) {
+    // Allow seeding during setup mode (when no admin user exists yet)
+    const setupStatus = await setupService.getSetupStatus();
+    const isSetupMode = setupStatus.success && setupStatus.responseObject?.setupRequired === true;
+
+    if (!isAllowedEnv && !allowSeedInProd && !isSetupMode) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
         message: "Seeding is not allowed in production environment",
         data: null,
         statusCode: StatusCodes.FORBIDDEN,
       });
+    }
+
+    // Log warning if seeding in production during setup mode
+    if (isSetupMode && !isAllowedEnv) {
+      logger.warn("Seeding demo data in PRODUCTION during initial setup - this will insert fictive data");
     }
 
     // Parse request body with defaults
