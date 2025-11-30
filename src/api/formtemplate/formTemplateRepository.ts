@@ -1,6 +1,5 @@
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import * as aofasJsonForm from "./JsonFormTemplates/AOFAS_JsonForm_Export.json";
 import * as efasJsonForm from "./JsonFormTemplates/EFAS_JsonForm_Export.json";
 import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
@@ -55,10 +54,6 @@ export class FormTemplateRepository {
   ];
 
   public get mockFormTemplateData() {
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._mockFormTemplateData;
   }
 }

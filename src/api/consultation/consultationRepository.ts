@@ -1,8 +1,7 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { userRepository } from "@/api/user/userRepository";
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker, fakerDA } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { type Consultation, type CreateConsultation, consultationModel } from "./consultationModel";
@@ -140,14 +139,10 @@ export class ConsultationRepository {
   public _mockConsultations: Consultation[] = [];
 
   /**
-   * Lazy initialization of mock data to avoid accessing userRepository.mockUsers
-   * during module loading in production environment
+   * Lazy initialization of mock data.
+   * Note: Seeding methods should call assertSeedingAllowed() before accessing this.
    */
   private initializeMockData(): Consultation[] {
-    if (env.NODE_ENV === "production") {
-      return [];
-    }
-
     return [
       {
         _id: "60d5ec49f1b2c12d88f1e8a1",
@@ -266,16 +261,9 @@ export class ConsultationRepository {
   }
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data. Seeding is controlled at the route level.
    */
   public get mockConsultations(): Consultation[] {
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
-
     // Lazy initialization
     if (this._mockConsultations.length === 0) {
       this._mockConsultations = this.initializeMockData();

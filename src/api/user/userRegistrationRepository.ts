@@ -1,4 +1,3 @@
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
@@ -128,15 +127,10 @@ export class UserRegistrationRepository {
   ];
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data.
+   * Note: Seeding methods should call assertSeedingAllowed() before accessing this.
    */
   public get userCodeMockData(): RegistrationCode[] {
-    if (env.NODE_ENV === "production") {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._userCodeMockData;
   }
 }

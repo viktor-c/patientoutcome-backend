@@ -1,9 +1,8 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
+import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
@@ -109,13 +108,8 @@ export class FormRepository {
   }
 
   // no need to be async, just populate the mock forms
+  // Note: This is called from createFormMockData which already calls assertSeedingAllowed()
   populateMockForms(): void {
-    // Only allow mock data access in development or test environments
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to populate mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
-
     this.mockForms = [];
     try {
       // EFAS Form 1
@@ -300,28 +294,18 @@ export class FormRepository {
   private _mockForms: Form[] = [];
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data.
+   * Note: Seeding methods should call assertSeedingAllowed() before accessing this.
    */
   public get mockForms(): Form[] {
-    if (env.NODE_ENV === "production") {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._mockForms;
   }
 
   /**
-   * Setter to update mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Setter to update mock data.
+   * Note: Seeding methods should call assertSeedingAllowed() before accessing this.
    */
   public set mockForms(value: Form[]) {
-    if (env.NODE_ENV === "production") {
-      logger.error("Attempted to set mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     this._mockForms = value;
   }
 }
