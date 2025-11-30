@@ -273,6 +273,48 @@ export class UserRepository {
   }
 
   /**
+   * Insert mock users without deleting existing users.
+   * Skips users that already exist (by username or _id).
+   * Used during setup to preserve admin user created during initial setup.
+   */
+  async insertMockUsersPreserveExisting(): Promise<{ inserted: number; skipped: number }> {
+    // Only allow mock data in development or test environments
+    if (env.NODE_ENV === "production") {
+      const error = new Error("Mock data is not allowed in production environment");
+      logger.error({ error }, "Attempted to create mock data in production");
+      return Promise.reject(error);
+    }
+
+    try {
+      let inserted = 0;
+      let skipped = 0;
+
+      for (const mockUser of this.mockUsers) {
+        // Check if user already exists by username or _id
+        const existingUser = await userModel.findOne({
+          $or: [{ username: mockUser.username }, { _id: mockUser._id }],
+        });
+
+        if (existingUser) {
+          logger.debug({ username: mockUser.username }, "User already exists, skipping");
+          skipped++;
+          continue;
+        }
+
+        // Insert the mock user
+        await userModel.create(mockUser);
+        inserted++;
+      }
+
+      logger.info({ inserted, skipped }, "Mock users inserted (preserving existing)");
+      return { inserted, skipped };
+    } catch (error) {
+      logger.error({ error }, "Error inserting mock users");
+      return Promise.reject(error);
+    }
+  }
+
+  /**
    * Getter to access mock data only in development or test environments.
    * In production, accessing this property will throw an error to prevent
    * accidental exposure of mock data.
