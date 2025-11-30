@@ -1,6 +1,4 @@
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import mongoose from "mongoose";
 import { patientModel } from "./patientModel";
 import type { Patient } from "./patientModel";
@@ -106,8 +104,6 @@ export class PatientRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       // Add code to save mockCases to the database
       await patientModel.deleteMany({});
@@ -243,15 +239,9 @@ export class PatientRepository {
   ];
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data. Seeding is controlled at the router level.
    */
   public get mockPatients(): Patient[] {
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._mockPatients;
   }
 }

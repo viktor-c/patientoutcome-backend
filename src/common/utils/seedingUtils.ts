@@ -1,6 +1,10 @@
 import { userModel } from "@/api/user/userModel";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { env } from "@/common/utils/envConfig";
+import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
+import type { NextFunction, Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
 
 /**
  * Checks if the system is in setup mode (no admin user exists yet).
@@ -75,3 +79,25 @@ export async function assertSeedingAllowed(): Promise<void> {
 export function isMockDataAccessAllowed(): boolean {
   return env.NODE_ENV === "development" || env.NODE_ENV === "test" || process.env.ALLOW_SEED === "true";
 }
+
+/**
+ * Express middleware that checks if seeding is allowed.
+ * Use this on seed routers to protect all seeding endpoints at once.
+ *
+ * @example
+ * seedRouter.use(seedingMiddleware);
+ */
+export const seedingMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  const { allowed, reason } = await isSeedingAllowed();
+
+  if (!allowed) {
+    const serviceResponse = ServiceResponse.failure(
+      reason || "Seeding is not allowed in production environment",
+      null,
+      StatusCodes.FORBIDDEN,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+
+  next();
+};

@@ -2,7 +2,6 @@ import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
@@ -91,8 +90,6 @@ export class FormRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createFormMockData(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       await FormModel.deleteMany({});
       this.populateMockForms();

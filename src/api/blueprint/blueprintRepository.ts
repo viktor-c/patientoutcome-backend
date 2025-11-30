@@ -1,6 +1,5 @@
 import { CreateNoteSchema, type NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import mongoose from "mongoose";
 import { BlueprintModel } from "./blueprintModel";
@@ -196,8 +195,6 @@ export class BlueprintRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       // Clear existing blueprints
       await BlueprintModel.deleteMany({});

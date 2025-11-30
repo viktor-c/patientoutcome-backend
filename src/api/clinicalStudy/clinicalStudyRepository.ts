@@ -1,6 +1,4 @@
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import { type ClinicalStudy, clinicalStudyModel } from "./clinicalStudyModel";
 
 /**
@@ -174,8 +172,6 @@ export class ClinicalStudyRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockDataClinicalStudies(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       await clinicalStudyModel.deleteMany({}); // Clear existing data
       await clinicalStudyModel.insertMany(this.mockClinicalStudies);
@@ -185,15 +181,9 @@ export class ClinicalStudyRepository {
   }
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data. Seeding is controlled at the router level.
    */
   public get mockClinicalStudies(): ClinicalStudy[] {
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._mockClinicalStudies;
   }
 }

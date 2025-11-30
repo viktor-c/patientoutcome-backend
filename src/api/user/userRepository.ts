@@ -1,7 +1,5 @@
 import { type User, type UserNoPassword, userModel } from "@/api/user/userModel";
-import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed, isMockDataAccessAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 
 /**
@@ -242,8 +240,6 @@ export class UserRepository {
   }
 
   async createMockUserData(forceReset = false): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       // If forceReset is false, check if mock users already exist to avoid duplicate key errors in parallel tests
       if (!forceReset) {
@@ -274,8 +270,6 @@ export class UserRepository {
    * Used during setup to preserve admin user created during initial setup.
    */
   async insertMockUsersPreserveExisting(): Promise<{ inserted: number; skipped: number }> {
-    await assertSeedingAllowed();
-
     try {
       let inserted = 0;
       let skipped = 0;
@@ -306,15 +300,9 @@ export class UserRepository {
   }
 
   /**
-   * Getter to access mock data only in development or test environments.
-   * In production, accessing this property will throw an error to prevent
-   * accidental exposure of mock data.
+   * Getter to access mock data. Seeding is controlled at the router level.
    */
   public get mockUsers(): User[] {
-    if (!isMockDataAccessAllowed()) {
-      logger.error("Attempted to access mock data in production environment");
-      throw new Error("Mock data is not available in production environment");
-    }
     return this._mockUsers;
   }
 

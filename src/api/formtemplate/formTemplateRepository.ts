@@ -1,5 +1,4 @@
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import * as aofasJsonForm from "./JsonFormTemplates/AOFAS_JsonForm_Export.json";
 import * as efasJsonForm from "./JsonFormTemplates/EFAS_JsonForm_Export.json";
 import * as moxfqJsonForm from "./JsonFormTemplates/MOXFQ_JsonForm_Export.json";
@@ -34,8 +33,6 @@ export class FormTemplateRepository {
   }
 
   async createMockDataFormTemplate(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       await FormTemplateModel.deleteMany({});
       const result = await FormTemplateModel.insertMany(this.mockFormTemplateData as any);

@@ -8,9 +8,9 @@ import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepositor
 import { userRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
-// import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import express, { type Router, type Request, type Response, type NextFunction } from "express";
+import { seedingMiddleware } from "@/common/utils/seedingUtils";
+import express, { type Router, type Request, type Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { PatientRepository } from "../patient/patientRepository";
@@ -31,20 +31,8 @@ const userRegistrationRepository = new UserRegistrationRepository();
 // const consultationRepository = new ConsultationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
 
-// Middleware to check if the environment is testing, if not we cannot use this route
-// In production, seeding can be enabled by setting ALLOW_SEED=true environment variable
-const checkTestingEnv = (req: Request, res: Response, next: NextFunction) => {
-  const isAllowedEnv = process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
-  const allowSeedInProd = process.env.ALLOW_SEED === "true";
-
-  if (!isAllowedEnv && !allowSeedInProd) {
-    const serviceResponse = ServiceResponse.failure("Access denied", null, StatusCodes.FORBIDDEN);
-    return handleServiceResponse(serviceResponse, res);
-  }
-  next();
-};
-
-seedRouter.use(checkTestingEnv);
+// Middleware to check if seeding is allowed (dev/test, ALLOW_SEED=true, or setup mode)
+seedRouter.use(seedingMiddleware);
 
 /**
  * seed database with mock data for patients

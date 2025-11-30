@@ -1,6 +1,5 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import mongoose from "mongoose";
 import type { CreateKiosk, Kiosk, UpdateKiosk } from "./kioskModel";
 import { kioskModel } from "./kioskModel";
@@ -151,8 +150,6 @@ export class KioskRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockData(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       // Clear existing mock data
       await kioskModel.deleteMany({});

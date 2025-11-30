@@ -1,5 +1,4 @@
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { isPast } from "date-fns";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
@@ -52,8 +51,6 @@ export class CodeRepository {
    * Each code has a 3-letter and 2-number code and a unique mongodb ID
    */
   async createMockDataFormAccessCodes(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       const result = await codeModel.deleteMany();
       await codeModel.insertMany(this.codeMockData);

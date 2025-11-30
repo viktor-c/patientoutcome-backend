@@ -1,5 +1,4 @@
 import { logger } from "@/common/utils/logger";
-import { assertSeedingAllowed } from "@/common/utils/seedingUtils";
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
 import { type RegistrationCode, RegistrationCodeModel } from "./registrationCodeModel";
@@ -73,8 +72,6 @@ export class UserRegistrationRepository {
    * In production, it will throw an error to prevent accidental data insertion.
    */
   async createMockUserRegistrationCodes(): Promise<void> {
-    await assertSeedingAllowed();
-
     try {
       await RegistrationCodeModel.deleteMany({});
       const result = await RegistrationCodeModel.insertMany(this.userCodeMockData);
