@@ -57,19 +57,28 @@ export class PatientCaseRepository {
     try {
       const newCase = new PatientCaseModel(data);
       newCase.patient = patientId;
-      // create a random sensitive external Id with this pattern xxx-xxx-xxx, where x a letter or number
-      // check if it already exists, if yes, create a new one
+
       const randomBlock = () =>
         Array.from({ length: 3 }, () => {
           const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
           return chars.charAt(Math.floor(Math.random() * chars.length));
         }).join("");
-      let NewPatientCaseResponse: PatientCase[] | null = null;
-      do {
-        newCase.externalId = [randomBlock(), randomBlock(), randomBlock()].join("-");
-        NewPatientCaseResponse = await this.getPatientCaseByExternalId(newCase.externalId);
-        // while the externalId of the new case was found when searching byExternalId, try again
-      } while (NewPatientCaseResponse === null || NewPatientCaseResponse.length > 0);
+
+      // If externalId is provided in data, check if it already exists
+      if (data.externalId) {
+        const existingCase = await this.getPatientCaseByExternalId(data.externalId);
+        // If it exists, undefine it and generate a random one instead (in the next step)
+        if (existingCase && existingCase.length > 0) data.externalId = undefined;
+      }
+      if (!data.externalId) {
+        // If no externalId provided, generate a random one that doesn't already exist
+        let generatedExternalId: PatientCase[] | null = null;
+        do {
+          newCase.externalId = [randomBlock(), randomBlock(), randomBlock()].join("-");
+          generatedExternalId = await this.getPatientCaseByExternalId(newCase.externalId);
+        } while (generatedExternalId === null || generatedExternalId.length > 0);
+      }
+
       newCase.createdAt = new Date();
       return newCase.save();
     } catch (error) {

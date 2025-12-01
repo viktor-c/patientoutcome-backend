@@ -34,10 +34,21 @@ export class SurgeryRepository {
   async createSurgery(surgeryData: Partial<Surgery>): Promise<Surgery> {
     try {
       const newSurgery = new SurgeryModel(surgeryData);
-      // Generate external ID if not provided
-      if (!newSurgery.externalId) {
-        newSurgery.externalId = `SUR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // If externalId is provided in data, check if it already exists
+      if (surgeryData.externalId) {
+        const existingSurgery = await this.searchSurgeriesByExternalId(surgeryData.externalId);
+        if (existingSurgery && existingSurgery.length > 0) surgeryData.externalId = undefined;
       }
+      if (!surgeryData.externalId) {
+        // If no externalId provided, generate a unique one
+        let generatedExternalId: Surgery[] | null = null;
+        do {
+          newSurgery.externalId = `SUR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          generatedExternalId = await this.searchSurgeriesByExternalId(newSurgery.externalId);
+        } while (generatedExternalId === null || generatedExternalId.length > 0);
+      }
+
       newSurgery.createdAt = new Date();
       newSurgery.updatedAt = new Date();
       return newSurgery.save();
