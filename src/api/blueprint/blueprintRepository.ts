@@ -253,7 +253,14 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84", "67b4e612d0feb4ad99ae2e85"], //Array of FormTemplate ObjectId references - forms will be created from these templates
+        //Array of FormTemplate ObjectId references - forms will be created from these templates
+        // efas, aofas, moxfq, vas
+        formTemplates: [
+          "67b4e612d0feb4ad99ae2e83",
+          "67b4e612d0feb4ad99ae2e84",
+          "67b4e612d0feb4ad99ae2e85",
+          "67b4e612d0feb4ad99ae2e86",
+        ],
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -294,81 +301,81 @@ export class BlueprintRepository {
       },
       tags: ["surgery", "procedure", "documentation", "medical-coding"],
     },
-    {
-      _id: "68c08903290365a33d085fce",
-      createdOn: faker.date.past({ years: 1 }), // Random date within the past year
-      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
-      blueprintFor: "consultation" as const,
-      title: "Comprehensive Consultation Workflow Template",
-      timeDelta: "+6 W",
-      description:
-        "Enhanced consultation template based on actual Consultation schema with complete field coverage and workflow guidance",
-      content: {
-        core_consultation_fields: {
-          patientCaseId: "ObjectId reference linking to the patient's case",
-          dateAndTime: "Date object for consultation scheduling",
-          reasonForConsultation: {
-            description: "Array of enum values defining consultation purpose",
-            allowed_values: ["planned", "unplanned", "emergency", "pain", "followup"],
-            usage_examples: {
-              planned: "Scheduled follow-up appointments",
-              unplanned: "Walk-in or same-day consultations",
-              emergency: "Urgent medical situations",
-              pain: "Pain management consultations",
-              followup: "Post-procedure monitoring visits",
-            },
-          },
-          visitedBy: "Array of User ObjectId references for attending healthcare providers",
-        },
-        optional_consultation_fields: {
-          formAccessCode: "Optional ObjectId for patient form access",
-          kioskId: "Optional User ObjectId for kiosk-based consultations",
-        },
-        documentation_components: {
-          notes: {
-            description: "Array of clinical note objects",
-            schema: {
-              dateCreated: "Date - automatic timestamp",
-              createdBy: "ObjectId - User reference for note author",
-              note: "String - clinical observation text",
-            },
-            best_practices: [
-              "Document objective findings",
-              "Include patient complaints and symptoms",
-              "Record treatment decisions and rationale",
-              "Note any changes in condition",
-            ],
-          },
-          images: {
-            description: "Array of clinical image objects",
-            schema: {
-              path: "String - file system path to image",
-              format: "String - image format (jpg, png, dicom, etc.)",
-              dateAdded: "Date - when image was captured/uploaded",
-              addedBy: "ObjectId - User who added the image",
-              notes: "Array - image-specific note objects",
-            },
-            requirements: [
-              "Obtain patient consent for clinical photography",
-              "Follow institutional imaging protocols",
-              "Ensure HIPAA compliance for image storage",
-            ],
-          },
-          proms: {
-            description: "Patient Reported Outcome Measures",
-            field_type: "Array of Form ObjectId references",
-            purpose: "Link consultation to completed outcome assessment forms",
-          },
-        },
-        workflow_integration: {
-          consultation_creation: "Use CreateConsultationSchema for new consultations",
-          consultation_updates: "Use UpdateConsultationSchema for modifications",
-          form_integration: "Utilize formTemplates field during creation to assign PROM forms",
-          population: "API responses populate visitedBy and proms fields with full documents",
-        },
-      },
-      tags: ["consultation", "workflow", "documentation", "clinical-care", "schema-based"],
-    },
+    // {
+    //   _id: "68c08903290365a33d085fce",
+    //   createdOn: faker.date.past({ years: 1 }), // Random date within the past year
+    //   createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+    //   blueprintFor: "consultation" as const,
+    //   title: "Comprehensive Consultation Workflow Template",
+    //   timeDelta: "+6 W",
+    //   description:
+    //     "Enhanced consultation template based on actual Consultation schema with complete field coverage and workflow guidance",
+    //   content: {
+    //     core_consultation_fields: {
+    //       patientCaseId: "ObjectId reference linking to the patient's case",
+    //       dateAndTime: "Date object for consultation scheduling",
+    //       reasonForConsultation: {
+    //         description: "Array of enum values defining consultation purpose",
+    //         allowed_values: ["planned", "unplanned", "emergency", "pain", "followup"],
+    //         usage_examples: {
+    //           planned: "Scheduled follow-up appointments",
+    //           unplanned: "Walk-in or same-day consultations",
+    //           emergency: "Urgent medical situations",
+    //           pain: "Pain management consultations",
+    //           followup: "Post-procedure monitoring visits",
+    //         },
+    //       },
+    //       visitedBy: "Array of User ObjectId references for attending healthcare providers",
+    //     },
+    //     optional_consultation_fields: {
+    //       formAccessCode: "Optional ObjectId for patient form access",
+    //       kioskId: "Optional User ObjectId for kiosk-based consultations",
+    //     },
+    //     documentation_components: {
+    //       notes: {
+    //         description: "Array of clinical note objects",
+    //         schema: {
+    //           dateCreated: "Date - automatic timestamp",
+    //           createdBy: "ObjectId - User reference for note author",
+    //           note: "String - clinical observation text",
+    //         },
+    //         best_practices: [
+    //           "Document objective findings",
+    //           "Include patient complaints and symptoms",
+    //           "Record treatment decisions and rationale",
+    //           "Note any changes in condition",
+    //         ],
+    //       },
+    //       images: {
+    //         description: "Array of clinical image objects",
+    //         schema: {
+    //           path: "String - file system path to image",
+    //           format: "String - image format (jpg, png, dicom, etc.)",
+    //           dateAdded: "Date - when image was captured/uploaded",
+    //           addedBy: "ObjectId - User who added the image",
+    //           notes: "Array - image-specific note objects",
+    //         },
+    //         requirements: [
+    //           "Obtain patient consent for clinical photography",
+    //           "Follow institutional imaging protocols",
+    //           "Ensure HIPAA compliance for image storage",
+    //         ],
+    //       },
+    //       proms: {
+    //         description: "Patient Reported Outcome Measures",
+    //         field_type: "Array of Form ObjectId references",
+    //         purpose: "Link consultation to completed outcome assessment forms",
+    //       },
+    //     },
+    //     workflow_integration: {
+    //       consultation_creation: "Use CreateConsultationSchema for new consultations",
+    //       consultation_updates: "Use UpdateConsultationSchema for modifications",
+    //       form_integration: "Utilize formTemplates field during creation to assign PROM forms",
+    //       population: "API responses populate visitedBy and proms fields with full documents",
+    //     },
+    //   },
+    //   tags: ["consultation", "workflow", "documentation", "clinical-care", "schema-based"],
+    // },
     {
       _id: "68c08903290365a33d085fcf",
       createdOn: faker.date.past({ years: 1 }), // Random date within the past year
@@ -385,7 +392,12 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
+        formTemplates: [
+          "67b4e612d0feb4ad99ae2e83",
+          "67b4e612d0feb4ad99ae2e84",
+          "67b4e612d0feb4ad99ae2e85",
+          "67b4e612d0feb4ad99ae2e86",
+        ],
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -405,7 +417,12 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
+        formTemplates: [
+          "67b4e612d0feb4ad99ae2e83",
+          "67b4e612d0feb4ad99ae2e84",
+          "67b4e612d0feb4ad99ae2e85",
+          "67b4e612d0feb4ad99ae2e86",
+        ], //Array of FormTemplate ObjectId references - forms will be created from these templates
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
@@ -425,7 +442,12 @@ export class BlueprintRepository {
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
         kioskId: "" as string | undefined, //Optional User ObjectId reference for kiosk assignments
-        formTemplates: ["67b4e612d0feb4ad99ae2e83", "67b4e612d0feb4ad99ae2e84"], //Array of FormTemplate ObjectId references - forms will be created from these templates
+        formTemplates: [
+          "67b4e612d0feb4ad99ae2e83",
+          "67b4e612d0feb4ad99ae2e84",
+          "67b4e612d0feb4ad99ae2e85",
+          "67b4e612d0feb4ad99ae2e86",
+        ],
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
