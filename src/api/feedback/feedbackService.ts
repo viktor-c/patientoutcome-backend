@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { emailTemplateService } from "@/common/services/emailTemplateService";
 import { feedbackEnv } from "@/common/utils/feedbackEnvConfig";
 import { logger } from "@/common/utils/logger";
 import nodemailer from "nodemailer";
@@ -9,6 +10,7 @@ interface FeedbackData {
   message: string;
   submittedAt: Date;
   username?: string;
+  locale?: string;
 }
 
 interface SendResult {
@@ -232,10 +234,63 @@ This message was sent via the Patient Outcome feedback form.
 
       await transporter.sendMail(mailOptions);
       logger.info({ to: feedbackEnv.SMTP_TO_EMAIL }, "feedbackService: Feedback email sent successfully");
+
+      // Send confirmation email to the user if they provided an email address
+      if (data.email && data.email !== "Not provided") {
+        await this.sendConfirmationEmail(data);
+      }
+
       return { success: true };
     } catch (error) {
       logger.error({ error }, "feedbackService: Failed to send feedback email");
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    }
+  }
+
+  /**
+   * Send a confirmation email to the user who submitted feedback
+   * Uses templates based on the user's locale
+   */
+  private async sendConfirmationEmail(data: FeedbackData): Promise<void> {
+    try {
+      const transporter = this.getTransporter();
+      const locale = emailTemplateService.normalizeLocale(data.locale);
+
+      // Format the date/time according to locale
+      const formattedDateTime = data.submittedAt.toLocaleString(locale === "de" ? "de-DE" : "en-US", {
+        dateStyle: "full",
+        timeStyle: "short",
+      });
+
+      // Prepare template variables
+      const variables = {
+        name: data.name !== "Anonymous" ? data.name : locale === "de" ? "Benutzer" : "User",
+        message: data.message.replace(/\n/g, "<br>"),
+        submittedAt: formattedDateTime,
+        year: new Date().getFullYear(),
+        salutation: locale === "de" ? "Sehr geehrte/r" : "Dear",
+      };
+
+      // Render the template
+      const rendered = emailTemplateService.render("feedback-confirmation", locale, variables);
+
+      // For the text version, we don't want HTML line breaks
+      const textVariables = { ...variables, message: data.message };
+      const renderedText = emailTemplateService.render("feedback-confirmation", locale, textVariables);
+
+      const confirmationMailOptions = {
+        from: feedbackEnv.SMTP_FROM_EMAIL,
+        to: data.email,
+        subject: rendered.subject,
+        text: renderedText.text,
+        html: rendered.html,
+      };
+
+      await transporter.sendMail(confirmationMailOptions);
+      logger.info({ to: data.email, locale }, "feedbackService: Confirmation email sent successfully");
+    } catch (error) {
+      // Log the error but don't fail the main feedback submission
+      logger.error({ error, email: data.email }, "feedbackService: Failed to send confirmation email");
     }
   }
 }

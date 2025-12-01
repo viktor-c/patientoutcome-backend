@@ -24,6 +24,7 @@ const feedbackRequestSchema = z.object({
   message: z.string().min(1, "Message is required"),
   captchaId: z.string().min(1, "Captcha ID is required"),
   captchaAnswer: z.string().min(1, "Captcha answer is required"),
+  locale: z.string().optional(), // User's locale for confirmation email (e.g., 'en', 'de', 'en-US')
 });
 
 // Register GET /feedback/captcha endpoint
@@ -109,7 +110,7 @@ feedbackRouter.post("/", async (req: Request, res: Response) => {
       return handleServiceResponse(serviceResponse, res);
     }
 
-    const { name, email, message, captchaId, captchaAnswer } = validationResult.data;
+    const { name, email, message, captchaId, captchaAnswer, locale } = validationResult.data;
 
     // Verify captcha using server-side validation
     const captchaValid = feedbackService.verifyCaptcha(captchaId, captchaAnswer);
@@ -129,6 +130,7 @@ feedbackRouter.post("/", async (req: Request, res: Response) => {
       message,
       submittedAt: new Date(),
       username: req.session?.username,
+      locale,
     });
 
     if (result.success) {

@@ -1,0 +1,24 @@
+Thank You for Your Feedback!
+
+Dear {{name}},
+
+Thank you for taking the time to contact us. We have received your message and appreciate you reaching out to us.
+
+Your feedback is valuable to us and helps us improve our services. We will review your message and, if a response is required, we will get back to you as soon as possible.
+
+---
+Your message:
+
+{{message}}
+
+---
+
+If you have any additional questions or concerns, please don't hesitate to reach out again.
+
+Best regards,
+The Patient Outcome Team
+
+---
+This is an automated confirmation email.
+Sent on {{submittedAt}}
+© {{year}} Patient Outcome. All rights reserved.

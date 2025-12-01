@@ -1,0 +1,24 @@
+Vielen Dank für Ihr Feedback!
+
+{{salutation}} {{name}},
+
+vielen Dank, dass Sie sich die Zeit genommen haben, uns zu kontaktieren. Wir haben Ihre Nachricht erhalten und schätzen es sehr, dass Sie sich an uns gewandt haben.
+
+Ihr Feedback ist uns wichtig und hilft uns, unsere Dienste zu verbessern. Wir werden Ihre Nachricht prüfen und uns, falls eine Antwort erforderlich ist, so schnell wie möglich bei Ihnen melden.
+
+---
+Ihre Nachricht:
+
+{{message}}
+
+---
+
+Falls Sie weitere Fragen oder Anliegen haben, zögern Sie bitte nicht, uns erneut zu kontaktieren.
+
+Mit freundlichen Grüßen,
+Ihr Patient Outcome Team
+
+---
+Dies ist eine automatische Bestätigungs-E-Mail.
+Gesendet am {{submittedAt}}
+© {{year}} Patient Outcome. Alle Rechte vorbehalten.
