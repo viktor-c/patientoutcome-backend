@@ -7,8 +7,8 @@ import { z } from "zod";
 // Define the Patient schema
 export const PatientSchema = z.object({
   _id: zId().optional(),
-  externalPatientId: z.array(z.string()),
-  sex: z.string().optional(),
+  externalPatientId: z.array(z.string()).min(1, "At least one external patient ID is required"),
+  sex: z.string().optional().nullable(),
   cases: z.array(zId("PatientCase")).optional(),
 });
 
@@ -46,7 +46,9 @@ export const SearchPatientsByExternalIdSchema = z.object({
 
 // Input validation for 'POST patient' endpoint
 export const CreatePatientSchema = z.object({
-  body: PatientSchema.omit({ _id: true }),
+  body: PatientSchema.omit({ _id: true, cases: true }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
 });
 
 // Input validation for 'PUT patient/:id' endpoint

@@ -17,7 +17,11 @@ export const validateRequest = (schema: ZodSchema) => (req: Request, res: Respon
     const errorMessage = "Validation error";
     const statusCode = StatusCodes.BAD_REQUEST;
     const serviceResponse = ServiceResponse.failure(errorMessage, null, statusCode);
-    if (err) logger.debug({ validationErrors: (err as ZodError).errors }, "Validation error details");
+    if (err) {
+      const validationErrors = (err as ZodError).errors;
+      logger.debug({ validationErrors }, "Validation error details");
+      logger.error({ error: validationErrors }, "validateRequest: Validation failed");
+    }
     return handleServiceResponse(serviceResponse, res);
   }
 };
