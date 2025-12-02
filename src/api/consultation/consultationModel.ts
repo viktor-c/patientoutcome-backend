@@ -35,7 +35,7 @@ export const ConsultationSchema = z.object({
   proms: z.array(zId("Form")),
   images: z.array(ImageSchema),
   visitedBy: z.array(zId("User")),
-  formAccessCode: zId("FormAccessCode").optional(),
+  formAccessCode: zId("Code").optional(),
   kioskId: zId("User").optional().nullable(),
 });
 
