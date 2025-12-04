@@ -213,12 +213,19 @@ export class CodeRepository {
       if (existingCode.expiresOn && existingCode.expiresOn < new Date()) {
         logger.warn("Code is already expired, deactivating it.");
       }
+
+      // Unlink code from consultation - update the consultation document directly
+      if (existingCode.consultationId) {
+        const consultationId =
+          typeof existingCode.consultationId === "object"
+            ? (existingCode.consultationId as any)._id
+            : existingCode.consultationId;
+        await consultationModel.findByIdAndUpdate(consultationId, { $unset: { formAccessCode: 1 } });
+      }
+
       // If the code is expired, we can still deactivate it
       existingCode.activatedOn = undefined;
       existingCode.expiresOn = undefined;
-      //unlink code in consultation, the formAccessCode
-      //@ts-ignore
-      existingCode.consultationId.formAccessCode = undefined;
       existingCode.consultationId = undefined;
       await existingCode.save();
 
