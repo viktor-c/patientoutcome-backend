@@ -1,5 +1,5 @@
-import type { Request, RequestHandler, Response } from "express";
 import { activityLogService } from "@/common/services/activityLogService";
+import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 class ActivityLogController {
@@ -9,7 +9,8 @@ class ActivityLogController {
   public streamLogs: RequestHandler = (req: Request, res: Response) => {
     // Check if user is authorized (developer role)
     const userRoles = req.session?.roles || [];
-    if (!userRoles.includes("developer") && !userRoles.includes("admin")) {
+    //BUG do no allow doctors to view logs
+    if (!userRoles.includes("developer") && !userRoles.includes("admin") && !userRoles.includes("doctor")) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
         message: "Access denied. Only developers and admins can view activity logs.",
