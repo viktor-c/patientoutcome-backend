@@ -19,14 +19,21 @@ import {
 export const codeRegistry = new OpenAPIRegistry();
 export const formAccessCodeRouter: Router = Router();
 
-// Create the Code schema with populated consultation for OpenAPI
+// Create the Code schema with populated consultation for OpenAPI (used by findAllCodes)
 const CodeWithConsultationSchema = CodeSchema.extend({
   consultationId: ConsultationWithFormsSchema.optional(),
+});
+
+// Create the Code response schema for activate/deactivate operations
+// These operations return a Code WITHOUT _id and with consultationId as a string (not populated)
+const CodeResponseSchema = CodeSchema.omit({ _id: true }).extend({
+  consultationId: z.string().optional(),
 });
 
 // Register the Code schema
 codeRegistry.register("Code", CodeSchema);
 codeRegistry.register("CodeWithConsultation", CodeWithConsultationSchema);
+codeRegistry.register("CodeResponse", CodeResponseSchema);
 
 // Route to find all codes
 codeRegistry.registerPath({
@@ -72,7 +79,7 @@ codeRegistry.registerPath({
   description: "Activate a code by its code.",
   request: { params: ActivateCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: CodeWithConsultationSchema, description: "Code activated successfully", statusCode: 200 },
+    { schema: CodeResponseSchema, description: "Code activated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Consultation not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
@@ -96,7 +103,7 @@ codeRegistry.registerPath({
   description: "Deactivate a code by its code.",
   request: { params: GetCodeSchema.shape.params },
   responses: createApiResponses([
-    { schema: CodeWithConsultationSchema, description: "Code deactivated successfully", statusCode: 200 },
+    { schema: CodeResponseSchema, description: "Code deactivated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
     { schema: z.object({ message: z.string() }), description: "Internal server error", statusCode: 500 },

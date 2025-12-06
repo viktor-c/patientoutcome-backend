@@ -30,6 +30,7 @@ export class ConsultationRepository {
         { path: "visitedBy" },
         { path: "patientCaseId", populate: { path: "patient" } },
         { path: "kioskId" },
+        { path: "formAccessCode" },
       ])
       .lean();
   }
