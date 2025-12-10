@@ -231,7 +231,7 @@ export class ConsultationService {
             consultationId,
             templateId.toString(),
           );
-          if (form && form._id) {
+          if (form?._id) {
             newPromsById.push(form._id.toString());
           }
         }
@@ -458,11 +458,19 @@ export class ConsultationService {
   }
 
   compareConsultations(consultation1: Consultation, consultation2: Consultation): boolean {
+    // Helper to extract ID from potentially populated field
+    const extractId = (field: any): string => {
+      if (!field) return "";
+      if (typeof field === "string") return field;
+      if (typeof field === "object" && field._id) return field._id.toString();
+      return field.toString();
+    };
+
     if (
       consultation1.__v === consultation2.__v &&
       consultation1._id?.toString() === consultation2._id?.toString() &&
       consultation1.reasonForConsultation[0] === consultation2.reasonForConsultation[0] &&
-      consultation1.patientCaseId?.toString() === consultation2.patientCaseId?.toString()
+      extractId(consultation1.patientCaseId) === extractId(consultation2.patientCaseId)
     )
       return true;
     return false;
