@@ -1,6 +1,17 @@
 # Form Template Plugin System
 
 ## Overview
+TypeScript types
+----------------
+
+The examples in this document use TypeScript-friendly types from the backend model definitions. You should import them in your plugin file as follows:
+
+```typescript
+import type { CustomFormData, FormTemplate } from "@/api/formtemplate/formTemplateModel";
+```
+
+Use `CustomFormData` for plugin function signatures and `FormTemplate` when typing JSON imports.
+
 
 The Form Template Plugin System provides a modular architecture for managing different form templates in the patient outcome management system. Each form template (e.g., MOXFQ, AOFAS, EFAS, VAS) is encapsulated in its own plugin, making the system easily extensible and maintainable.
 
@@ -42,9 +53,9 @@ interface FormTemplatePlugin {
   name: string;                    // Human-readable form name
   description: string;             // What this form measures
   formTemplate: FormTemplateJson;  // Complete JSON form definition
-  calculateScore: (formData: any) => ScoringData;  // Score calculation
-  generateMockData?: () => any;    // Optional: Sample data generator
-  validateFormData?: (formData: any) => boolean;   // Optional: Data validator
+  calculateScore: (formData: CustomFormData) => ScoringData;  // Score calculation
+  generateMockData?: () => CustomFormData;    // Optional: Sample data generator
+  validateFormData?: (formData: CustomFormData) => boolean;   // Optional: Data validator
 }
 ```
 
@@ -85,7 +96,7 @@ import * as yourFormJson from "./YOUR_FORM_JsonForm_Export.json";
  * @param data - Raw form data submitted by user
  * @returns ScoringData structure with calculated scores
  */
-function calculateYourFormScore(data: any): ScoringData {
+function calculateYourFormScore(data: CustomFormData): ScoringData {
   // STEP 1: Extract and normalize the data
   // Handle nested structures (e.g., { section: { q1: value, q2: value }})
   const questions = data.section || data;
@@ -130,7 +141,7 @@ function calculateYourFormScore(data: any): ScoringData {
  * Helper function to calculate a single subscale score
  */
 function calculateSubscaleScore(
-  questions: any,
+  questions: Record<string, number | null>,
   questionKeys: string[],
   name: string,
   description: string,
@@ -167,8 +178,8 @@ function calculateSubscaleScore(
 /**
  * Generate mock data for testing
  */
-function generateMockData(): any {
-  return (yourFormJson as any).formData || {
+function generateMockData(): CustomFormData {
+  return ((yourFormJson as unknown as FormTemplate).formData as CustomFormData) || {
     // Fallback: Define your own mock data structure
     section: {
       q1: 2,
@@ -185,7 +196,7 @@ export const yourFormPlugin: FormTemplatePlugin = {
   templateId: "YOUR_MONGODB_ID_HERE", // Must match _id in JSON
   name: "Your Form Name",
   description: "What this form measures",
-  formTemplate: yourFormJson as any,
+  formTemplate: yourFormJson as unknown as FormTemplate,
   calculateScore: calculateYourFormScore,
   generateMockData,
 };
@@ -235,7 +246,7 @@ The plugin system automatically integrates with:
 #### Pattern 1: Simple Single-Section Form (like VAS)
 
 ```typescript
-function calculateScore(data: any): ScoringData {
+function calculateScore(data: CustomFormData): ScoringData {
   const rawScore = data.pain ?? data.vas?.pain;
   return {
     rawData: data,
@@ -322,7 +333,7 @@ interface SubscaleScore {
 
 ```typescript
 interface ScoringData {
-  rawData: any;                           // Original form data
+  rawData: CustomFormData;                           // Original form data
   subscales: {
     [key: string]: SubscaleScore | null;  // Individual subscale scores
   };
