@@ -71,8 +71,8 @@ describe("Blueprint API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Blueprints found");
-      expect(responseBody.responseObject.blueprints.length).toBeGreaterThan(5); // Based on mock data
-      expect(responseBody.responseObject.total).toBeGreaterThan(6);
+      expect(responseBody.responseObject.blueprints.length).toBeGreaterThanOrEqual(6); // Based on mock data (6 blueprints)
+      expect(responseBody.responseObject.total).toBeGreaterThanOrEqual(6);
       expect(responseBody.responseObject.page).toBe(1);
       expect(responseBody.responseObject.limit).toBe(10);
     });
