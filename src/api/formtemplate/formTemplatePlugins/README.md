@@ -62,7 +62,7 @@ Export your form from the form builder as JSON. The structure should include:
 - `formData`: Sample form data (optional)
 - `translations`: i18n translations (optional)
 
-Place the JSON file in: `src/api/formtemplate/JsonFormTemplates/YOUR_FORM_JsonForm_Export.json`
+Place the JSON file in your plugin folder, for example: `src/api/formtemplate/formTemplatePlugins/yourform/YOUR_FORM_JsonForm_Export.json`
 
 ### Step 2: Create Plugin Directory
 
@@ -78,7 +78,7 @@ Create `index.ts` in your new directory:
 
 ```typescript
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
-import * as yourFormJson from "../../JsonFormTemplates/YOUR_FORM_JsonForm_Export.json";
+import * as yourFormJson from "./YOUR_FORM_JsonForm_Export.json";
 
 /**
  * Calculate score for your form

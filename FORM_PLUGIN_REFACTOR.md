@@ -47,8 +47,8 @@ src/api/formtemplate/formTemplatePlugins/
 
 ### 4. JSON Template Integration
 
-- JSON templates remain in `JsonFormTemplates/` directory
-- Each plugin imports its corresponding JSON file
+- JSON templates are located inside their respective plugin folder (co-located with plugin code)
+- Each plugin imports its corresponding JSON file (e.g., `./YOUR_FORM_JsonForm_Export.json`)
 - Templates are accessed via plugin's `formTemplate` property
 
 ## Benefits
@@ -80,7 +80,7 @@ interface FormTemplatePlugin {
 
 To add a new form template:
 
-1. Export JSON from form builder to `JsonFormTemplates/`
+1. Export JSON from form builder and place it within your plugin folder, e.g., `src/api/formtemplate/formTemplatePlugins/yourform/YOUR_FORM_JsonForm_Export.json`
 2. Create plugin directory: `formTemplatePlugins/yourform/`
 3. Implement plugin following the template in README.md
 4. Register plugin in `formTemplatePlugins/index.ts`

@@ -1,0 +1,30 @@
+{
+  "_id": "67b4e612d0feb4ad99ae2e86",
+  "title": "VAS Pain Scale",
+  "description": "Visual Analog Scale for Pain Assessment - Visuelle Analogskala zur Schmerzerfassung",
+  "formSchema": {
+    "type": "object",
+    "properties": {
+      "painScale": {
+        "title": "Schmerzskala / Pain Scale",
+        "i18n": "vas.title",
+        "type": "object",
+        "properties": {
+          "painLevel": {
+            "title": "Wie stark sind Ihre aktuellen Schmerzen?",
+            "description": "Bitte bewerten Sie Ihre Schmerzen auf einer Skala von 0 (keine Schmerzen) bis 10 (unerträgliche Schmerzen)",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "multipleOf": 0.1,
+            "tickLabelLow": "Keine Schmerzen",
+            "tickLabelHigh": "Unerträgliche Schmerzen"
+          }
+        }
+      }
+    }
+  },
+  "formSchemaUI": { "type": "VAS_Layout", "scope": "#" },
+  "formData": { "vas": { "pain": null } },
+  "translations": { "de": {}, "en": {} }
+}

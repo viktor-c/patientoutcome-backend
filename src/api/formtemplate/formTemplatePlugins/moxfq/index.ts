@@ -1,5 +1,5 @@
-import * as moxfqJsonForm from "../../JsonFormTemplates/MOXFQ_JsonForm_Export.json";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
 
 /**
  * Calculate MOXFQ score from form data

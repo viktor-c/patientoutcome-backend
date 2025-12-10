@@ -1,5 +1,5 @@
-import * as aofasJsonForm from "../../JsonFormTemplates/AOFAS_JsonForm_Export.json";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
 
 /**
  * Calculate AOFAS score from form data

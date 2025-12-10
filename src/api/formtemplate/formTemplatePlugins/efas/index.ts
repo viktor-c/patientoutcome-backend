@@ -1,5 +1,5 @@
-import * as efasJsonForm from "../../JsonFormTemplates/EFAS_JsonForm_Export.json";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import * as efasJsonForm from "./EFAS_JsonForm_Export.json";
 
 /**
  * Calculate EFAS score from form data
