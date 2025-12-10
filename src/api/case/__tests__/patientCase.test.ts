@@ -68,9 +68,8 @@ describe("PatientCase API", () => {
   });
 
   it("should get a case by ID", async () => {
-    const patientId = patientCaseRepository.mockPatientCases[0].patient;
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const res = await request(app).get(`/patient/${patientId}/case/${caseId}`);
+    const res = await request(app).get(`/case/id/${caseId}`);
     expect(res.status).toBe(200);
     comparePatientCases(res.body.responseObject, patientCaseRepository.mockPatientCases[0] as unknown as PatientCase);
   });
