@@ -20,6 +20,14 @@ describe("Patient Case Consultation API", () => {
     agent = request.agent(app);
 
     try {
+      // Seed dependencies in correct order: templates, patient cases, forms, codes, then consultations
+      // Some data might already be seeded by other tests, so attempt all but only fail on consultation seeding
+      await agent.get("/seed/formTemplate").catch(() => {}); // Templates may already exist
+      await agent.get("/seed/patientCase").catch(() => {}); // Patient cases may already exist
+      await agent.get("/seed/form").catch(() => {}); // Forms may already exist
+      await agent.get("/seed/code").catch(() => {}); // Codes may already exist
+
+      // Now seed consultations - this is the critical one for this test
       const res = await agent.get("/seed/consultation");
       if (res.status !== StatusCodes.OK) {
         throw new Error("Failed to insert consultation data");
