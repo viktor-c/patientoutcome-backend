@@ -1,3 +1,4 @@
+import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
 import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
 
@@ -6,7 +7,7 @@ import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
  * @param {Object} data - Form data with question responses (may be nested in 'moxfq' section or flat)
  * @returns {Object} ScoringData structure
  */
-function calculateMoxfqScore(data: any): ScoringData {
+function calculateMoxfqScore(data: CustomFormData): ScoringData {
   // Handle nested structure (e.g., { moxfq: { q1: 0, q2: 1, ... } })
   // Extract questions from 'moxfq' section if present, otherwise use data directly
   const questions = data.moxfq || data;
@@ -81,8 +82,8 @@ function calculateMoxfqScore(data: any): ScoringData {
 /**
  * Generate mock MOXFQ form data for testing
  */
-function generateMockData(): any {
-  return (moxfqJsonForm as any).formData || {};
+function generateMockData(): CustomFormData {
+  return ((moxfqJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
 }
 
 /**
@@ -93,7 +94,7 @@ export const moxfqPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e85",
   name: "Manchester-Oxford Foot Questionnaire",
   description: "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities",
-  formTemplate: moxfqJsonForm as any,
+  formTemplate: moxfqJsonForm as unknown as FormTemplateModelType,
   calculateScore: calculateMoxfqScore,
   generateMockData,
 };

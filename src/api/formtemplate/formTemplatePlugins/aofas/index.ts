@@ -1,3 +1,4 @@
+import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
 import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
 
@@ -6,7 +7,7 @@ import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateAofasScore(data: any): ScoringData {
+function calculateAofasScore(data: CustomFormData): ScoringData {
   // AOFAS has a single section but we need to handle nested structure
   const sectionKey = Object.keys(data)[0]; // e.g., 'vorfußfragebogen'
   const questions = data[sectionKey] || {};
@@ -86,8 +87,8 @@ function calculateAofasScore(data: any): ScoringData {
 /**
  * Generate mock AOFAS form data for testing
  */
-function generateMockData(): any {
-  return (aofasJsonForm as any).formData || {};
+function generateMockData(): CustomFormData {
+  return ((aofasJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
 }
 
 /**
@@ -98,7 +99,7 @@ export const aofasPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e84",
   name: "AOFAS Forefoot Score",
   description: "American Orthopedic Foot & Ankle Society clinical rating system for forefoot",
-  formTemplate: aofasJsonForm as any,
+  formTemplate: aofasJsonForm as unknown as FormTemplateModelType,
   calculateScore: calculateAofasScore,
   generateMockData,
 };

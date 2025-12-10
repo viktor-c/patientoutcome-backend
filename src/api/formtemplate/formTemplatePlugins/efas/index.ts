@@ -1,3 +1,4 @@
+import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
 import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
 import * as efasJsonForm from "./EFAS_JsonForm_Export.json";
 
@@ -6,7 +7,7 @@ import * as efasJsonForm from "./EFAS_JsonForm_Export.json";
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateEfasScore(data: any): ScoringData {
+function calculateEfasScore(data: CustomFormData): ScoringData {
   // EFAS has two sections: standardfragebogen and sportfragebogen
   const sections = ["standardfragebogen", "sportfragebogen"];
 
@@ -108,8 +109,8 @@ function calculateEfasScore(data: any): ScoringData {
 /**
  * Generate mock EFAS form data for testing
  */
-function generateMockData(): any {
-  return (efasJsonForm as any).formData || {};
+function generateMockData(): CustomFormData {
+  return ((efasJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
 }
 
 /**
@@ -120,7 +121,7 @@ export const efasPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e83",
   name: "EFAS Score",
   description: "European Foot and Ankle Society patient-reported outcome measure",
-  formTemplate: efasJsonForm as any,
+  formTemplate: efasJsonForm as unknown as FormTemplateModelType,
   calculateScore: calculateEfasScore,
   generateMockData,
 };

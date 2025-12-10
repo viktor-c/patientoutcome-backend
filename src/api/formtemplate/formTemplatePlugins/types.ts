@@ -24,8 +24,10 @@ export interface SubscaleScore {
 /**
  * Complete scoring data structure for a form
  */
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
+
 export interface ScoringData {
-  rawData: any;
+  rawData: CustomFormData | Record<string, unknown>;
   subscales: {
     [key: string]: SubscaleScore | null;
   };
@@ -40,10 +42,10 @@ export interface FormTemplateJson {
   _id: string;
   title: string;
   description: string;
-  formSchema: any;
-  formSchemaUI?: any;
-  formData?: any;
-  translations?: any;
+  formSchema: Record<string, unknown>;
+  formSchemaUI?: Record<string, unknown>;
+  formData?: CustomFormData;
+  translations?: Record<string, string> | Record<string, unknown>;
 }
 
 /**
@@ -80,14 +82,14 @@ export interface FormTemplatePlugin {
    * @param formData - The raw form data submitted by the user
    * @returns ScoringData structure with calculated scores
    */
-  calculateScore: (formData: any) => ScoringData;
+  calculateScore: (formData: CustomFormData) => ScoringData;
 
   /**
    * Generate mock/sample form data for testing purposes
    * 
    * @returns Sample form data that can be used for testing
    */
-  generateMockData?: () => any;
+  generateMockData?: () => CustomFormData;
 
   /**
    * Validate form data before scoring
@@ -96,5 +98,5 @@ export interface FormTemplatePlugin {
    * @param formData - The form data to validate
    * @returns true if valid, false otherwise
    */
-  validateFormData?: (formData: any) => boolean;
+  validateFormData?: (formData: CustomFormData) => boolean;
 }

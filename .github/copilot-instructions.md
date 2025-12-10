@@ -44,3 +44,6 @@ This patient outcome management system follows a strict layered architecture: **
 - OpenAPI spec automatically updates with zod-to-openapi registry patterns
 - Don't remove existing comments unless explicitly requested
 - Mock data is environment-protected (throws errors in production)
+
+## General prompts
+- "commit changes" is an alias for "commit changes to patientoutcome-frontend following best practices, logically group related changes into single commits; create multiple commits if necessary for clarity"

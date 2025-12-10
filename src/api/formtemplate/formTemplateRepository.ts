@@ -33,7 +33,7 @@ export class FormTemplateRepository {
   async createMockDataFormTemplate(): Promise<void> {
     try {
       await FormTemplateModel.deleteMany({});
-      const result = await FormTemplateModel.insertMany(this.mockFormTemplateData as any);
+      const result = await FormTemplateModel.insertMany(this.mockFormTemplateData);
       logger.debug({ count: result.length }, "Form template mock data created");
     } catch (error) {
       return Promise.reject(error);
@@ -41,7 +41,9 @@ export class FormTemplateRepository {
   }
 
   // Include form templates from plugins
-  private _mockFormTemplateData: any[] = allFormPlugins.map((plugin) => plugin.formTemplate);
+  private _mockFormTemplateData: FormTemplate[] = allFormPlugins.map((plugin) => (
+    plugin.formTemplate as unknown as FormTemplate
+  ));
 
   public get mockFormTemplateData() {
     if (env.NODE_ENV === "production") {

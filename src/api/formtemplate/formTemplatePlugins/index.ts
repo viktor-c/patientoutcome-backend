@@ -5,10 +5,11 @@
  * a registry for accessing them by template ID.
  */
 
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
 import { aofasPlugin } from "./aofas";
 import { efasPlugin } from "./efas";
 import { moxfqPlugin } from "./moxfq";
-import type { FormTemplatePlugin } from "./types";
+import type { FormTemplatePlugin, ScoringData } from "./types";
 import { vasPlugin } from "./vas";
 
 /**
@@ -56,7 +57,7 @@ export function getAllPlugins(): FormTemplatePlugin[] {
  * @param formData - The form data to calculate score for
  * @returns ScoringData or null if plugin not found
  */
-export function calculateFormScore(templateId: string, formData: any): any {
+export function calculateFormScore(templateId: string, formData: CustomFormData): ScoringData {
   const plugin = getPluginByTemplateId(templateId);
   if (!plugin) {
     throw new Error(`No plugin found for template ID: ${templateId}`);
