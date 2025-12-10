@@ -63,7 +63,7 @@
     "tsx": "^4.20.3",
     "typescript": "^5.9.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.9",
+    "vitest": "^4.0.15",
     "zod-to-json-schema": "^3.0.0"
   },
   "lint-staged": {
