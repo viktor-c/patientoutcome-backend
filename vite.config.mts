@@ -14,7 +14,8 @@ export default defineConfig({
     },
     globals: true,
     restoreMocks: true,
-    sequence: {shuffle: {tests: false}},
+    sequence: { shuffle: { tests: false } },
+    fileParallelism: false, // Run test files sequentially to avoid DB race conditions
   },
   plugins: [],
 });
