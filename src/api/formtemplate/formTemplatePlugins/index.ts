@@ -1,14 +1,14 @@
 /**
  * Form Template Plugins Registry
- * 
+ *
  * This file exports all available form template plugins and provides
  * a registry for accessing them by template ID.
  */
 
-import type { FormTemplatePlugin } from "./types";
-import { moxfqPlugin } from "./moxfq";
 import { aofasPlugin } from "./aofas";
 import { efasPlugin } from "./efas";
+import { moxfqPlugin } from "./moxfq";
+import type { FormTemplatePlugin } from "./types";
 import { vasPlugin } from "./vas";
 
 /**

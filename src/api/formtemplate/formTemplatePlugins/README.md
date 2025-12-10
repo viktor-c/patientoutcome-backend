@@ -26,6 +26,7 @@ formTemplatePlugins/
 ### What is a Form Template Plugin?
 
 A form template plugin is a self-contained module that:
+
 1. Defines the form's JSON structure (schema, UI schema, translations)
 2. Implements score calculation logic specific to that form
 3. Provides mock data for testing
@@ -52,6 +53,7 @@ interface FormTemplatePlugin {
 ### Step 1: Prepare Your Form JSON
 
 Export your form from the form builder as JSON. The structure should include:
+
 - `_id`: Unique MongoDB ObjectId string
 - `title`: Form title
 - `description`: Form description
@@ -213,6 +215,7 @@ export const allFormPlugins: FormTemplatePlugin[] = [
 ### Step 5: Test Your Plugin
 
 The plugin system automatically integrates with:
+
 - `formTemplateRepository.mockFormTemplateData` - Your form template is auto-included
 - `formRepository.populateMockForms()` - Uses your `calculateScore` function
 - API endpoints - Your form is immediately available through the API
@@ -230,6 +233,7 @@ The plugin system automatically integrates with:
 ### Common Patterns
 
 #### Pattern 1: Simple Single-Section Form (like VAS)
+
 ```typescript
 function calculateScore(data: any): ScoringData {
   const rawScore = data.pain ?? data.vas?.pain;
@@ -242,6 +246,7 @@ function calculateScore(data: any): ScoringData {
 ```
 
 #### Pattern 2: Multi-Question Single-Section Form (like AOFAS)
+
 ```typescript
 function calculateScore(data: any): ScoringData {
   const sectionKey = Object.keys(data)[0]; // e.g., 'section1'
@@ -252,6 +257,7 @@ function calculateScore(data: any): ScoringData {
 ```
 
 #### Pattern 3: Multi-Subscale Form (like MOXFQ)
+
 ```typescript
 function calculateScore(data: any): ScoringData {
   const questions = data.moxfq || data;
@@ -276,6 +282,7 @@ function calculateScore(data: any): ScoringData {
 ```
 
 #### Pattern 4: Multi-Section Form (like EFAS)
+
 ```typescript
 function calculateScore(data: any): ScoringData {
   const sections = ["section1", "section2"];
@@ -445,6 +452,7 @@ expect(form?.scoring).toBeDefined();
 ### Updating Existing Plugins
 
 When updating a plugin:
+
 1. Keep the `templateId` unchanged
 2. Version your JSON file if making breaking changes
 3. Update tests to cover new functionality
@@ -453,6 +461,7 @@ When updating a plugin:
 ### Deprecating Plugins
 
 To deprecate a form:
+
 1. Remove it from `allFormPlugins` array
 2. Keep the plugin file for backward compatibility
 3. Add a deprecation notice in the plugin's comments
@@ -461,6 +470,7 @@ To deprecate a form:
 ## Support
 
 For questions or issues:
+
 1. Check existing plugins for reference implementations
 2. Review the type definitions in `types.ts`
 3. Consult the main README for project architecture
@@ -469,6 +479,7 @@ For questions or issues:
 ## Examples
 
 See the existing implementations:
+
 - **Simple form**: `vas/index.ts`
 - **Single section**: `aofas/index.ts`
 - **Multi-subscale**: `moxfq/index.ts`

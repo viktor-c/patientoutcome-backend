@@ -1,7 +1,7 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
-import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { calculateFormScore } from "@/api/formtemplate/formTemplatePlugins";
+import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
@@ -92,9 +92,7 @@ export class FormRepository {
     try {
       // EFAS Form 1
       const efasFormData1 = formTemplateRepository.mockFormTemplateData[0].formData;
-      const efasScoring1 = efasFormData1
-        ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData1)
-        : undefined;
+      const efasScoring1 = efasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData1) : undefined;
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
@@ -137,9 +135,7 @@ export class FormRepository {
 
       // AOFAS Form 1
       const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
-      const aofasScoring1 = aofasFormData1
-        ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData1)
-        : undefined;
+      const aofasScoring1 = aofasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData1) : undefined;
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
@@ -184,9 +180,7 @@ export class FormRepository {
       });
       // EFAS Form 2
       const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData;
-      const efasScoring2 = efasFormData2
-        ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData2)
-        : undefined;
+      const efasScoring2 = efasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData2) : undefined;
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d55",
@@ -208,9 +202,7 @@ export class FormRepository {
 
       // AOFAS Form 2
       const aofasFormData2 = formTemplateRepository.mockFormTemplateData[1].formData;
-      const aofasScoring2 = aofasFormData2
-        ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData2)
-        : undefined;
+      const aofasScoring2 = aofasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData2) : undefined;
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d56",
@@ -232,9 +224,7 @@ export class FormRepository {
       });
 
       const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData;
-      const moxfqScoring1 = moxfqFormData1
-        ? calculateFormScore("67b4e612d0feb4ad99ae2e85", moxfqFormData1)
-        : undefined;
+      const moxfqScoring1 = moxfqFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e85", moxfqFormData1) : undefined;
       // This is the moxfq Form
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d57",

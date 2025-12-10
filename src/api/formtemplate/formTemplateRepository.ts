@@ -1,7 +1,7 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
-import { allFormPlugins } from "./formTemplatePlugins";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
+import { allFormPlugins } from "./formTemplatePlugins";
 
 export class FormTemplateRepository {
   async getAllTemplates(): Promise<FormTemplate[]> {

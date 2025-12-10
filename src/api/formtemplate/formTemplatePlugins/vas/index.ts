@@ -1,5 +1,5 @@
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
 import * as vasJsonForm from "../../JsonFormTemplates/VAS_JsonForm_Export.json";
+import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
 
 /**
  * Calculate and fill data for VAS number scale
