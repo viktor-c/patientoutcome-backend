@@ -1,10 +1,12 @@
 This directory contains proposed frontend changes for the patientoutcome-frontend repo to match updated backend typing for form templates.
 
 Overview:
+
 - Backend replaced `any` usage in form template plugin types with `CustomFormData`, `Questionnaire`, and other safe types.
 - Update the frontend API models and local types to reflect these changes.
 
 Suggested steps:
+
 1. Regenerate API client: The OpenAPI spec exported from backend will reflect new types; regenerate the frontend API client:
 
 ```bash
@@ -16,6 +18,7 @@ npx @openapitools/openapi-generator-cli generate -i http://localhost:40001/opena
 2. Update the FormTemplate model type in frontend (in src/api types or local type file):
 
 Old (loose):
+
 ```ts
 export interface FormTemplate {
   _id: string;
@@ -29,6 +32,7 @@ export interface FormTemplate {
 ```
 
 New (typed):
+
 ```ts
 export type Questionnaire = Record<string, number | null>;
 export type CustomFormData = Record<string, Questionnaire>;
@@ -53,6 +57,7 @@ export interface FormTemplate {
 6. Run `pnpm test` and `pnpm build` in frontend to verify no type errors.
 
 Example migration snippets:
+
 - Replace `const formData: any = ...` with `const formData: CustomFormData = ...`
 - Use `Object.entries(formData).forEach(([section, questions]) => {...})` where `questions: Questionnaire`.
 
