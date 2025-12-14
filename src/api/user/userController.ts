@@ -1,13 +1,13 @@
 import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
-import { userService } from "@/api/user/userService";
 import { kioskService } from "@/api/user/kioskService";
 import type { UserNoPassword } from "@/api/user/userModel";
+import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { activityLogService } from "@/common/services/activityLogService";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
-import { activityLogService } from "@/common/services/activityLogService";
 import { StatusCodes } from "http-status-codes";
 import { isValidObjectId } from "mongoose";
 import { userRegistrationZod } from "./userRegistrationSchemas";
@@ -63,6 +63,27 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public updateUserById: RequestHandler = async (req: Request, res: Response) => {
+    // Get user id from URL parameter
+    const userId = z.string().parse(req.params.id);
+    const currentUserId = req.session?.userId;
+    const currentUserRoles = req.session?.roles || [];
+
+    if (!currentUserId) {
+      return res.status(401).json({ message: "Authentication required: User id not found in session" });
+    }
+
+    // Allow admins to update any user, otherwise only allow users to update themselves
+    const isAdmin = currentUserRoles.includes("admin");
+    if (userId !== currentUserId && !isAdmin) {
+      return res.status(403).json({ message: "Access denied: You can only update your own profile" });
+    }
+
+    const userData = req.body;
+    const serviceResponse = await userService.updateUser(userId, userData);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public deleteUser: RequestHandler = async (req: Request, res: Response) => {
     const username = z.string().parse(req.params.username);
     const serviceResponse = await userService.deleteUser(username);
@@ -76,7 +97,7 @@ class UserController {
       if (serviceResponse.responseObject._id === undefined) {
         req.session.userId = undefined;
         // do we need to destroy session?
-        await req.session.destroy(() => {});
+        await req.session.destroy(() => { });
         // do not allow login
         return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
       } else {
@@ -89,7 +110,7 @@ class UserController {
       req.session.lastLogin = new Date(); // Store last login time
       req.session.loggedIn = true; // Mark the user as logged in
       req.session.username = username;
-      
+
       // Log the activity
       activityLogService.log({
         username,
@@ -97,7 +118,7 @@ class UserController {
         type: "login",
         details: `Roles: ${serviceResponse.responseObject.roles.join(", ")}`,
       });
-      
+
       //@ts-ignore-next-line
       serviceResponse.responseObject._id = undefined;
       await req.session.save(); // Save the session
@@ -107,12 +128,12 @@ class UserController {
 
   public kioskLoginUser: RequestHandler = async (req: Request, res: Response) => {
     const { username } = req.body;
-    
+
     const serviceResponse = await kioskService.kioskLogin(username);
     if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
       if (serviceResponse.responseObject._id === undefined) {
         req.session.userId = undefined;
-        await req.session.destroy(() => {});
+        await req.session.destroy(() => { });
         return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
       } else {
         req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
@@ -125,7 +146,7 @@ class UserController {
       req.session.loggedIn = true;
       req.session.username = username;
       req.session.consultationId = serviceResponse.responseObject.consultationId?.toString();
-      
+
       // Log the kiosk login activity
       activityLogService.log({
         username,
@@ -133,7 +154,7 @@ class UserController {
         type: "login",
         details: `Consultation ID: ${req.session.consultationId}`,
       });
-      
+
       //@ts-ignore-next-line
       serviceResponse.responseObject._id = undefined;
       await req.session.save();
@@ -144,7 +165,7 @@ class UserController {
   public roleSwitchUser: RequestHandler = async (req: Request, res: Response) => {
     const { username } = req.body;
     const previousUser = req.session?.username || "unknown";
-    
+
     // Fetch the existing user without creating a new one
     const user = await userService.findByUsername(username);
     if (!user || !user._id) {
@@ -247,31 +268,36 @@ class UserController {
   public changePassword: RequestHandler = async (req, res) => {
     // Check if user is logged in
     if (!req.session || !req.session.userId) {
-      return res.status(401).json({ message: "Authentication required: Not logged in" });
+      return handleServiceResponse(
+        ServiceResponse.failure("Authentication required: Not logged in", null, StatusCodes.UNAUTHORIZED),
+        res,
+      );
     }
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const userId = req.session.userId;
     // Fetch user from DB
     const user = await userService.findByIdWithPassword(userId);
     if (!user || !user.responseObject) {
-      return res.status(404).json({ message: "User not found." });
+      return handleServiceResponse(ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND), res);
     }
     // Check current password
     const passwordMatches = await userService.comparePassword(currentPassword, user.responseObject.password);
     if (!passwordMatches) {
-      return res.status(400).json({ message: "Current password is incorrect." });
+      return handleServiceResponse(
+        ServiceResponse.failure("Current password is incorrect", null, StatusCodes.BAD_REQUEST),
+        res,
+      );
     }
     // Check newPassword === confirmPassword
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: "New password and confirm password do not match." });
+      return handleServiceResponse(
+        ServiceResponse.failure("New password and confirm password do not match", null, StatusCodes.BAD_REQUEST),
+        res,
+      );
     }
     // Update password
     const updateResult = await userService.updatePassword(userId, newPassword);
-    if (updateResult.statusCode === 200) {
-      return res.status(200).json({ message: "Password changed successfully." });
-    } else {
-      return res.status(400).json({ message: updateResult.message || "Error changing password." });
-    }
+    return handleServiceResponse(updateResult, res);
   };
 }
 

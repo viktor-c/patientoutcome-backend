@@ -313,7 +313,7 @@ export class UserService {
       if (!updated) {
         return ServiceResponse.failure("Failed to update password", null, StatusCodes.BAD_REQUEST);
       }
-      return ServiceResponse.success("Password updated", null);
+      return ServiceResponse.success("Password changed successfully", null);
     } catch (ex) {
       return ServiceResponse.failure("Error updating password", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }

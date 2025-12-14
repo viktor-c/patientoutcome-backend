@@ -16,9 +16,9 @@ import { z } from "zod";
 describe("User API Endpoints", () => {
   // seed users and all registration codes before all tests
   beforeAll(async () => {
-    // setup first users
+    // setup first users - use reset to ensure fresh data
     try {
-      const res = await request(app).get("/seed/users");
+      const res = await request(app).get("/seed/users/reset");
       if (res.status !== StatusCodes.OK) {
         throw new Error("Failed to insert user data");
       }
@@ -254,7 +254,8 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
 
     it("should return a BAD REQUEST for invalid ID format", async () => {
@@ -267,7 +268,8 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 
@@ -311,7 +313,8 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
 
     it("should return an error if user is not logged in", async () => {
@@ -380,51 +383,57 @@ describe("User API Endpoints", () => {
     it("should fail if current password is incorrect", async () => {
       const agent = await loginUserAgent("admin");
       const res = await agent.put("/user/change-password").send({
-        userId: mockUser._id,
         currentPassword: "wrongPassword",
         newPassword: "newPassword!456",
         confirmPassword: "newPassword!456",
       });
+      const responseBody: ServiceResponse = res.body;
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.message).toContain("Current password is incorrect");
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Current password is incorrect");
+      expect(responseBody.responseObject).toBeNull();
     });
 
     it("should fail if newPassword and confirmPassword do not match", async () => {
       const agent = await loginUserAgent("admin");
       const res = await agent.put("/user/change-password").send({
-        userId: mockUser._id,
         currentPassword: "password123#124",
         newPassword: "newPassword!456",
         confirmPassword: "differentPassword",
       });
+      const responseBody: ServiceResponse = res.body;
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.message).toContain("New password and confirm password do not match");
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("New password and confirm password do not match");
+      expect(responseBody.responseObject).toBeNull();
     });
 
     it("should fail if not logged in", async () => {
       const res = await request(app).put("/user/change-password").send({
-        userId: mockUser._id,
         currentPassword: "password123#124",
         newPassword: "newPassword!456",
         confirmPassword: "newPassword!456",
       });
+      const responseBody: ServiceResponse = res.body;
       expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
-      expect(res.body.message).toContain("Authentication required");
+      expect(responseBody.success).toBeFalsy();
+      expect(responseBody.message).toContain("Authentication required");
+      expect(responseBody.responseObject).toBeNull();
     });
     it("should change password successfully for logged in user", async () => {
       const agent = await loginUserAgent("admin");
       const res = await agent.put("/user/change-password").send({
-        userId: mockUser._id,
         currentPassword: "password123#124",
         newPassword: "newPassword!456",
         confirmPassword: "newPassword!456",
       });
+      const responseBody: ServiceResponse = res.body;
       expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.message).toContain("Password changed successfully");
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Password changed successfully");
 
       // revert password to original value
       await agent.put("/user/change-password").send({
-        userId: mockUser._id,
         currentPassword: "newPassword!456",
         newPassword: "password123#124",
         confirmPassword: "password123#124",

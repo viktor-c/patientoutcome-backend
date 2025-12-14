@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import {
+  ChangePasswordBodySchema,
   ChangePasswordSchema,
   CreateUserSchema,
   GetUserSchema,
@@ -12,6 +13,7 @@ import {
   UserNoPasswordSchema,
   UserSchema,
 } from "@/api/user/userModel";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest, validateRequestOnlyWithBody } from "@/common/utils/httpHandlers";
 import { userController } from "./userController";
 import { userRegistrationZod } from "./userRegistrationSchemas";
@@ -110,7 +112,7 @@ userRegistry.registerPath({
       statusCode: 200,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Invalid username",
       statusCode: 400,
     },
@@ -430,6 +432,101 @@ userRegistry.registerPath({
 
 userRouter.put("/update", AclMiddleware(), validateRequestOnlyWithBody(UpdateUserSchema), userController.updateUser);
 
+// Register the path for updating a user by ID (for admin updating other users)
+userRegistry.registerPath({
+  method: "put",
+  path: "/user/{id}",
+  tags: ["User"],
+  operationId: "updateUserById",
+  description: "Update a user by ID (admin only, or user updating themselves)",
+  summary: "Update a user by ID",
+  request: {
+    params: z.object({ id: z.string() }),
+    body: {
+      content: {
+        "application/json": { schema: UpdateUserSchema },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: UserSchema,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "User not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied",
+      statusCode: 403,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while updating the user.",
+      statusCode: 500,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+// Register the path for changing password (must come before /:id route to avoid conflicts)
+userRegistry.registerPath({
+  method: "put",
+  path: "/user/change-password",
+  tags: ["User"],
+  operationId: "changeUserPassword",
+  description: "Change the password for a user. User must be logged in and match the userId.",
+  summary: "Change user password",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: ChangePasswordBodySchema,
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Password changed successfully.",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Error changing password.",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Authentication required - Not logged in",
+      statusCode: 401,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied - Insufficient permissions",
+      statusCode: 403,
+    },
+  ]),
+});
+
+userRouter.put(
+  "/change-password",
+  AclMiddleware(),
+  validateRequestOnlyWithBody(ChangePasswordBodySchema),
+  userController.changePassword,
+);
+
+userRouter.put("/:id", AclMiddleware(), validateRequestOnlyWithBody(UpdateUserSchema), userController.updateUserById);
+
 // Register the path for updating a user
 userRegistry.registerPath({
   method: "delete",
@@ -509,52 +606,4 @@ userRouter.post(
   AclMiddleware(),
   validateRequestOnlyWithBody(userRegistrationZod),
   userController.registerUser,
-);
-
-// Register the path for changing password
-userRegistry.registerPath({
-  method: "put",
-  path: "/user/change-password",
-  tags: ["User"],
-  operationId: "changeUserPassword",
-  description: "Change the password for a user. User must be logged in and match the userId.",
-  summary: "Change user password",
-  request: {
-    body: {
-      content: {
-        "application/json": {
-          schema: ChangePasswordSchema.shape.body,
-        },
-      },
-    },
-  },
-  responses: createApiResponses([
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Password changed successfully.",
-      statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Error changing password.",
-      statusCode: 400,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Authentication required - Not logged in",
-      statusCode: 401,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Access denied - Insufficient permissions",
-      statusCode: 403,
-    },
-  ]),
-});
-
-userRouter.put(
-  "/change-password",
-  AclMiddleware(),
-  validateRequest(ChangePasswordSchema),
-  userController.changePassword,
 );
