@@ -109,6 +109,10 @@ describe("Blueprint API Endpoints", () => {
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      // The response object should include an array of validation errors
+      const responseBody: ServiceResponse<any> = response.body;
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 
@@ -159,6 +163,9 @@ describe("Blueprint API Endpoints", () => {
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      const responseBody: ServiceResponse<any> = response.body;
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 
@@ -204,6 +211,9 @@ describe("Blueprint API Endpoints", () => {
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      const responseBody: ServiceResponse<any> = response.body;
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
 
     it("should return authentication error when user is not logged in", async () => {
@@ -254,6 +264,9 @@ describe("Blueprint API Endpoints", () => {
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      const responseBody: ServiceResponse<any> = response.body;
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 

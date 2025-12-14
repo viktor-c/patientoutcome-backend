@@ -95,7 +95,8 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
 
     it("should return a BAD REQUEST for invalid ID format", async () => {
@@ -108,7 +109,8 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 
@@ -182,7 +184,8 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
 
     // clean up and delete the newly created patient
@@ -258,7 +261,8 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
-      expect(responseBody.responseObject).toBeNull();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      expect(responseBody.responseObject.length).toBeGreaterThan(0);
     });
   });
 });
