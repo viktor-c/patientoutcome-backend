@@ -8,6 +8,7 @@ import { ConsultationWithFormsSchema } from "@/api/consultation/consultationMode
 import { PatientSchema } from "@/api/patient/patientModel";
 import { SurgerySchema } from "@/api/surgery/surgeryModel";
 import { UserNoPasswordSchema } from "@/api/user/userModel";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { StatusCodes } from "http-status-codes";
 import { patientCaseController } from "./patientCaseController";
@@ -60,7 +61,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -104,7 +105,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -191,7 +192,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -256,7 +257,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -319,7 +320,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -377,7 +378,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -439,7 +440,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -498,7 +499,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -551,7 +552,7 @@ patientCaseRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },

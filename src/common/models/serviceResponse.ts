@@ -42,3 +42,14 @@ export const ServiceResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     responseObject: dataSchema.optional(),
     statusCode: z.number(),
   });
+
+// Validation error payload structure returned on 400 responses
+export const ValidationErrorSchema = z.object({
+  message: z.string(),
+  path: z.array(z.string()).optional(),
+  code: z.string().optional(),
+  expected: z.any().optional(),
+  received: z.any().optional(),
+});
+
+export const ValidationErrorsSchema = z.array(ValidationErrorSchema);

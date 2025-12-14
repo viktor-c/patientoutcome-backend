@@ -1,5 +1,5 @@
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
-import { ServiceResponseSchema } from "@/common/models/serviceResponse";
+import { ServiceResponseSchema, ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
@@ -85,7 +85,7 @@ formRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -121,7 +121,7 @@ formRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -150,7 +150,7 @@ formRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -192,7 +192,7 @@ formRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },

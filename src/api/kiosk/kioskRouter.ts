@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { zId } from "@zodyac/zod-mongoose";
 import { ConsultationWithFormsSchema } from "../consultation/consultationModel";
@@ -161,7 +162,7 @@ kioskRegistry.registerPath({
       statusCode: 403,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },

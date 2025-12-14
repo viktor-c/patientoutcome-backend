@@ -1,4 +1,5 @@
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -82,7 +83,7 @@ codeRegistry.registerPath({
     { schema: CodeResponseSchema, description: "Code activated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
     { schema: z.object({ message: z.string() }), description: "Consultation not found", statusCode: 404 },
-    { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
     { schema: z.object({ message: z.string() }), description: "Internal server error", statusCode: 500 },
     { schema: z.object({ message: z.string() }), description: "Code already activated", statusCode: 409 },
   ]),
@@ -105,7 +106,7 @@ codeRegistry.registerPath({
   responses: createApiResponses([
     { schema: CodeResponseSchema, description: "Code deactivated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
-    { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
     { schema: z.object({ message: z.string() }), description: "Internal server error", statusCode: 500 },
   ]),
 });
@@ -122,7 +123,7 @@ codeRegistry.registerPath({
   request: { params: CreateCodeSchema.shape.params },
   responses: createApiResponses([
     { schema: z.array(CodeWithConsultationSchema), description: "Code created successfully", statusCode: 201 },
-    { schema: z.object({ message: z.string() }), description: "Validation error", statusCode: 400 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
   ]),
 });
 formAccessCodeRouter.post("/addCodes/:numberOfCodes", validateRequest(CreateCodeSchema), codeController.addCodes);

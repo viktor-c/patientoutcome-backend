@@ -1,7 +1,7 @@
 import type { StatusCodes } from "http-status-codes";
 import type { z } from "zod";
 
-import { ServiceResponseSchema } from "@/common/models/serviceResponse";
+import { ServiceResponseSchema, ValidationErrorsSchema } from "@/common/models/serviceResponse";
 
 // Use if you want multiple responses for a single endpoint
 
@@ -27,7 +27,10 @@ export function createApiResponses(configs: ApiResponseConfig[]) {
         description,
         content: {
           "application/json": {
-            schema: ServiceResponseSchema(schema),
+            schema:
+              statusCode === 400
+                ? ServiceResponseSchema(ValidationErrorsSchema)
+                : ServiceResponseSchema(schema),
           },
         },
       };

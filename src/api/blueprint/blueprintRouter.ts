@@ -1,4 +1,5 @@
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
@@ -44,7 +45,7 @@ blueprintRegistry.registerPath({
       statusCode: 200,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -76,7 +77,7 @@ blueprintRegistry.registerPath({
       statusCode: 200,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -113,7 +114,7 @@ blueprintRegistry.registerPath({
       statusCode: 404,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -149,7 +150,7 @@ blueprintRegistry.registerPath({
       statusCode: 201,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },

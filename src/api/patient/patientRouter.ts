@@ -13,6 +13,7 @@ import {
   SearchPatientsByExternalIdSchema,
   UpdatePatientSchema,
 } from "@/api/patient/patientModel";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { patientController } from "./patientController";
 
@@ -50,7 +51,7 @@ patientRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -112,7 +113,7 @@ patientRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -146,7 +147,7 @@ patientRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -191,7 +192,7 @@ patientRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
