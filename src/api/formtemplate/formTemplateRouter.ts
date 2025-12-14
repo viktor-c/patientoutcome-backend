@@ -3,6 +3,7 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
+import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { formTemplateController } from "./formTemplateController";
 import {
@@ -46,7 +47,7 @@ formTemplateRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -75,7 +76,7 @@ formTemplateRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -110,7 +111,7 @@ formTemplateRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },
@@ -146,7 +147,7 @@ formTemplateRegistry.registerPath({
       statusCode: 500,
     },
     {
-      schema: z.object({ message: z.string() }),
+      schema: ValidationErrorsSchema,
       description: "Validation error",
       statusCode: 400,
     },

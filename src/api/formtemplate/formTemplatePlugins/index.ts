@@ -11,11 +11,12 @@ import { efasPlugin } from "./efas";
 import { moxfqPlugin } from "./moxfq";
 import type { FormTemplatePlugin, ScoringData } from "./types";
 import { vasPlugin } from "./vas";
+import { visaaPlugin } from "./visa-a";
 
 /**
  * Export individual plugins
  */
-export { moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin };
+export { moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin, visaaPlugin };
 
 /**
  * Export types
@@ -25,7 +26,7 @@ export type { FormTemplatePlugin, ScoringData, SubscaleScore, FormTemplateJson }
 /**
  * Array of all registered form template plugins
  */
-export const allFormPlugins: FormTemplatePlugin[] = [moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin];
+export const allFormPlugins: FormTemplatePlugin[] = [moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin, visaaPlugin];
 
 /**
  * Plugin registry map for quick lookup by template ID

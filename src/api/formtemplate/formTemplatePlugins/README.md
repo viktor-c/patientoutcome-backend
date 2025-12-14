@@ -1,6 +1,7 @@
 # Form Template Plugin System
 
 ## Overview
+
 TypeScript types
 ----------------
 
@@ -11,7 +12,6 @@ import type { CustomFormData, FormTemplate } from "@/api/formtemplate/formTempla
 ```
 
 Use `CustomFormData` for plugin function signatures and `FormTemplate` when typing JSON imports.
-
 
 The Form Template Plugin System provides a modular architecture for managing different form templates in the patient outcome management system. Each form template (e.g., MOXFQ, AOFAS, EFAS, VAS) is encapsulated in its own plugin, making the system easily extensible and maintainable.
 

@@ -33,6 +33,15 @@ describe("FormTemplate API", () => {
     }
   });
 
+  it("should have unique template ids for all form templates", async () => {
+    const response = await request(app).get("/formtemplate");
+    expect(response.status).toBe(200);
+    const templates = response.body.responseObject as any[];
+    const ids = templates.map((t) => t._id);
+    const uniqueIds = new Set(ids);
+    expect(uniqueIds.size).toBe(ids.length);
+  });
+
   it("should get a form template by ID", async () => {
     // Retrieve templates from the API and use a real _id returned by the database
     const listResp = await request(app).get("/formtemplate");

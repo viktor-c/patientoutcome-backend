@@ -32,6 +32,14 @@ export class FormTemplateRepository {
 
   async createMockDataFormTemplate(): Promise<void> {
     try {
+      // Ensure mock templates have unique _id values to prevent duplicate-key errors during insert
+      const ids = this.mockFormTemplateData.map((t) => (t as any)._id).filter(Boolean);
+      const dupes = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+      if (dupes.length > 0) {
+        const uniqueDupes = Array.from(new Set(dupes));
+        logger.error({ duplicates: uniqueDupes }, "Duplicate _id values detected in mock form template data");
+        return Promise.reject(new Error(`Duplicate _id values detected in mock form template data: ${uniqueDupes.join(", ")}`));
+      }
       await FormTemplateModel.deleteMany({});
       const result = await FormTemplateModel.insertMany(this.mockFormTemplateData);
       logger.debug({ count: result.length }, "Form template mock data created");
