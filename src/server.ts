@@ -23,8 +23,9 @@ import { setupRouter } from "@/api/setup/setupRouter";
 import { statisticsRouter } from "@/api/statistics/statisticsRouter";
 import { surgeryRouter } from "@/api/surgery/surgeryRouter";
 import { userRouter } from "@/api/user/userRouter";
+import { userDepartmentRouter } from "@/api/userDepartment/userDepartmentRouter";
 
-/*******************  Middleware import **************************/
+/*******************  Middleware import **************************/ 
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
@@ -98,6 +99,7 @@ app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);
 app.use("", surgeryRouter);
 app.use("/user", userRouter);
+app.use("/userDepartment", userDepartmentRouter);
 app.use("", consultationRouter);
 app.use("/clinicalstudy", clinicalStudyRouter);
 app.use("/seed", seedRouter);

@@ -6,6 +6,7 @@ import { type ConsultationRepository, consultationRepository } from "@/api/consu
 import { FormRepository } from "@/api/form/formRepository";
 import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { userRepository } from "@/api/user/userRepository";
+import { userDepartmentRepository } from "@/api/userDepartment/userDepartmentRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
@@ -150,6 +151,25 @@ seedRouter.get("/users", async (_req: Request, res: Response) => {
 });
 
 /**
+ * seed database with mock data for user departments
+ * @route GET /seed/departments
+ */
+seedRouter.get("/departments", async (_req: Request, res: Response) => {
+  try {
+    await userDepartmentRepository.seedMockData();
+    const serviceResponse = ServiceResponse.success("Department mock data inserted successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to insert mock department data",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+/**
  * Force reset and seed database with fresh mock data for users
  * @route GET /seed/users/reset
  */
@@ -278,6 +298,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
 
   await run("surgery", () => surgeryRepository.createMockSurgeryData());
   await run("blueprint", () => blueprintRepository.createMockData());
+  await run("departments", () => userDepartmentRepository.seedMockData());
   await run("patient", () => patientRepository.createMockData());
   await run("patientCase", () => patientCaseRepository.createMockPatientCaseData());
   await run("consultation", () => consultationRepository.createMockData());
@@ -311,6 +332,7 @@ export {
   formTemplateRepository,
   formRepository,
   userRepository,
+  userDepartmentRepository,
   clinicalStudyRepository,
   codeRepository,
 };

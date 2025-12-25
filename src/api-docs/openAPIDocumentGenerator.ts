@@ -26,6 +26,7 @@ export function generateOpenAPIDocument() {
   const { statisticsRegistry } = require("@/api/statistics/statisticsRouter");
   const { surgeryRegistry } = require("@/api/surgery/surgeryRouter");
   const { userRegistry } = require("@/api/user/userRouter");
+  const { userDepartmentRegistry } = require("@/api/userDepartment/userDepartmentRouter");
 
   const registry = new OpenAPIRegistry([
     activityLogRegistry,
@@ -44,6 +45,7 @@ export function generateOpenAPIDocument() {
     formRegistry,
     kioskRegistry,
     generalSchemaRegistry,
+    userDepartmentRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

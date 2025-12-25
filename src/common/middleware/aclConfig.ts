@@ -50,8 +50,17 @@ export const aclConfig = {
   //"user-login": { roles: ["anonymous"] }, // Allow anonymous users to login
   "user-logout": { roles: ["authenticated"] }, // Allow authenticated users to logout
   "user:get": { roles: ["authenticated"] },
+  "user:create": { roles: ["admin"] },
   "user:get-kiosk": { roles: ["authenticated"] },
   "user:delete": { atLeastAuthenticationLevel: "admin" },
+
+  // UserDepartment routes
+  "userDepartment-get-all": { roles: ["admin"] },
+  "userDepartment-get-own": { roles: ["authenticated"] },
+  "userDepartment-get-by-id": { roles: ["admin"] },
+  "userDepartment-create": { roles: ["admin"] },
+  "userDepartment-update": { roles: ["admin"] },
+  "userDepartment-delete": { roles: ["admin"] },
 
   // Add more route keys as needed
 };

@@ -12,7 +12,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8d",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "student@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "PJ Student",
@@ -24,7 +24,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8e",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "asmith@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Alice Smith",
@@ -36,7 +36,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c8f",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "bwhite@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Bob White",
@@ -48,7 +48,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8a8f",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "jdoe@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "John Doe",
@@ -60,7 +60,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c90",
       belongsToCenter: ["2"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "cjones@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Carol Jones",
@@ -72,7 +72,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c91",
       belongsToCenter: ["2"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "dlee@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "David Lee",
@@ -84,7 +84,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c92",
       belongsToCenter: ["2"],
-      department: "Radiology",
+      department: "675000000000000000000002", // References second mock department (Radiology)
       email: "ewilson@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Emma Wilson",
@@ -96,7 +96,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c94",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "victor@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Victor C",
@@ -109,7 +109,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c95",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "kiosk1@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Kiosk Tablet 1",
@@ -121,7 +121,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8c96",
       belongsToCenter: ["1"],
-      department: "Orthopädie",
+      department: "675000000000000000000001", // References first mock department (Orthopädie)
       email: "kiosk2@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "Kiosk Tablet 2",
