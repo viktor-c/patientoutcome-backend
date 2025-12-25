@@ -6,7 +6,7 @@ import { z } from "zod";
 // Extend zod with OpenAPI support
 
 export interface Questionnaire {
-  [key: string]: number | null;
+  [key: string]: number | string | null;
 }
 
 export interface CustomFormData {
@@ -14,7 +14,7 @@ export interface CustomFormData {
 }
 
 // Define the Questionnaire schema
-export const QuestionnaireSchema = z.record(z.string(), z.number().nullable());
+export const QuestionnaireSchema = z.record(z.string(), z.union([z.number(), z.string()]).nullable());
 
 // Define the CustomFormData schema
 export const CustomFormDataSchema = z.record(z.string(), QuestionnaireSchema);
