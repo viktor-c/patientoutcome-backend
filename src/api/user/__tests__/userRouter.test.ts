@@ -91,7 +91,8 @@ describe("User API Endpoints", () => {
       );
       expect(responseBody.responseObject.length).toEqual(sameDepartmentUsers.length);
 
-      expect(responseBody.responseObject[0].department).toEqual("Orthopädie");
+      // Department is now returned as ID, not name
+      expect(responseBody.responseObject[0].department).toEqual("675000000000000000000001");
       const expectedUsername = sameDepartmentUsers[0].username;
       expect(responseBody.responseObject[0].username).toEqual(expectedUsername);
 
@@ -113,7 +114,8 @@ describe("User API Endpoints", () => {
       // Should return kiosk users from "Orthopädie" department (kiosk1, kiosk2)
       expect(responseBody.responseObject.length).toEqual(2);
       responseBody.responseObject.forEach((user) => {
-        expect(user.department).toEqual("Orthopädie");
+        // Department is now returned as ID, not name
+        expect(user.department).toEqual("675000000000000000000001");
         expect(user.roles).toContain("kiosk");
       });
 

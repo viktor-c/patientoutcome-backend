@@ -35,28 +35,12 @@ class UserDepartmentController {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const userDepartmentName = userResponse.responseObject.department;
+    // User's department is now stored as an ObjectId reference
+    const userDepartmentId = userResponse.responseObject.department;
     
-    // Find department by name (we need to add this functionality)
-    // For now, we'll get all departments and filter
-    const departmentsResponse = await userDepartmentService.findAll();
-    if (!departmentsResponse.success || !departmentsResponse.responseObject) {
-      return res.status(404).json({ message: "Department not found" });
-    }
-
-    const userDepartment = departmentsResponse.responseObject.find(
-      (dept: UserDepartment) => dept.name === userDepartmentName
-    );
-
-    if (!userDepartment) {
-      return res.status(404).json({ message: "Department not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Department found",
-      responseObject: userDepartment,
-    });
+    // Get department by ID directly
+    const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId);
+    return handleServiceResponse(serviceResponse, res);
   };
 
   // POST new department (admin only)

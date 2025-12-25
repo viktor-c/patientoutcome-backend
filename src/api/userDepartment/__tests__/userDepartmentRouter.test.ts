@@ -100,7 +100,7 @@ describe("UserDepartment API Endpoints", () => {
 
     it("should prevent creating duplicate department names", async () => {
       const duplicateDepartment = {
-        name: "Orthopädie", // Already exists in mock data
+        name: "Orthopädie und Unfallchirurgie", // Already exists in mock data
         description: "Duplicate",
         contactEmail: "duplicate@example.com",
       };
