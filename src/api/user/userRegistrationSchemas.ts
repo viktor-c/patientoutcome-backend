@@ -10,3 +10,25 @@ export const userRegistrationZod = z.object({
 });
 
 export type UserRegistrationInput = z.infer<typeof userRegistrationZod>;
+
+export const batchCreateCodesSchema = z.object({
+  roles: z.array(
+    z.object({
+      role: z.string().min(1),
+      count: z.number().int().min(0).max(100),
+    })
+  ).min(1),
+  department: z.string().min(1),
+  belongsToCenter: z.array(z.string()).min(1),
+  expiryType: z.enum(['days', 'months', 'years', 'date']),
+  expiryValue: z.union([z.number().int().positive(), z.string().datetime()]),
+});
+
+export type BatchCreateCodesRequest = z.infer<typeof batchCreateCodesSchema>;
+
+export const checkUsernameSchema = z.object({
+  params: z.object({
+    username: z.string().min(3),
+  }),
+});
+

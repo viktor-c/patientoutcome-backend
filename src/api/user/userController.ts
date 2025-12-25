@@ -10,7 +10,7 @@ import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { isValidObjectId } from "mongoose";
-import { userRegistrationZod } from "./userRegistrationSchemas";
+import { batchCreateCodesSchema, userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
 
 class UserController {
@@ -262,6 +262,24 @@ class UserController {
     const serviceResponse = await userRegistrationService.registerUser(parseResult.data);
 
     // even if we had errors, return them together
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public batchCreateRegistrationCodes: RequestHandler = async (req: Request, res: Response) => {
+    const parseResult = batchCreateCodesSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: parseResult.error.errors.map((e) => e.message).join(", "),
+      });
+    }
+    const serviceResponse = await userRegistrationService.batchCreateCodes(parseResult.data);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public checkUsernameAvailability: RequestHandler = async (req: Request, res: Response) => {
+    const { username } = req.params;
+    const serviceResponse = await userRegistrationService.checkUsernameAvailability(username);
     return handleServiceResponse(serviceResponse, res);
   };
 

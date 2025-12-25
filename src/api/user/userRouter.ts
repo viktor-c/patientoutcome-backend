@@ -16,7 +16,7 @@ import {
 import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest, validateRequestOnlyWithBody } from "@/common/utils/httpHandlers";
 import { userController } from "./userController";
-import { userRegistrationZod } from "./userRegistrationSchemas";
+import { batchCreateCodesSchema, checkUsernameSchema, userRegistrationZod } from "./userRegistrationSchemas";
 
 // initialize the openapi registry
 export const userRegistry = new OpenAPIRegistry();
@@ -607,3 +607,71 @@ userRouter.post(
   validateRequestOnlyWithBody(userRegistrationZod),
   userController.registerUser,
 );
+
+// Register the path for batch creating registration codes
+userRegistry.registerPath({
+  method: "post",
+  path: "/user/batch-registration-codes",
+  tags: ["User"],
+  operationId: "batchCreateRegistrationCodes",
+  description: "Create multiple registration codes for batch user creation. Admin only.",
+  summary: "Batch create registration codes",
+  request: {
+    body: {
+      content: {
+        "application/json": { schema: batchCreateCodesSchema },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: z.record(z.string(), z.array(z.string())),
+      description: "Registration codes created successfully",
+      statusCode: 201,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Validation or creation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+userRouter.post(
+  "/batch-registration-codes",
+  AclMiddleware("user:create"),
+  validateRequestOnlyWithBody(batchCreateCodesSchema),
+  userController.batchCreateRegistrationCodes,
+);
+
+// Register the path for checking username availability
+userRegistry.registerPath({
+  method: "get",
+  path: "/user/check-username/{username}",
+  tags: ["User"],
+  operationId: "checkUsernameAvailability",
+  description: "Check if a username is available and get suggestions if not.",
+  summary: "Check username availability",
+  request: {
+    params: checkUsernameSchema.shape.params,
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        available: z.boolean(),
+        suggestion: z.string().optional(),
+      }),
+      description: "Username availability checked",
+      statusCode: 200,
+    },
+  ]),
+});
+
+userRouter.get(
+  "/check-username/:username",
+  AclMiddleware(),
+  validateRequest(checkUsernameSchema),
+  userController.checkUsernameAvailability,
+);
+
+export default userRouter;

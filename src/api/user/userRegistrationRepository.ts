@@ -130,4 +130,68 @@ export class UserRegistrationRepository {
   public get userCodeMockData(): RegistrationCode[] {
     return this._userCodeMockData;
   }
+
+  /**
+   * Create multiple registration codes for batch user creation
+   * @param count - Number of codes to create for this role
+   * @param roleInfo - Role, department, and center information for the codes
+   * @param validDays - Number of days until expiration (or specific date)
+   * @returns Array of created registration codes
+   */
+  async createMultipleCodes(
+    count: number,
+    roleInfo: {
+      roles: string[];
+      permissions?: string[];
+      userDepartment: string;
+      userBelongsToCenter: string[];
+    },
+    validUntil: Date,
+  ): Promise<RegistrationCode[]> {
+    const codes: RegistrationCode[] = [];
+    const createdAt = new Date();
+
+    for (let i = 0; i < count; i++) {
+      // Generate unique code in format ABC-123-XYZ
+      const code = this.generateUniqueCode();
+      
+      const registrationCode: RegistrationCode = {
+        code,
+        createdAt,
+        activatedAt: null,
+        validUntil,
+        userCreatedWith: null,
+        roles: roleInfo.roles,
+        permissions: roleInfo.permissions,
+        userDepartment: roleInfo.userDepartment,
+        userBelongsToCenter: roleInfo.userBelongsToCenter,
+        active: true,
+      };
+      codes.push(registrationCode);
+    }
+
+    const result = await RegistrationCodeModel.insertMany(codes);
+    logger.debug({ count: result.length }, "Batch registration codes created");
+    return result;
+  }
+
+  /**
+   * Generate a unique registration code in format ABC-123-XYZ
+   */
+  private generateUniqueCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const segments = 3;
+    const segmentLength = 3;
+    
+    const generateSegment = () => {
+      let segment = '';
+      for (let i = 0; i < segmentLength; i++) {
+        segment += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return segment;
+    };
+
+    const code = Array.from({ length: segments }, generateSegment).join('-');
+    return code;
+  }
 }
