@@ -118,9 +118,12 @@ describe("Patient API Endpoints", () => {
   describe("GET /patient/externalId/:externalPatientId", () => {
     it("should return a patient for a valid external ID", async () => {
       // Arrange
-      const testExternalId = patientRepository.mockPatients[1].externalPatientId[0];
+      const testExternalId = patientRepository.mockPatients[1].externalPatientId?.[0];
+      if (!testExternalId) {
+        throw new Error("Test requires a mock patient with external ID");
+      }
       const expectedPatient = patientRepository.mockPatients.find((patient: Patient) =>
-        patient.externalPatientId.includes(testExternalId),
+        patient.externalPatientId?.includes(testExternalId),
       ) as Patient;
 
       // Act
@@ -169,23 +172,44 @@ describe("Patient API Endpoints", () => {
       newPatientId = responseBody.responseObject._id as string;
     });
 
-    it("should return an error if required fields are missing", async () => {
+    it("should create a patient without external ID (GDPR compliant)", async () => {
       // Arrange
-      const newPatientWithMissingFields = {
-        name: "New",
-        surname: "Patient",
+      const patientWithoutExternalId = {
+        sex: "F",
       };
 
       // Act
-      const response = await request(app).post("/patient").send(newPatientWithMissingFields);
-      const responseBody: ServiceResponse = response.body;
+      const response = await request(app).post("/patient").send(patientWithoutExternalId);
+      const responseBody: ServiceResponse<Patient> = response.body;
 
       // Assert
-      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
-      expect(responseBody.success).toBeFalsy();
-      expect(responseBody.message).toContain("Validation error");
-      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect(response.statusCode).toEqual(StatusCodes.CREATED);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Patient created successfully");
+      expect(responseBody.responseObject.sex).toBe("F");
+      expect(responseBody.responseObject.externalPatientId).toBeUndefined();
+
+      // Clean up
+      await request(app).delete(`/patient/${responseBody.responseObject._id}`);
+    });
+
+    it("should create a patient with minimal data (all fields optional)", async () => {
+      // Arrange - since all fields are optional, we can create a patient with an empty object
+      const minimalPatient = {};
+
+      // Act
+      const response = await request(app).post("/patient").send(minimalPatient);
+      const responseBody: ServiceResponse<Patient> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.CREATED);
+      expect(responseBody.success).toBeTruthy();
+      expect(responseBody.message).toContain("Patient created successfully");
+      expect(responseBody.responseObject.externalPatientId).toBeUndefined();
+      expect(responseBody.responseObject.sex).toBeUndefined();
+
+      // Clean up
+      await request(app).delete(`/patient/${responseBody.responseObject._id}`);
     });
 
     // clean up and delete the newly created patient

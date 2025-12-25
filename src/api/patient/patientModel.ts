@@ -7,7 +7,7 @@ import { z } from "zod";
 // Define the Patient schema
 export const PatientSchema = z.object({
   _id: zId().optional(),
-  externalPatientId: z.array(z.string()).min(1, "At least one external patient ID is required"),
+  externalPatientId: z.array(z.string()).optional(),
   sex: z.string().optional().nullable(),
   cases: z.array(zId("PatientCase")).optional(),
 });

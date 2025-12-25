@@ -84,10 +84,12 @@ export class PatientService {
 
   async createPatient(patientData: Patient): Promise<ServiceResponse<Patient | null>> {
     try {
-      //must check if external patient id already exists
-      const existingPatient = await this.patientRepository.findByExternalIdAsync(patientData.externalPatientId[0]);
-      if (existingPatient) {
-        return ServiceResponse.conflict("Patient with the same external ID already exists", null, StatusCodes.CONFLICT);
+      //must check if external patient id already exists (only if provided)
+      if (patientData.externalPatientId && patientData.externalPatientId.length > 0) {
+        const existingPatient = await this.patientRepository.findByExternalIdAsync(patientData.externalPatientId[0]);
+        if (existingPatient) {
+          return ServiceResponse.conflict("Patient with the same external ID already exists", null, StatusCodes.CONFLICT);
+        }
       }
       const newPatient = await this.patientRepository.createAsync(patientData);
       return ServiceResponse.created("Patient created successfully", newPatient);
