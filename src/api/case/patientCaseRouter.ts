@@ -1,3 +1,11 @@
+/**
+ * @file Patient Case Router
+ * @module api/case
+ * @description Manages patient cases which represent clinical episodes of care. Each case links a patient to surgeries,
+ * consultations, supervisors, and diagnoses. Provides comprehensive CRUD operations, search functionality, and case
+ * statistics tracking for patient outcome management.
+ */
+
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";

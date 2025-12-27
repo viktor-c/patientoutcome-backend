@@ -1,3 +1,11 @@
+/**
+ * @file Consultation Router
+ * @module api/consultation
+ * @description Manages patient consultations within cases. Each consultation represents a clinical visit and can have
+ * multiple associated forms (PROMs). Supports scheduled and completed consultations, linking forms to specific
+ * timepoints in the patient care pathway.
+ */
+
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";

@@ -2,9 +2,21 @@ import { activityLogService } from "@/common/services/activityLogService";
 import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
+/**
+ * Activity Log Controller
+ * @class ActivityLogController
+ * @description Handles activity log streaming, retrieval, and management for audit trails and monitoring
+ */
 class ActivityLogController {
   /**
-   * SSE endpoint for real-time activity logs
+   * Stream real-time activity logs via Server-Sent Events (SSE)
+   * @route GET /activitylog/stream
+   * @access Developer, Admin
+   * @param {Request} req - Express request object with session containing user roles
+   * @param {Response} res - Express response object configured for SSE streaming
+   * @returns {void} Establishes persistent SSE connection for real-time log streaming
+   * @description Opens an SSE connection and streams activity logs in real-time to authorized users.
+   * Connection remains open until client disconnects.
    */
   public streamLogs: RequestHandler = (req: Request, res: Response) => {
     // Check if user is authorized (developer role)
@@ -37,7 +49,13 @@ class ActivityLogController {
   };
 
   /**
-   * Get recent activity logs
+   * Retrieve recent activity logs
+   * @route GET /activitylog/recent
+   * @access Developer, Admin
+   * @param {Request} req - Express request with optional query parameter 'count' (default: 50)
+   * @param {Response} res - Express response object
+   * @returns {Response} JSON response with array of recent activity log entries
+   * @description Fetches the most recent activity logs up to the specified count
    */
   public getRecentLogs: RequestHandler = (req: Request, res: Response) => {
     // Check if user is authorized
@@ -61,7 +79,13 @@ class ActivityLogController {
   };
 
   /**
-   * Clear activity logs
+   * Clear all activity logs
+   * @route DELETE /activitylog
+   * @access Developer, Admin
+   * @param {Request} req - Express request object with session
+   * @param {Response} res - Express response object
+   * @returns {Response} JSON response confirming logs have been cleared
+   * @description Clears all stored activity logs from memory. Use with caution.
    */
   public clearLogs: RequestHandler = (req: Request, res: Response) => {
     // Check if user is authorized
@@ -84,7 +108,13 @@ class ActivityLogController {
   };
 
   /**
-   * Get connection stats
+   * Get activity log connection statistics
+   * @route GET /activitylog/stats
+   * @access Developer, Admin
+   * @param {Request} req - Express request object with session
+   * @param {Response} res - Express response object
+   * @returns {Response} JSON response with stats including connected clients count and total log entries
+   * @description Returns statistics about the activity log system including connected SSE clients and log count
    */
   public getStats: RequestHandler = (req: Request, res: Response) => {
     // Check if user is authorized

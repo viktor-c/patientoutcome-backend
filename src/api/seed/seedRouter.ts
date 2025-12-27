@@ -1,3 +1,11 @@
+/**
+ * @file Seed Router
+ * @module api/seed
+ * @description Development and testing utility for populating the database with mock data. Provides endpoints to seed
+ * patients, cases, consultations, forms, blueprints, users, and other entities. Only accessible in development/test
+ * environments or setup mode.
+ */
+
 import { BlueprintRepository } from "@/api/blueprint/blueprintRepository";
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { ClinicalStudyRepository } from "@/api/clinicalStudy/clinicalStudyRepository";

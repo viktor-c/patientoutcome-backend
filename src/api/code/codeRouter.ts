@@ -1,3 +1,11 @@
+/**
+ * @file Form Access Code Router
+ * @module api/code
+ * @description Manages time-limited access codes for patients to complete forms remotely. Generates, activates,
+ * deactivates, and validates codes that link to specific consultations. Enables secure, unauthenticated patient
+ * access to assigned questionnaires via unique URLs.
+ */
+
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";

@@ -1,3 +1,11 @@
+/**
+ * @file Kiosk Router
+ * @module api/kiosk
+ * @description Manages kiosk user accounts and consultation assignments. Kiosks are special user accounts for patient
+ * self-service stations where patients can complete forms in clinical settings. Handles kiosk creation, deletion,
+ * consultation assignment, and status updates.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";

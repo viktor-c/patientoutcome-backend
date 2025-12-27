@@ -1,3 +1,11 @@
+/**
+ * @file Activity Log Router
+ * @module api/activitylog
+ * @description Provides real-time activity monitoring and logging for the application. Streams and retrieves system events
+ * including user logins, role switches, form interactions, and other tracked activities. Used primarily for audit trails
+ * and developer/admin monitoring dashboards.
+ */
+
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";

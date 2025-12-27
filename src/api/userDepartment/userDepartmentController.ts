@@ -5,21 +5,50 @@ import { userDepartmentService } from "@/api/userDepartment/userDepartmentServic
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { z } from "zod";
 
+/**
+ * User Department Controller
+ * @class UserDepartmentController
+ * @description Handles HTTP requests for organizational department/center management
+ */
 class UserDepartmentController {
-  // GET all departments (admin only)
+  /**
+   * Get all departments
+   * @route GET /userDepartment
+   * @access Admin
+   * @param {Request} _req - Express request object
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with array of all departments
+   * @description Retrieves all organizational departments (admin only)
+   */
   public getAllDepartments: RequestHandler = async (_req: Request, res: Response) => {
     const serviceResponse = await userDepartmentService.findAll();
     return handleServiceResponse(serviceResponse, res);
   };
 
-  // GET department by ID (admin only)
+  /**
+   * Get a department by ID
+   * @route GET /userDepartment/:id
+   * @access Admin
+   * @param {Request} req - Express request with department ID in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with department details or 404
+   * @description Retrieves a single department (admin only)
+   */
   public getDepartmentById: RequestHandler = async (req: Request, res: Response) => {
     const id = z.string().parse(req.params.id);
     const serviceResponse = await userDepartmentService.findById(id);
     return handleServiceResponse(serviceResponse, res);
   };
 
-  // GET user's own department (all authenticated users)
+  /**
+   * Get current user's department
+   * @route GET /userDepartment/my
+   * @access Authenticated users
+   * @param {Request} req - Express request with userId in session
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with user's department or 401/404
+   * @description Retrieves the department of the currently logged-in user
+   */
   public getUserDepartment: RequestHandler = async (req: Request, res: Response) => {
     // Get user's department from their session/user data
     const userId = req.session?.userId;
@@ -43,14 +72,30 @@ class UserDepartmentController {
     return handleServiceResponse(serviceResponse, res);
   };
 
-  // POST new department (admin only)
+  /**
+   * Create a new department
+   * @route POST /userDepartment
+   * @access Admin
+   * @param {Request} req - Express request with department data in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with created department or validation errors
+   * @description Creates a new organizational department (admin only)
+   */
   public createUserDepartment: RequestHandler = async (req: Request, res: Response) => {
     const departmentData = req.body;
     const serviceResponse = await userDepartmentService.create(departmentData);
     return handleServiceResponse(serviceResponse, res);
   };
 
-  // PUT update department by ID (admin only)
+  /**
+   * Update a department
+   * @route PUT /userDepartment/:id
+   * @access Admin
+   * @param {Request} req - Express request with department ID in params and update data in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with updated department or errors
+   * @description Updates an existing department (admin only)
+   */
   public updateDepartmentById: RequestHandler = async (req: Request, res: Response) => {
     const id = z.string().parse(req.params.id);
     const departmentData = req.body;
@@ -58,7 +103,15 @@ class UserDepartmentController {
     return handleServiceResponse(serviceResponse, res);
   };
 
-  // DELETE department by ID (admin only)
+  /**
+   * Delete a department
+   * @route DELETE /userDepartment/:id
+   * @access Admin
+   * @param {Request} req - Express request with department ID in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming deletion
+   * @description Permanently deletes a department (admin only)
+   */
   public deleteDepartmentById: RequestHandler = async (req: Request, res: Response) => {
     const id = z.string().parse(req.params.id);
     const serviceResponse = await userDepartmentService.delete(id);

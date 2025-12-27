@@ -1,3 +1,10 @@
+/**
+ * @file Setup Router
+ * @module api/setup
+ * @description Handles initial application setup and configuration. Checks setup status, creates the first admin user,
+ * and optionally seeds the database with initial data. Used during first-time deployment to bootstrap the application.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { StatusCodes } from "http-status-codes";

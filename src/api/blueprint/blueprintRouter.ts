@@ -1,3 +1,11 @@
+/**
+ * @file Blueprint Router
+ * @module api/blueprint
+ * @description Manages blueprint templates for patient cases, consultations, and other entities. Blueprints define
+ * structured workflows and data requirements (e.g., pre-op, post-op protocols) that can be applied when creating
+ * new clinical records. Supports CRUD operations with pagination and filtering.
+ */
+
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { validateRequest } from "@/common/utils/httpHandlers";

@@ -1,3 +1,11 @@
+/**
+ * @file Form Router
+ * @module api/form
+ * @description Manages completed and in-progress patient-reported outcome measure (PROM) forms. Handles form data
+ * submission, retrieval, updates, and deletion. Tracks form completion status, timing metrics, and scoring. Forms
+ * are linked to consultations and support draft/incomplete/completed states.
+ */
+
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ServiceResponseSchema, ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";

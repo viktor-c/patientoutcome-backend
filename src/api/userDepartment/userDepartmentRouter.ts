@@ -1,3 +1,11 @@
+/**
+ * @file User Department Router
+ * @module api/userDepartment
+ * @description Manages organizational departments/centers within the healthcare institution. Users and patient cases
+ * are assigned to departments for data organization and access control. Supports department CRUD operations and
+ * hierarchical clinic structures.
+ */
+
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";

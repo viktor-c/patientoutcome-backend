@@ -13,7 +13,21 @@ import { isValidObjectId } from "mongoose";
 import { batchCreateCodesSchema, userRegistrationZod } from "./userRegistrationSchemas";
 import { userRegistrationService } from "./userRegistrationService";
 
+/**
+ * User Controller
+ * @class UserController
+ * @description Handles HTTP requests for user management, authentication, authorization, and user registration workflows
+ */
 class UserController {
+  /**
+   * Get all users with optional role filtering
+   * @route GET /user
+   * @access Authenticated users
+   * @param {Request} req - Express request with optional role query param, userId and roles in session
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with filtered user list or 401 if not authenticated
+   * @description Retrieves users filtered by role and user's access permissions
+   */
   public getUsers: RequestHandler = async (req: Request, res: Response) => {
     // Check if user is logged in
     if (!req.session || !req.session.userId) {
@@ -28,16 +42,40 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Get all kiosk users
+   * @route GET /user/kiosk/all
+   * @param {Request} _req - Express request object
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with array of all kiosk users
+   * @description Retrieves all users with kiosk role
+   */
   public getAllKioskUsers: RequestHandler = async (_req: Request, res: Response) => {
     const serviceResponse = await userService.getAllKioskUsers();
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Get available (unassigned) kiosk users
+   * @route GET /user/kiosk/available
+   * @param {Request} _req - Express request object
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with array of kiosks without active consultation assignments
+   * @description Retrieves kiosk users that are available for consultation assignment
+   */
   public getAvailableKioskUsers: RequestHandler = async (_req: Request, res: Response) => {
     const serviceResponse = await userService.getAvailableKioskUsers();
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Get a user by ID
+   * @route GET /user/:id
+   * @param {Request} req - Express request with user ID in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with user details (without password) or 404
+   * @description Retrieves a single user by MongoDB ObjectId
+   */
   public getUser: RequestHandler = async (req: Request, res: Response) => {
     // const id = Number.parseInt(req.params.id as string, 10);
     const id = z.string().parse(req.params.id);
@@ -63,7 +101,25 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Update a user by ID
+   * @route PUT /user/:id
+   * @access Admin or own profile
+   * @param {Request} req - Express request with user ID in params, update data in body, session data
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with updated user or 403 if access denied
+   * @description Allows admins to update any user, or users to update their own profile
+   */
   public updateUserById: RequestHandler = async (req: Request, res: Response) => {
+   * Update current logged -in user
+      * @route PUT / user
+        * @access Authenticated users
+          * @param { Request } req - Express request with update data in body, userId in session
+            * @param { Response } res - Express response object
+              * @returns { Promise<Response> } ServiceResponse with updated user or 401 if not authenticated
+                * @description Updates the currently logged -in user's profile
+                  */
+  public updateUser: RequestHandler = async (req: Request, res: Response) => {
     // Get user id from URL parameter
     const userId = z.string().parse(req.params.id);
     const currentUserId = req.session?.userId;
@@ -84,12 +140,28 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Delete a user by username
+   * @route DELETE /user/:username
+   * @param {Request} req - Express request with username in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming deletion
+   * @description Permanently deletes a user account
+   */
   public deleteUser: RequestHandler = async (req: Request, res: Response) => {
     const username = z.string().parse(req.params.username);
     const serviceResponse = await userService.deleteUser(username);
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * User login
+   * @route POST /user/login
+   * @param {Request} req - Express request with username and password in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with session data and user info or authentication error
+   * @description Authenticates user credentials and creates session with role-based permissions
+   */
   public loginUser: RequestHandler = async (req: Request, res: Response) => {
     const { username, password } = req.body;
     const serviceResponse = await userService.login(username, password);
@@ -126,6 +198,14 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Kiosk user passwordless login
+   * @route POST /user/kiosk/login
+   * @param {Request} req - Express request with username in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with kiosk session and consultation data or authentication error
+   * @description Authenticates kiosk user without password, establishes session with consultation context
+   */
   public kioskLoginUser: RequestHandler = async (req: Request, res: Response) => {
     const { username } = req.body;
 
@@ -162,6 +242,14 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Switch user role/context
+   * @route POST /user/role-switch
+   * @param {Request} req - Express request with username in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with new user context or 403/404 on error
+   * @description Allows switching between kiosk and doctor roles without re-authentication
+   */
   public roleSwitchUser: RequestHandler = async (req: Request, res: Response) => {
     const { username } = req.body;
     const previousUser = req.session?.username || "unknown";
@@ -232,6 +320,15 @@ class UserController {
     );
   };
 
+  /**
+   * User logout
+   * @route POST /user/logout
+   * @access Authenticated users
+   * @param {Request} req - Express request with session
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming logout or 401 if not logged in
+   * @description Destroys user session and clears authentication cookies
+   */
   public logoutUser: RequestHandler = async (req: Request, res: Response) => {
     if (!req.session || !req.session.userId) {
       return handleServiceResponse(
@@ -252,6 +349,14 @@ class UserController {
     });
   };
 
+  /**
+   * Register a new user
+   * @route POST /user/register
+   * @param {Request} req - Express request with registration data in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with created user or validation errors
+   * @description Handles new user registration with code validation and account creation
+   */
   public registerUser: RequestHandler = async (req: Request, res: Response) => {
     const parseResult = userRegistrationZod.safeParse(req.body);
     if (!parseResult.success) {
@@ -265,6 +370,15 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Batch create registration codes
+   * @route POST /user/registration-codes/batch
+   * @access Admin
+   * @param {Request} req - Express request with batch creation parameters in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with created codes or validation errors
+   * @description Creates multiple registration codes for user onboarding (admin only)
+   */
   public batchCreateRegistrationCodes: RequestHandler = async (req: Request, res: Response) => {
     const parseResult = batchCreateCodesSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -277,12 +391,29 @@ class UserController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Check username availability
+   * @route GET /user/check-username/:username
+   * @param {Request} req - Express request with username in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse indicating if username is available
+   * @description Validates whether a username is available for registration
+   */
   public checkUsernameAvailability: RequestHandler = async (req: Request, res: Response) => {
     const { username } = req.params;
     const serviceResponse = await userRegistrationService.checkUsernameAvailability(username);
     return handleServiceResponse(serviceResponse, res);
   };
 
+  /**
+   * Change user password
+   * @route POST /user/change-password
+   * @access Authenticated users
+   * @param {Request} req - Express request with currentPassword, newPassword, confirmPassword in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming password update or 401/400 on errors
+   * @description Allows logged-in users to change their password with current password verification
+   */
   public changePassword: RequestHandler = async (req, res) => {
     // Check if user is logged in
     if (!req.session || !req.session.userId) {

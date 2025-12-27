@@ -1,3 +1,10 @@
+/**
+ * @file Health Check Router
+ * @module api/healthCheck
+ * @description Provides service health monitoring endpoints. Returns service status and optionally lists all registered
+ * routes (development mode only). Used for uptime monitoring, load balancer health checks, and debugging route registration.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";

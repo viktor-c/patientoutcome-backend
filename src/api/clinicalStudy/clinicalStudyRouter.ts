@@ -1,3 +1,11 @@
+/**
+ * @file Clinical Study Router
+ * @module api/clinicalStudy
+ * @description Manages clinical research studies. Tracks study metadata, assigned study nurses, supervisors, and
+ * associated diagnoses. Enables filtering studies by nurse ID, supervisor ID, or diagnosis code for research
+ * management and patient enrollment.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";

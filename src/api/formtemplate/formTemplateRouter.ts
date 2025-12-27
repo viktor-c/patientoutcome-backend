@@ -1,3 +1,11 @@
+/**
+ * @file Form Template Router
+ * @module api/formtemplate
+ * @description Manages form template definitions (questionnaire structures). Templates define the questions, fields,
+ * validation rules, and scoring logic for PROMs like MOXFQ, EQ-5D, etc. Supports versioning, activation/deactivation,
+ * and retrieval of available templates for form assignment.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";

@@ -1,3 +1,11 @@
+/**
+ * @file Surgery Router
+ * @module api/surgery
+ * @description Manages surgical procedures within patient cases. Tracks surgery details including date, type, side
+ * (left/right), associated diagnoses, complications, and assigned surgeons. Supports multiple surgeries per case
+ * for complex treatment pathways.
+ */
+
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { dateSchema } from "@/api/generalSchemas";
 import { UserNoPasswordSchema } from "@/api/user/userModel";

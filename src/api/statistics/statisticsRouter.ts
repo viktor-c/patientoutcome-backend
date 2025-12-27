@@ -1,3 +1,11 @@
+/**
+ * @file Statistics Router
+ * @module api/statistics
+ * @description Provides aggregated patient outcome statistics and PROM scores. Retrieves case-level statistics
+ * including consultation counts, form completion rates, and score trends over time. Used for visualizing patient
+ * progress and outcome analysis.
+ */
+
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";

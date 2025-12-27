@@ -1,3 +1,11 @@
+/**
+ * @file User Router
+ * @module api/user
+ * @description Manages user accounts, authentication, and authorization. Handles user CRUD operations, login/logout,
+ * password changes, role management (admin, surgeon, nurse, studyNurse), and department assignments. Includes user
+ * registration workflows and batch code generation for new users.
+ */
+
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";

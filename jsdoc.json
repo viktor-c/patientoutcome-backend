@@ -1,0 +1,82 @@
+{
+  "source": {
+    "include": ["src/api"],
+    "includePattern": ".+\\.(ts|js)$",
+    "exclude": ["node_modules", "dist", "coverage", "**/__tests__/**", "**/*.test.ts", "**/*.spec.ts"]
+  },
+  "plugins": [
+    "plugins/markdown",
+    "node_modules/better-docs/typescript"
+  ],
+  "recurseDepth": 10,
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "opts": {
+    "template": "node_modules/better-docs",
+    "encoding": "utf8",
+    "destination": "./docs",
+    "recurse": true,
+    "verbose": true,
+    "readme": "README.md"
+  },
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true,
+      "includeDate": false
+    },
+    "better-docs": {
+      "name": "Patient Outcome Backend API",
+      "title": "Patient Outcome Backend Documentation",
+      "css": "",
+      "trackingCode": "",
+      "hideGenerator": false,
+      "navLinks": [
+        {
+          "label": "GitHub",
+          "href": "https://github.com/viktor-c/patientoutcome-backend"
+        }
+      ]
+    }
+  },
+  "docdash": {
+    "static": true,
+    "sort": true,
+    "search": true,
+    "collapse": false,
+    "typedefs": true,
+    "removeQuotes": "none",
+    "scripts": [],
+    "menu": {
+      "API Endpoints": {
+        "href": "tutorial-activitylog_description.md.html",
+        "target": "_self"
+      },
+      "GitHub": {
+        "href": "https://github.com/viktor-c/patientoutcome-backend",
+        "target": "_blank",
+        "class": "menu-item",
+        "id": "repository"
+      }
+    },
+    "meta": {
+      "title": "Patient Outcome Backend Documentation",
+      "description": "API Documentation for Patient Outcome Management System",
+      "keyword": "patient outcome, healthcare, API, backend"
+    },
+    "openGraph": {
+      "title": "Patient Outcome Backend API",
+      "type": "website",
+      "image": "",
+      "site_name": "Patient Outcome Backend",
+      "url": ""
+    }
+  },
+  "markdown": {
+    "hardwrap": false,
+    "idInHeadings": true
+  }
+}

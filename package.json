@@ -17,7 +17,9 @@
     "lint:fix": "biome check src/ --fix",
     "format": "biome format src/",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs": "jsdoc -c jsdoc.json",
+    "docs:serve": "npx http-server docs -p 8080 -o"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.3.4",
@@ -53,8 +55,11 @@
     "@types/nodemailer": "^7.0.4",
     "@types/supertest": "^6.0.3",
     "@types/swagger-ui-express": "^4.1.8",
+    "better-docs": "^2.7.3",
     "biome": "^0.3.3",
+    "docdash": "^2.0.2",
     "husky": "^9.1.7",
+    "jsdoc": "^4.0.5",
     "lint-staged": "^15.5.2",
     "pino-pretty": "^11.3.0",
     "rimraf": "^6.0.1",

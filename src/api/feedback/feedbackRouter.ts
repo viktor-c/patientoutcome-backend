@@ -1,3 +1,11 @@
+/**
+ * @file Feedback Router
+ * @module api/feedback
+ * @description Handles user feedback submissions with CAPTCHA protection. Allows anonymous or identified users to
+ * submit feedback messages, which are logged and optionally emailed to administrators. Includes CAPTCHA challenge
+ * generation for spam prevention.
+ */
+
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
