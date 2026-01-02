@@ -19,6 +19,7 @@ import {
   ScoreDataResponseSchema,
   SubscaleScoreSchema,
   ScoringDataSchema,
+  SurgeryStatisticsSchema,
 } from "./statisticsModel";
 
 export const statisticsRegistry = new OpenAPIRegistry();
@@ -28,6 +29,7 @@ export const statisticsRouter: Router = express.Router();
 statisticsRegistry.register("SubscaleScore", SubscaleScoreSchema);
 statisticsRegistry.register("ScoringData", ScoringDataSchema);
 statisticsRegistry.register("ConsultationWithScores", ConsultationWithScoresSchema);
+statisticsRegistry.register("SurgeryStatistics", SurgeryStatisticsSchema);
 statisticsRegistry.register("CaseStatistics", CaseStatisticsSchema);
 statisticsRegistry.register("ScoreDataPoint", ScoreDataPointSchema);
 statisticsRegistry.register("ScoreDataResponse", ScoreDataResponseSchema);

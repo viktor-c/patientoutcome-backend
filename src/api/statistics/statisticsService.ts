@@ -3,8 +3,8 @@ import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { consultationModel } from "@/api/consultation/consultationModel";
 import { FormModel } from "@/api/form/formModel";
-import { PatientCaseModel } from "@/api/case/patientCaseModel"
-import { SurgeryModel } from "@/api/surgery/surgeryModel"
+import { PatientCaseModel } from "@/api/case/patientCaseModel";
+import { surgeryService } from "@/api/surgery/surgeryService";
 import type {
   CaseStatistics,
   ConsultationWithScores,
@@ -34,29 +34,44 @@ export class StatisticsService {
             totalConsultations: 0,
             caseId,
             consultations: [],
-            surgeryDate: null,
+            surgeries: [],
             caseCreatedAt: null,
           },
           StatusCodes.OK,
         );
       }
 
-      // Fetch surgery date and case creation date for timeline reference
-      let surgeryDate: Date | null = null;
+      // Fetch all surgeries and case creation date for timeline reference
       let caseCreatedAt: Date | null = null;
+      const surgeries: { surgeryDate: string; therapy: string | null }[] = [];
       
       try {
-        
-        const patientCase = await PatientCaseModel.findById(caseId).lean();
+        const patientCase = await PatientCaseModel.findById(caseId).lean() as any;
         
         if (patientCase) {
           caseCreatedAt = patientCase.createdAt || null;
-          
-          if (patientCase.surgeries && patientCase.surgeries.length > 0) {
-            // Get the first (primary) surgery date
-            const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
-            if (surgery && surgery.surgeryDate) {
-              surgeryDate = new Date(surgery.surgeryDate);
+        }
+
+        // Use surgery service to fetch all surgeries for this case
+        const surgeriesResponse = await surgeryService.getSurgeriesByPatientCaseId(caseId);
+
+        if (surgeriesResponse.success && surgeriesResponse.responseObject) {
+          const surgeriesData = surgeriesResponse.responseObject;
+
+          // Sort surgeries by date
+          surgeriesData.sort((a, b) => {
+            const dateA = new Date(a.surgeryDate).getTime();
+            const dateB = new Date(b.surgeryDate).getTime();
+            return dateA - dateB;
+          });
+
+          // Map surgeries to the statistics format
+          for (const surgery of surgeriesData) {
+            if (surgery.surgeryDate) {
+              surgeries.push({
+                surgeryDate: new Date(surgery.surgeryDate).toISOString(),
+                therapy: surgery.therapy || null,
+              });
             }
           }
         }
@@ -165,7 +180,7 @@ export class StatisticsService {
         totalConsultations: consultations.length,
         caseId,
         consultations: processedConsultations,
-        surgeryDate: surgeryDate ? surgeryDate.toISOString() : null,
+        surgeries,
         caseCreatedAt: caseCreatedAt ? caseCreatedAt.toISOString() : null,
       };
       return ServiceResponse.success("Statistics retrieved successfully", stats, StatusCodes.OK);

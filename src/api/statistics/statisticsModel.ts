@@ -45,14 +45,23 @@ export const ConsultationWithScoresSchema = z.object({
 });
 
 /**
+ * Schema for surgery data in statistics
+ * Contains essential surgery information for plotting
+ */
+export const SurgeryStatisticsSchema = z.object({
+  surgeryDate: z.string(),
+  therapy: z.string().nullable().optional(),
+});
+
+/**
  * Schema for case statistics response
- * Contains array of consultations with their scores
+ * Contains array of consultations with their scores and surgeries
  */
 export const CaseStatisticsSchema = z.object({
   totalConsultations: z.number(),
   caseId: zId("PatientCase"),
   consultations: z.array(ConsultationWithScoresSchema),
-  surgeryDate: z.string().nullable().optional(),
+  surgeries: z.array(SurgeryStatisticsSchema),
   caseCreatedAt: z.string().nullable().optional(),
 });
 
@@ -79,6 +88,7 @@ export const ScoreDataResponseSchema = z.object({
 export type SubscaleScore = z.infer<typeof SubscaleScoreSchema>;
 export type ScoringData = z.infer<typeof ScoringDataSchema>;
 export type ConsultationWithScores = z.infer<typeof ConsultationWithScoresSchema>;
+export type SurgeryStatistics = z.infer<typeof SurgeryStatisticsSchema>;
 export type CaseStatistics = z.infer<typeof CaseStatisticsSchema>;
 export type ScoreDataPoint = z.infer<typeof ScoreDataPointSchema>;
 export type ScoreDataResponse = z.infer<typeof ScoreDataResponseSchema>;
