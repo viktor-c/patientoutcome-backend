@@ -49,12 +49,22 @@ export function generateOpenAPIDocument() {
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
+  // Build server URL from environment variables
+  const protocol = env.NODE_ENV === "production" ? "https" : "http";
+  const serverUrl = `${protocol}://${env.HOST}:${env.PORT}`;
+
   return generator.generateDocument({
     openapi: "3.0.0",
     info: {
       version: "1.0.0",
       title: "Swagger API",
     },
+    servers: [
+      {
+        url: serverUrl,
+        description: `${env.NODE_ENV.charAt(0).toUpperCase() + env.NODE_ENV.slice(1)} server`,
+      },
+    ],
     externalDocs: {
       description: "View the raw OpenAPI Specification in JSON format",
       url: "/swagger.json",
