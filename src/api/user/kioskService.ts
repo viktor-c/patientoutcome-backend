@@ -247,17 +247,17 @@ export class KioskService {
       // Try to fetch the surgery date for this case
       let consultationDate: Date;
       try {
-        const caseModule = await import("@/api/case/patientCaseModel");
-        const surgeryModule = await import("@/api/surgery/surgeryModel");
+        const caseModule = await import("@/api/case/patientCaseModel.js");
+        const surgeryModule = await import("@/api/surgery/surgeryModel.js");
 
         const PatientCaseModel = caseModule.PatientCaseModel;
         const SurgeryModel = surgeryModule.SurgeryModel;
 
-        const patientCase = await PatientCaseModel.findById(caseId).lean();
+        const patientCase = await PatientCaseModel.findById(caseId).lean() as any;
 
         if (patientCase?.surgeries && patientCase.surgeries.length > 0) {
           // Get the first surgery date
-          const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
+          const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean() as any;
 
           if (surgery?.surgeryDate) {
             // Calculate consultation date based on surgery date and postop weeks

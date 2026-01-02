@@ -92,7 +92,7 @@ export class FormRepository {
     this.mockForms = [];
     try {
       // EFAS Form 1
-      const efasFormData1 = formTemplateRepository.mockFormTemplateData[0].formData;
+      const efasFormData1 = formTemplateRepository.mockFormTemplateData[0].formData as CustomFormData;
       const efasScoring1 = efasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData1) : undefined;
 
       this.mockForms.push({
@@ -114,7 +114,7 @@ export class FormRepository {
         translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
       // VAS Form 1
-      const vasFormData1 = formTemplateRepository.mockFormTemplateData[3].formData;
+      const vasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
       const vasScoring1 = vasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData1) : undefined;
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d53",
@@ -135,7 +135,7 @@ export class FormRepository {
       });
 
       // AOFAS Form 1
-      const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData;
+      const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
       const aofasScoring1 = aofasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData1) : undefined;
 
       this.mockForms.push({
@@ -160,7 +160,7 @@ export class FormRepository {
       // forms for the second consultation
 
       // VAS Form 2
-      const vasFormData2 = formTemplateRepository.mockFormTemplateData[3].formData;
+      const vasFormData2 = formTemplateRepository.mockFormTemplateData[3].formData as CustomFormData;
       const vasScoring2 = vasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData2) : undefined;
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d54",
@@ -180,7 +180,7 @@ export class FormRepository {
         translations: formTemplateRepository.mockFormTemplateData[3].translations,
       });
       // EFAS Form 2
-      const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData;
+      const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData as CustomFormData;
       const efasScoring2 = efasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData2) : undefined;
 
       this.mockForms.push({
@@ -202,7 +202,7 @@ export class FormRepository {
       });
 
       // AOFAS Form 2
-      const aofasFormData2 = formTemplateRepository.mockFormTemplateData[1].formData;
+      const aofasFormData2 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
       const aofasScoring2 = aofasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData2) : undefined;
 
       this.mockForms.push({
@@ -224,7 +224,7 @@ export class FormRepository {
         translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
-      const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData;
+      const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData as CustomFormData;
       const moxfqScoring1 = moxfqFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e85", moxfqFormData1) : undefined;
       // This is the moxfq Form
       this.mockForms.push({
@@ -321,8 +321,11 @@ function calculateMoxfqScore(data: CustomFormData | Record<string, unknown>): Sc
   // Calculate subscale scores
   const calculateSubscaleScore = (questionKeys: string[], subscaleName: string, subscaleDescription: string) => {
     const validAnswers = questionKeys
-      .map((key) => questions[key])
-      .filter((value) => value !== null && value !== undefined);
+      .map((key) => {
+        const value = (questions as Record<string, unknown>)[key];
+        return typeof value === 'number' ? value : null;
+      })
+      .filter((value): value is number => value !== null);
 
     if (validAnswers.length === 0) return null;
 
@@ -386,8 +389,11 @@ function calculateAofasScore(data: CustomFormData | Record<string, unknown>): Sc
 
   const questionKeys = Object.keys(questions);
   const validAnswers = questionKeys
-    .map((key) => questions[key])
-    .filter((value) => value !== null && value !== undefined);
+    .map((key) => {
+      const value = (questions as Record<string, unknown>)[key];
+      return typeof value === 'number' ? value : null;
+    })
+    .filter((value): value is number => value !== null);
 
   if (questionKeys.length === 0) {
     // No questions at all
@@ -462,8 +468,11 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
     allQuestions = [...allQuestions, ...questionKeys];
 
     const validAnswers = questionKeys
-      .map((key) => questions[key])
-      .filter((value) => value !== null && value !== undefined);
+      .map((key) => {
+        const value = (questions as Record<string, unknown>)[key];
+        return typeof value === 'number' ? value : null;
+      })
+      .filter((value): value is number => value !== null);
 
     if (questionKeys.length === 0) {
       // No questions in this section, set subscale to null
@@ -514,8 +523,8 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
     allQuestionsList.push(...questionKeys);
 
     questionKeys.forEach((key) => {
-      const value = questions[key];
-      if (value !== null && value !== undefined) {
+      const value = (questions as Record<string, unknown>)[key];
+      if (typeof value === 'number') {
         allValidAnswers.push(value);
       }
     });

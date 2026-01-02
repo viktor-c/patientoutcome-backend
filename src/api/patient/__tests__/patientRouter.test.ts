@@ -65,6 +65,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Patient found");
       if (!expectedPatient) throw new Error("Invalid test data: expectedPatient is undefined");
+      if (!responseBody.responseObject) throw new Error("Response object is null");
       comparePatients(expectedPatient, responseBody.responseObject);
     });
 
@@ -96,7 +97,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
+      expect((responseBody.responseObject as any)?.length).toBeGreaterThan(0);
     });
 
     it("should return a BAD REQUEST for invalid ID format", async () => {
@@ -110,7 +111,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
+      expect((responseBody.responseObject as any)?.length).toBeGreaterThan(0);
     });
   });
 
@@ -135,6 +136,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Patient found");
       if (!expectedPatient) throw new Error("Invalid test data: expectedPatient is undefined");
+      if (!responseBody.responseObject) throw new Error("Response object is null");
       comparePatients(expectedPatient, responseBody.responseObject);
     });
 
@@ -236,6 +238,7 @@ describe("Patient API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Patient updated successfully");
+      if (!responseBody.responseObject) throw new Error("Response object is null");
       comparePatients(expectedPatient, responseBody.responseObject);
 
       // Reset the name back to original
@@ -286,7 +289,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
+      expect((responseBody.responseObject as any)?.length).toBeGreaterThan(0);
     });
   });
 });

@@ -85,9 +85,10 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
+      if (!responseBody.responseObject) throw new Error("Response object is null");
 
       const sameDepartmentUsers = userRepository.mockUsers.filter(
-        (user) => user.department === responseBody.responseObject[0].department,
+        (user) => user.department === responseBody.responseObject![0].department,
       );
       expect(responseBody.responseObject.length).toEqual(sameDepartmentUsers.length);
 
@@ -110,6 +111,7 @@ describe("User API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("Users found");
+      if (!responseBody.responseObject) throw new Error("Response object is null");
 
       // Should return kiosk users from "Orthopädie" department (kiosk1, kiosk2)
       expect(responseBody.responseObject.length).toEqual(2);
@@ -257,7 +259,7 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect((responseBody.responseObject as any)?.length).toBeGreaterThan(0);
     });
 
     it("should return a BAD REQUEST for invalid ID format", async () => {
@@ -271,7 +273,9 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect(responseBody.responseObject).toBeDefined();
+      expect(responseBody.responseObject).not.toBeNull();
+      expect((responseBody.responseObject as any).length).toBeGreaterThan(0);
     });
   });
 
@@ -316,7 +320,7 @@ describe("User API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect((responseBody.responseObject as any)?.length).toBeGreaterThan(0);
     });
 
     it("should return an error if user is not logged in", async () => {

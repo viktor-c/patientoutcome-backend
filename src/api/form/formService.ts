@@ -31,9 +31,9 @@ async function calculateRelativeCreatedAtDate(
     }
 
     // Import dynamically to avoid circular dependencies
-    const consultationModule = await import("@/api/consultation/consultationModel");
-    const surgeryModule = await import("@/api/surgery/surgeryModel");
-    const caseModule = await import("@/api/case/patientCaseModel");
+    const consultationModule = await import("@/api/consultation/consultationModel.js");
+    const surgeryModule = await import("@/api/surgery/surgeryModel.js");
+    const caseModule = await import("@/api/case/patientCaseModel.js");
 
     const consultationModel = consultationModule.consultationModel;
     const SurgeryModel = surgeryModule.SurgeryModel;
@@ -47,14 +47,14 @@ async function calculateRelativeCreatedAtDate(
     }
 
     // Get the patient case
-    const patientCase = await PatientCaseModel.findById(consultation.patientCaseId).lean();
+    const patientCase = await PatientCaseModel.findById(consultation.patientCaseId).lean() as any;
     if (!patientCase || !patientCase.surgeries || patientCase.surgeries.length === 0) {
       logger.debug({ patientCaseId: consultation.patientCaseId }, "No surgeries found for relative date calculation");
       return null;
     }
 
     // Get the first surgery date
-    const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean();
+    const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean() as any;
     if (!surgery || !surgery.surgeryDate) {
       logger.debug({ surgeryId: patientCase.surgeries[0] }, "Surgery date not found for relative date calculation");
       return null;
@@ -241,11 +241,11 @@ export class FormService {
       // This ensures forms submitted by kiosk users have a createdAt date relative to their consultation date
       if (userContext?.userId) {
         try {
-          const userModule = await import("@/api/user/userModel");
+          const userModule = await import("@/api/user/userModel.js");
           const userModel = userModule.userModel;
-          const user = await userModel.findById(userContext.userId).select("postopWeek").lean();
+          const user = await userModel.findById(userContext.userId).select("postopWeek").lean() as any;
 
-          if (user?.postopWeek) {
+          if (user?.postopWeek && typeof user.postopWeek === 'number') {
             const relativeDate = await calculateRelativeCreatedAtDate(
               typeof existingForm.consultationId === 'string'
                 ? existingForm.consultationId

@@ -74,7 +74,7 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
 
     questionKeys.forEach((key) => {
       const value = questions[key];
-      if (value !== null && value !== undefined) {
+      if (typeof value === 'number') {
         allValidAnswers.push(value);
       }
     });

@@ -194,8 +194,8 @@ export class ConsultationService {
         if (!originalConsultation.proms) {
           originalConsultation.proms = [];
         }
-        if (!data.proms) data.proms = [...data.formTemplates];
-        else data.proms = [...data.proms, ...data.formTemplates];
+        if (!data.proms) data.proms = [...(data.formTemplates || [])];
+        else data.proms = [...data.proms, ...(data.formTemplates || [])];
 
         //first intersect the originalConsultation.proms.formTemplateId with the ids from data.proms
         // BUG originalConsultation.proms will be populated with the forms and not the ids
