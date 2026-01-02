@@ -90,6 +90,15 @@ class UserController {
   //   return handleServiceResponse(serviceResponse, res);
   // };
 
+  /* Update current logged -in user
+    * @route PUT / user
+      * @access Authenticated users
+        * @param { Request } req - Express request with update data in body, userId in session
+          * @param { Response } res - Express response object
+            * @returns { Promise<Response> } ServiceResponse with updated user or 401 if not authenticated
+              * @description Updates the currently logghttps://www.chartjs.org/chartjs-plugin-annotation/latest/guide/types/line.htmled -in user's profile
+                */
+
   public updateUser: RequestHandler = async (req: Request, res: Response) => {
     // Get user id from session (or JWT, adjust as needed)
     const id = req.session?.userId;
@@ -104,37 +113,15 @@ class UserController {
   /**
    * Update a user by ID
    * @route PUT /user/:id
-   * @access Admin or own profile
-   * @param {Request} req - Express request with user ID in params, update data in body, session data
+   * @access Admin only
+   * @param {Request} req - Express request with user ID in params, update data in body
    * @param {Response} res - Express response object
-   * @returns {Promise<Response>} ServiceResponse with updated user or 403 if access denied
-   * @description Allows admins to update any user, or users to update their own profile
+   * @returns {Promise<Response>} ServiceResponse with updated user
+   * @description Allows admins to update any user. Regular users should use PUT /user/update for their own profile.
    */
   public updateUserById: RequestHandler = async (req: Request, res: Response) => {
-   * Update current logged -in user
-      * @route PUT / user
-        * @access Authenticated users
-          * @param { Request } req - Express request with update data in body, userId in session
-            * @param { Response } res - Express response object
-              * @returns { Promise<Response> } ServiceResponse with updated user or 401 if not authenticated
-                * @description Updates the currently logged -in user's profile
-                  */
-  public updateUser: RequestHandler = async (req: Request, res: Response) => {
-    // Get user id from URL parameter
+    // ACL middleware ensures user has admin privileges
     const userId = z.string().parse(req.params.id);
-    const currentUserId = req.session?.userId;
-    const currentUserRoles = req.session?.roles || [];
-
-    if (!currentUserId) {
-      return res.status(401).json({ message: "Authentication required: User id not found in session" });
-    }
-
-    // Allow admins to update any user, otherwise only allow users to update themselves
-    const isAdmin = currentUserRoles.includes("admin");
-    if (userId !== currentUserId && !isAdmin) {
-      return res.status(403).json({ message: "Access denied: You can only update your own profile" });
-    }
-
     const userData = req.body;
     const serviceResponse = await userService.updateUser(userId, userData);
     return handleServiceResponse(serviceResponse, res);

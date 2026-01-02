@@ -52,6 +52,7 @@ export const aclConfig = {
   "user:get": { roles: ["authenticated"] },
   "user:create": { roles: ["admin"] },
   "user:get-kiosk": { roles: ["authenticated"] },
+  "user:update-by-id": { atLeastAuthenticationLevel: "admin" }, // Only admin can update other users
   "user:delete": { atLeastAuthenticationLevel: "admin" },
 
   // UserDepartment routes

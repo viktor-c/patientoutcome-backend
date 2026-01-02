@@ -533,7 +533,7 @@ userRouter.put(
   userController.changePassword,
 );
 
-userRouter.put("/:id", AclMiddleware(), validateRequestOnlyWithBody(UpdateUserSchema), userController.updateUserById);
+userRouter.put("/:id", AclMiddleware("user:update-by-id"), validateRequestOnlyWithBody(UpdateUserSchema), userController.updateUserById);
 
 // Register the path for updating a user
 userRegistry.registerPath({
