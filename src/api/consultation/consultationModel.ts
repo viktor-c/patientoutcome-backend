@@ -57,9 +57,10 @@ export const CreateConsultationSchema = ConsultationSchema.omit({
   images: z.array(CreateImageSchema),
 });
 
-// when updating a consulstation, a form list may already exist, but also the formtemplates can be given
+// when updating a consultation, a form list may already exist, but also the formtemplates can be given
 export const UpdateConsultationSchema = CreateConsultationSchema.partial().extend({
   proms: z.array(zId("Form")).optional(),
+  formTemplates: z.array(zId("FormTemplate")).optional(),
 });
 
 export const GetConsultationRequestSchema = z.object({
@@ -69,6 +70,7 @@ export const GetConsultationRequestSchema = z.object({
 export type Consultation = z.infer<typeof ConsultationSchema>;
 export type ConsultationWithForms = z.infer<typeof ConsultationWithFormsSchema>;
 export type CreateConsultation = z.infer<typeof CreateConsultationSchema>;
+export type UpdateConsultation = z.infer<typeof UpdateConsultationSchema>;
 // Define the mongoose schema and model
 const ConsultationMongooseSchema = zodSchema(ConsultationSchema.omit({ _id: true }));
 

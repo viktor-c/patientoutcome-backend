@@ -26,12 +26,15 @@ function calculateMoxfqScore(data: CustomFormData): ScoringData {
     subscaleDescription: string,
   ): SubscaleScore | null => {
     const validAnswers = questionKeys
-      .map((key) => questions[key])
-      .filter((value) => value !== null && value !== undefined);
+      .map((key) => {
+        const value = questions[key];
+        return typeof value === 'number' ? value : (typeof value === 'string' ? Number.parseFloat(value) : null);
+      })
+      .filter((value): value is number => value !== null && !Number.isNaN(value));
 
     if (validAnswers.length === 0) return null;
 
-    const rawScore = validAnswers.reduce((sum, value) => sum + value, 0);
+    const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
     const maxPossibleScore = questionKeys.length * 4;
     const completionRate = validAnswers.length / questionKeys.length;
 

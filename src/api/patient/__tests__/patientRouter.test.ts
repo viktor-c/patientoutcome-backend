@@ -96,7 +96,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
     });
 
     it("should return a BAD REQUEST for invalid ID format", async () => {
@@ -110,7 +110,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
     });
   });
 
@@ -286,7 +286,7 @@ describe("Patient API Endpoints", () => {
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Validation error");
       expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
-      expect(responseBody.responseObject.length).toBeGreaterThan(0);
+      expect(responseBody.responseObject?.length).toBeGreaterThan(0);
     });
   });
 });

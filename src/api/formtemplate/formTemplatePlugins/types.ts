@@ -39,7 +39,7 @@ export interface ScoringData {
  * This should match the structure exported from your form builder
  */
 export interface FormTemplateJson {
-  _id: string;
+  _id?: string;
   title: string;
   description: string;
   formSchema: Record<string, unknown>;

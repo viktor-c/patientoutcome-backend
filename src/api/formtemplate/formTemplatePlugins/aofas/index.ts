@@ -14,8 +14,11 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   const questionKeys = Object.keys(questions);
   const validAnswers = questionKeys
-    .map((key) => questions[key])
-    .filter((value) => value !== null && value !== undefined);
+    .map((key) => {
+      const value = questions[key];
+      return typeof value === 'number' ? value : (typeof value === 'string' ? Number.parseFloat(value) : null);
+    })
+    .filter((value): value is number => value !== null && !Number.isNaN(value));
 
   if (questionKeys.length === 0) {
     // No questions at all
@@ -57,7 +60,7 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
     };
   }
 
-  const rawScore = validAnswers.reduce((sum, value) => sum + value, 0);
+  const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
 
   // AOFAS max score is 100 (based on clinical standard)
   // Each question has different max values, but total is always 100

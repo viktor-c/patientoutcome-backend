@@ -1,6 +1,7 @@
 import { type Form, FormModel } from "@/api/form/formModel";
-import { FormTemplate, FormTemplateModel } from "@/api/formtemplate/formTemplateModel";
+import { FormTemplate, FormTemplateModel, type CustomFormData } from "@/api/formtemplate/formTemplateModel";
 import { calculateFormScore } from "@/api/formtemplate/formTemplatePlugins";
+import { type ScoringData } from "@/api/formtemplate/formTemplatePlugins/types";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
@@ -305,7 +306,7 @@ if (process.env.NODE_ENV === "test") {
  * @param {Object} data - Form data with question responses (may be nested in 'moxfq' section or flat)
  * @returns {Object} ScoringData structure
  */
-function calculateMoxfqScore(data): ScoringData {
+function calculateMoxfqScore(data: CustomFormData | Record<string, unknown>): ScoringData {
   // Handle nested structure (e.g., { moxfq: { q1: 0, q2: 1, ... } })
   // Extract questions from 'moxfq' section if present, otherwise use data directly
   const questions = data.moxfq || data;
@@ -318,7 +319,7 @@ function calculateMoxfqScore(data): ScoringData {
   };
 
   // Calculate subscale scores
-  const calculateSubscaleScore = (questionKeys, subscaleName, subscaleDescription) => {
+  const calculateSubscaleScore = (questionKeys: string[], subscaleName: string, subscaleDescription: string) => {
     const validAnswers = questionKeys
       .map((key) => questions[key])
       .filter((value) => value !== null && value !== undefined);
@@ -378,7 +379,7 @@ function calculateMoxfqScore(data): ScoringData {
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateAofasScore(data): ScoringData {
+function calculateAofasScore(data: CustomFormData | Record<string, unknown>): ScoringData {
   // AOFAS has a single section but we need to handle nested structure
   const sectionKey = Object.keys(data)[0]; // e.g., 'vorfußfragebogen'
   const questions = data[sectionKey] || {};
@@ -448,12 +449,12 @@ function calculateAofasScore(data): ScoringData {
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateEfasScore(data): ScoringData {
+function calculateEfasScore(data: CustomFormData | Record<string, unknown>): ScoringData {
   // EFAS has two sections: standardfragebogen and sportfragebogen
   const sections = ["standardfragebogen", "sportfragebogen"];
 
-  const subscaleScores = {};
-  let allQuestions = [];
+  const subscaleScores: { [key: string]: ScoringData["subscales"][string] } = {};
+  let allQuestions: string[] = [];
 
   sections.forEach((sectionKey) => {
     const questions = data[sectionKey] || {};
@@ -504,8 +505,8 @@ function calculateEfasScore(data): ScoringData {
   });
 
   // Calculate total across all sections
-  const allValidAnswers = [];
-  const allQuestionsList = [];
+  const allValidAnswers: number[] = [];
+  const allQuestionsList: string[] = [];
 
   sections.forEach((sectionKey) => {
     const questions = data[sectionKey] || {};

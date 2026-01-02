@@ -20,17 +20,18 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
     allQuestions = [...allQuestions, ...questionKeys];
 
     const validAnswers = questionKeys
-      .map((key) => questions[key])
-      .filter((value) => value !== null && value !== undefined);
-
-    if (questionKeys.length === 0) {
+      .map((key) => {
+        const value = questions[key];
+        return typeof value === 'number' ? value : (typeof value === 'string' ? Number.parseFloat(value) : null);
+      })
+      .filter((value): value is number => value !== null && !Number.isNaN(value)); if (questionKeys.length === 0) {
       // No questions in this section, set subscale to null
       subscaleScores[sectionKey] = null;
       return;
     }
 
     if (validAnswers.length > 0) {
-      const rawScore = validAnswers.reduce((sum, value) => sum + value, 0);
+      const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
       const maxPossibleScore = questionKeys.length * 5; // EFAS uses 0-5 scale
       const completionRate = validAnswers.length / questionKeys.length;
       const normalizedScore = (rawScore / maxPossibleScore) * 100;

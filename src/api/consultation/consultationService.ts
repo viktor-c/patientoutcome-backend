@@ -6,7 +6,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import { isValidObjectId } from "mongoose";
-import type { Consultation, CreateConsultation } from "./consultationModel";
+import type { Consultation, CreateConsultation, UpdateConsultation } from "./consultationModel";
 import { type ConsultationRepository, consultationRepository } from "./consultationRepository";
 
 export class ConsultationService {
@@ -153,7 +153,7 @@ export class ConsultationService {
    */
   async updateConsultation(
     consultationId: string,
-    data: Partial<CreateConsultation>,
+    data: UpdateConsultation,
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
       const originalConsultation = await this.consultationRepository.getConsultationById(consultationId);
@@ -227,7 +227,9 @@ export class ConsultationService {
         // for each newProms create a new form by template id
         for (const templateId of newPromsByTemplateId) {
           const form = await formRepository.createFormByTemplateId(
-            originalConsultation.patientCaseId._id.toString(),
+            typeof originalConsultation.patientCaseId === 'string'
+              ? originalConsultation.patientCaseId
+              : originalConsultation.patientCaseId.toString(),
             consultationId,
             templateId.toString(),
           );

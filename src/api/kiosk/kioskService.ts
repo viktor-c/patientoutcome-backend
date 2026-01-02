@@ -215,7 +215,10 @@ export class KioskService {
 
       // reset previous kiosk user from consultation
       if (consultation.kioskId) {
-        await userRepository.updateByIdAsync(consultation.kioskId._id.toString(), {
+        const kioskIdString = typeof consultation.kioskId === 'string'
+          ? consultation.kioskId
+          : consultation.kioskId.toString();
+        await userRepository.updateByIdAsync(kioskIdString, {
           consultationId: null,
         });
       }

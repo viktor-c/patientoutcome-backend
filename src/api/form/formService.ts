@@ -31,9 +31,13 @@ async function calculateRelativeCreatedAtDate(
     }
 
     // Import dynamically to avoid circular dependencies
-    const { consultationModel } = await import("@/api/consultation/consultationModel");
-    const { SurgeryModel } = await import("@/api/surgery/surgeryModel");
-    const { PatientCaseModel } = await import("@/api/case/patientCaseModel");
+    const consultationModule = await import("@/api/consultation/consultationModel");
+    const surgeryModule = await import("@/api/surgery/surgeryModel");
+    const caseModule = await import("@/api/case/patientCaseModel");
+
+    const consultationModel = consultationModule.consultationModel;
+    const SurgeryModel = surgeryModule.SurgeryModel;
+    const PatientCaseModel = caseModule.PatientCaseModel;
 
     // Get consultation to find the patient case
     const consultation = await consultationModel.findById(consultationId).lean();
@@ -237,12 +241,15 @@ export class FormService {
       // This ensures forms submitted by kiosk users have a createdAt date relative to their consultation date
       if (userContext?.userId) {
         try {
-          const { userModel } = await import("@/api/user/userModel");
+          const userModule = await import("@/api/user/userModel");
+          const userModel = userModule.userModel;
           const user = await userModel.findById(userContext.userId).select("postopWeek").lean();
 
           if (user?.postopWeek) {
             const relativeDate = await calculateRelativeCreatedAtDate(
-              existingForm.consultationId?._id.toString(),
+              typeof existingForm.consultationId === 'string'
+                ? existingForm.consultationId
+                : existingForm.consultationId?.toString(),
               user.postopWeek,
             );
 

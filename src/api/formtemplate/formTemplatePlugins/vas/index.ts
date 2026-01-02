@@ -11,17 +11,18 @@ function calculateVAS(data: CustomFormData): ScoringData {
   // Support both shapes: data.vas?.pain or a direct questionnaire section like { pain: number }
   const dataRecord: Record<string, Questionnaire> = data as Record<string, Questionnaire>;
   const vasSection: Questionnaire | undefined = dataRecord.vas ?? Object.values(dataRecord)[0];
-  const rawScore: number | null | undefined = vasSection?.pain;
+  const painValue = vasSection?.pain;
+  const rawScore: number | null = typeof painValue === 'number' ? painValue : (typeof painValue === 'string' ? Number.parseFloat(painValue) : null);
   const totalScore: SubscaleScore = {
     name: "VAS Total",
     description: "Visual Analog Scale",
-    rawScore,
-    normalizedScore: rawScore, // VAS is already 0-10 scale
+    rawScore: rawScore ?? null,
+    normalizedScore: rawScore ?? null, // VAS is already 0-10 scale
     maxPossibleScore: 10,
-    answeredQuestions: rawScore !== null && rawScore !== undefined ? 1 : 0,
+    answeredQuestions: rawScore !== null ? 1 : 0,
     totalQuestions: 1,
-    completionPercentage: rawScore !== null && rawScore !== undefined ? 100 : 0,
-    isComplete: rawScore !== null && rawScore !== undefined,
+    completionPercentage: rawScore !== null ? 100 : 0,
+    isComplete: rawScore !== null,
   };
 
   return {

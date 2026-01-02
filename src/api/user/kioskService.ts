@@ -247,8 +247,11 @@ export class KioskService {
       // Try to fetch the surgery date for this case
       let consultationDate: Date;
       try {
-        const { PatientCaseModel } = await import("@/api/case/patientCaseModel");
-        const { SurgeryModel } = await import("@/api/surgery/surgeryModel");
+        const caseModule = await import("@/api/case/patientCaseModel");
+        const surgeryModule = await import("@/api/surgery/surgeryModel");
+
+        const PatientCaseModel = caseModule.PatientCaseModel;
+        const SurgeryModel = surgeryModule.SurgeryModel;
 
         const patientCase = await PatientCaseModel.findById(caseId).lean();
 
@@ -323,7 +326,12 @@ export class KioskService {
 
       // set the consultation for this kiosk user
       // use the setConsultation method to link the consultation from api/KioskService, this is not the same KioskService in this file
-      await kioskServiceApi.setConsultation(kioskUser._id.toString(), consultationResult.responseObject._id.toString());
+      const consultationIdString = consultationResult.responseObject._id
+        ? (typeof consultationResult.responseObject._id === 'string'
+          ? consultationResult.responseObject._id
+          : consultationResult.responseObject._id.toString())
+        : '';
+      await kioskServiceApi.setConsultation(kioskUser._id.toString(), consultationIdString);
 
       logger.info(
         {
