@@ -1,7 +1,6 @@
 import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
-import { kioskService } from "@/api/user/kioskService";
 import type { UserNoPassword } from "@/api/user/userModel";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
@@ -181,50 +180,6 @@ class UserController {
       //@ts-ignore-next-line
       serviceResponse.responseObject._id = undefined;
       await req.session.save(); // Save the session
-    }
-    return handleServiceResponse(serviceResponse, res);
-  };
-
-  /**
-   * Kiosk user passwordless login
-   * @route POST /user/kiosk/login
-   * @param {Request} req - Express request with username in body
-   * @param {Response} res - Express response object
-   * @returns {Promise<Response>} ServiceResponse with kiosk session and consultation data or authentication error
-   * @description Authenticates kiosk user without password, establishes session with consultation context
-   */
-  public kioskLoginUser: RequestHandler = async (req: Request, res: Response) => {
-    const { username } = req.body;
-
-    const serviceResponse = await kioskService.kioskLogin(username);
-    if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
-      if (serviceResponse.responseObject._id === undefined) {
-        req.session.userId = undefined;
-        await req.session.destroy(() => { });
-        return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
-      } else {
-        req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
-          ? serviceResponse.responseObject._id.toString()
-          : undefined;
-      }
-      req.session.roles = serviceResponse.responseObject.roles;
-      req.session.permissions = serviceResponse.responseObject.permissions;
-      req.session.lastLogin = new Date();
-      req.session.loggedIn = true;
-      req.session.username = username;
-      req.session.consultationId = serviceResponse.responseObject.consultationId?.toString();
-
-      // Log the kiosk login activity
-      activityLogService.log({
-        username,
-        action: "Kiosk user logged in (passwordless)",
-        type: "login",
-        details: `Consultation ID: ${req.session.consultationId}`,
-      });
-
-      //@ts-ignore-next-line
-      serviceResponse.responseObject._id = undefined;
-      await req.session.save();
     }
     return handleServiceResponse(serviceResponse, res);
   };

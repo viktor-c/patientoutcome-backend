@@ -91,44 +91,6 @@ userRegistry.registerPath({
 
 userRouter.post("/login", AclMiddleware("user-login"), validateRequest(LoginSchema), userController.loginUser);
 
-// Kiosk Login Schema
-const KioskLoginSchema = z.object({
-  body: z.object({
-    username: z.string().startsWith("kiosk"),
-  }),
-});
-
-// Register the path for kiosk login
-userRegistry.registerPath({
-  method: "post",
-  path: "/user/kiosk-login",
-  tags: ["User"],
-  operationId: "kioskLoginUser",
-  description: "Passwordless login for kiosk users - automatically creates consultation",
-  summary: "Kiosk login (passwordless)",
-  request: {
-    body: {
-      content: {
-        "application/json": { schema: KioskLoginSchema.shape.body },
-      },
-    },
-  },
-  responses: createApiResponses([
-    {
-      schema: LoginResponseSchema,
-      description: "Success",
-      statusCode: 200,
-    },
-    {
-      schema: ValidationErrorsSchema,
-      description: "Invalid username",
-      statusCode: 400,
-    },
-  ]),
-});
-
-userRouter.post("/kiosk-login", AclMiddleware("user-login"), validateRequest(KioskLoginSchema), userController.kioskLoginUser);
-
 // Role Switch Schema
 const RoleSwitchSchema = z.object({
   body: z.object({
