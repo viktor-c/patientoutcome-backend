@@ -17,8 +17,9 @@ export class FormTemplateService {
   async getFormTemplates(): Promise<ServiceResponse<FormTemplate[] | null>> {
     try {
       const formTemplates = await this.formTemplateRepository.getAllTemplates();
+      // Return empty array with success status (consistent with blueprints API)
       if (!formTemplates || formTemplates.length === 0) {
-        return ServiceResponse.failure("No form templates found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<FormTemplate[]>("Form templates found", []);
       }
 
       const validationResult = FormTemplateArray.safeParse(formTemplates);
@@ -85,8 +86,9 @@ export class FormTemplateService {
   async getFormTemplatesShortlist(): Promise<ServiceResponse<FormTemplate[] | null>> {
     try {
       const formTemplates = await this.formTemplateRepository.getFormTemplatesShortlist();
+      // Return empty array with success status (consistent with blueprints API)
       if (!formTemplates || formTemplates.length === 0) {
-        return ServiceResponse.failure("No form templates found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<FormTemplate[]>("Form templates found", []);
       }
       const validationResult = FormTemplateListSchema.safeParse(formTemplates);
       if (validationResult.success === false) {
