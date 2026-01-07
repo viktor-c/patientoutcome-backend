@@ -209,12 +209,13 @@ class BackupController {
   public createManualBackup: RequestHandler = async (req: Request, res: Response) => {
     try {
       const userId = req.session?.userId;
-      const { collections, storageType, encryptionEnabled, password } = req.body;
+      const { collections, storageType, credentialId, encryptionEnabled, password } = req.body;
 
       // Create a temporary job configuration for manual backup
       const jobConfig = {
         name: "Manual Backup",
         storageType: storageType || "local",
+        credentialId: credentialId || undefined,
         collections: collections || [],
         encryptionEnabled: encryptionEnabled || false,
         encryptionPasswordHash: password ? await this.hashPassword(password) : undefined,

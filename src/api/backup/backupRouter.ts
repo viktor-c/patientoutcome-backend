@@ -250,6 +250,7 @@ const CreateManualBackupSchema = z.object({
   body: z.object({
     collections: z.array(z.string()).optional(),
     storageType: StorageTypeSchema.optional(),
+    credentialId: z.string().optional(),
     encryptionEnabled: z.boolean().optional(),
     password: z.string().optional(),
   }),
