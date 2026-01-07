@@ -16,6 +16,13 @@ export const env = cleanEnv(process.env, {
   SESSION_SECRET: str({
     devDefault: testOnly("test-session-secret-do-not-use-in-production-replace-with-secure-random-value"),
   }),
+  // Backup configuration
+  BACKUP_STORAGE_PATH: str({ devDefault: testOnly("/tmp/backups") }),
+  BACKUP_MASTER_KEY: str({
+    devDefault: testOnly("backup-master-key-32-chars-min!"),
+    desc: "Master encryption key for backup credentials (min 32 chars)",
+  }),
+  BACKUP_RETENTION_DAYS: num({ devDefault: testOnly(30), desc: "Default retention period for backups in days" }),
 });
 
 //only show debug info when node env is development

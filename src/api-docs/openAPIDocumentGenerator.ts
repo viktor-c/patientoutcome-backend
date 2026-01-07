@@ -11,6 +11,7 @@ import { env } from "@/common/utils/envConfig";
 export function generateOpenAPIDocument() {
   // Only import registries when generating docs to avoid circular dependencies
   const { activityLogRegistry } = require("@/api/activitylog/activityLogRouter");
+  const { backupRegistry } = require("@/api/backup/backupRouter");
   const { blueprintRegistry } = require("@/api/blueprint/blueprintRouter");
   const { patientCaseRegistry } = require("@/api/case/patientCaseRouter");
   const { clinicalStudyRegistry } = require("@/api/clinicalStudy/clinicalStudyRouter");
@@ -30,6 +31,7 @@ export function generateOpenAPIDocument() {
 
   const registry = new OpenAPIRegistry([
     activityLogRegistry,
+    backupRegistry,
     blueprintRegistry,
     codeRegistry,
     feedbackRegistry,

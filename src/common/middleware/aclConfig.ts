@@ -63,5 +63,25 @@ export const aclConfig = {
   "userDepartment-update": { roles: ["admin"] },
   "userDepartment-delete": { roles: ["admin"] },
 
+  // Backup routes - admin and developer only
+  "backup-jobs-get-all": { roles: ["admin", "developer"] },
+  "backup-jobs-get": { roles: ["admin", "developer"] },
+  "backup-jobs-create": { roles: ["admin", "developer"] },
+  "backup-jobs-update": { roles: ["admin", "developer"] },
+  "backup-jobs-delete": { roles: ["admin", "developer"] },
+  "backup-jobs-trigger": { roles: ["admin", "developer"] },
+  "backup-create": { roles: ["admin", "developer"] },
+  "backup-history-get": { roles: ["admin", "developer"] },
+  "backup-metadata-get": { roles: ["admin", "developer"] },
+  "backup-download": { roles: ["admin", "developer"] },
+  "backup-upload": { roles: ["admin", "developer"] },
+  "backup-restore": { roles: ["admin", "developer"] },
+  "backup-restore-history-get": { roles: ["admin", "developer"] },
+  "backup-credentials-get-all": { roles: ["admin", "developer"] },
+  "backup-credentials-create": { roles: ["admin", "developer"] },
+  "backup-credentials-delete": { roles: ["admin", "developer"] },
+  "backup-collections-get": { roles: ["admin", "developer"] },
+  "backup-stats-get": { roles: ["admin", "developer"] },
+
   // Add more route keys as needed
 };

@@ -10,6 +10,7 @@ import helmet from "helmet";
 
 //****************** Routers import ****************************** */
 import { activityLogRouter } from "@/api/activitylog/activityLogRouter";
+import { backupRouter } from "@/api/backup/backupRouter";
 import { blueprintRouter } from "@/api/blueprint/blueprintRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
@@ -93,6 +94,7 @@ app.use(requestLogger);
 
 // Routes
 app.use("/activitylog", activityLogRouter);
+app.use("/backup", backupRouter);
 app.use("/blueprints", blueprintRouter);
 app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
