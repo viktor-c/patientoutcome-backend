@@ -167,6 +167,7 @@ export class BackupService {
         sizeBytes,
         collections: collectionMetadata,
         isEncrypted: job.encryptionEnabled || false,
+        encryptedWithPassword: !!job.encryptionPasswordHash,
         storageType: job.storageType || "local",
         status: "completed",
         startedAt,
@@ -604,5 +605,38 @@ export class BackupService {
     const storageAdapter = await this.getStorageAdapterForBackup(history);
     await storageAdapter.download(history.filename, tempFilePath);
     return tempFilePath;
+  }
+
+  /**
+   * Delete a backup (removes both the file and database record)
+   */
+  async deleteBackup(backupId: string): Promise<void> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+
+    try {
+      // Delete the backup file from storage
+      if (history.storageType === "local") {
+        // Delete local file
+        const localAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+        await localAdapter.delete(history.filename);
+      } else {
+        // Delete remote file
+        const storageAdapter = await this.getStorageAdapterForBackup(history);
+        await storageAdapter.delete(history.filename);
+      }
+
+      logger.info(`Backup file deleted: ${history.filename}`);
+    } catch (error) {
+      // Log error but continue to delete database record
+      logger.error(error, `Failed to delete backup file: ${history.filename}`);
+    }
+
+    // Delete the backup history record from database
+    await this.repository.deleteBackupHistory(backupId);
+    
+    logger.info(`Backup history deleted: ${backupId}`);
   }
 }

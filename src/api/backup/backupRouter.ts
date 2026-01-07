@@ -316,6 +316,37 @@ backupRouter.get(
 );
 
 backupRegistry.registerPath({
+  method: "delete",
+  path: "/backup/history/{id}",
+  tags: ["Backup"],
+  operationId: "deleteBackup",
+  description: "Delete a backup (removes both the file and database record)",
+  summary: "Delete backup",
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Backup not found",
+      statusCode: 404,
+    },
+  ]),
+});
+
+backupRouter.delete(
+  "/history/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-history-delete"),
+  backupController.deleteBackup
+);
+
+backupRegistry.registerPath({
   method: "get",
   path: "/backup/{id}/metadata",
   tags: ["Backup"],

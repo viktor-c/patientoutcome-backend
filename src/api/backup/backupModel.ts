@@ -107,6 +107,7 @@ export const BackupHistorySchema = z.object({
   // Backup metadata
   collections: z.array(CollectionMetadataSchema),
   isEncrypted: z.boolean().default(false),
+  encryptedWithPassword: z.boolean().default(false),
   
   // Storage information
   storageType: StorageTypeSchema,

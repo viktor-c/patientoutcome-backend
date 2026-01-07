@@ -208,6 +208,14 @@ export class BackupRepository {
   }
 
   /**
+   * Delete a specific backup history record
+   */
+  async deleteBackupHistory(historyId: string): Promise<boolean> {
+    const result = await backupHistoryModel.findByIdAndDelete(historyId);
+    return !!result;
+  }
+
+  /**
    * Find backups by storage type and location
    */
   async findBackupsByStorage(storageType: string, storageLocation?: string): Promise<BackupHistory[]> {

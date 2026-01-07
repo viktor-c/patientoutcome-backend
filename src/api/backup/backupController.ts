@@ -533,6 +533,29 @@ class BackupController {
     }
   };
 
+  /**
+   * Delete a backup
+   * @route DELETE /backup/history/:id
+   */
+  public deleteBackup: RequestHandler = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      await this.backupService.deleteBackup(id);
+
+      const serviceResponse = ServiceResponse.success("Backup deleted successfully", null);
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      logger.error(error, "Failed to delete backup");
+      const serviceResponse = ServiceResponse.failure(
+        error instanceof Error ? error.message : "Failed to delete backup",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(serviceResponse, res);
+    }
+  };
+
   // ============================================
   // Utility Methods
   // ============================================
