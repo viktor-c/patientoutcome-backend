@@ -19,7 +19,7 @@ describe("Error Handler Middleware", () => {
     });
 
     app.use(errorHandler());
-    app.use("*", (req, res) => res.status(StatusCodes.NOT_FOUND).send("Not Found"));
+    app.use("/*splat", (req, res) => res.status(StatusCodes.NOT_FOUND).send("Not Found"));
   });
 
   describe("Handling unknown routes", () => {
