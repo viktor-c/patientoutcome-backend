@@ -332,6 +332,20 @@ export class BackupService {
   }
 
   /**
+   * Validate a backup is available and completed before attempting restore
+   */
+  async validateBackupForRestore(backupId: string): Promise<any> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+    if (history.status !== "completed") {
+      throw new Error("Backup is not in a valid state for restore");
+    }
+    return history;
+  }
+
+  /**
    * Restore backup
    */
   async restoreBackup(
