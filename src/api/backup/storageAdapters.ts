@@ -174,9 +174,9 @@ export class S3StorageAdapter implements IStorageAdapter {
 
     // Write stream to file
     const writeStream = createWriteStream(localFilePath);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       (response.Body as Readable).pipe(writeStream)
-        .on("finish", resolve)
+        .on("finish", () => resolve())
         .on("error", reject);
     });
 
@@ -311,7 +311,8 @@ export class SftpStorageAdapter implements IStorageAdapter {
     const sftp = await this.getClient();
     try {
       const remotePath = this.getRemotePath(remoteFileName);
-      return await sftp.exists(remotePath);
+      const result = await sftp.exists(remotePath);
+      return result !== false; // sftp.exists returns false | string, convert to boolean
     } finally {
       await sftp.end();
     }

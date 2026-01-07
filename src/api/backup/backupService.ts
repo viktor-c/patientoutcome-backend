@@ -79,7 +79,7 @@ export class BackupService {
 
     return await this.repository.createCredential({
       name,
-      storageType,
+      storageType: storageType as 'local' | 's3' | 'sftp' | 'webdav',
       encryptedData,
       iv,
       authTag,

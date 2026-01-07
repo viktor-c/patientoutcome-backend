@@ -422,7 +422,7 @@ const CreateCredentialSchema = z.object({
   body: z.object({
     name: z.string(),
     storageType: StorageTypeSchema,
-    credentials: z.record(z.any()),
+    credentials: z.record(z.string(), z.any()),
   }),
 });
 

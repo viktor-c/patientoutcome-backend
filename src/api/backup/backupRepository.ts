@@ -1,5 +1,4 @@
-import type { FilterQuery } from "mongoose";
-import mongoose from "mongoose";
+import mongoose, { type HydratedDocument } from "mongoose";
 
 import {
   type BackupCredential,
@@ -28,15 +27,15 @@ export class BackupRepository {
    */
   async createBackupJob(jobData: Partial<BackupJob>): Promise<BackupJob> {
     const job = await backupJobModel.create(jobData);
-    return job.toObject() as BackupJob;
+    return job.toObject() as unknown as BackupJob;
   }
 
   /**
    * Find all backup jobs
    */
-  async findAllBackupJobs(filter: FilterQuery<BackupJob> = {}): Promise<BackupJob[]> {
+  async findAllBackupJobs(filter: Record<string, any> = {}): Promise<BackupJob[]> {
     const jobs = await backupJobModel.find(filter).sort({ createdAt: -1 }).lean();
-    return jobs as BackupJob[];
+    return jobs as unknown as BackupJob[];
   }
 
   /**
@@ -52,7 +51,7 @@ export class BackupRepository {
    */
   async findJobsDueForExecution(): Promise<BackupJob[]> {
     const jobs = await backupJobModel.find({ enabled: true }).lean();
-    return jobs as BackupJob[];
+    return jobs as unknown as BackupJob[];
   }
 
   /**
@@ -95,7 +94,7 @@ export class BackupRepository {
    */
   async createCredential(credentialData: Partial<BackupCredential>): Promise<BackupCredential> {
     const credential = await backupCredentialModel.create(credentialData);
-    return credential.toObject() as BackupCredential;
+    return credential.toObject() as unknown as BackupCredential;
   }
 
   /**
@@ -103,7 +102,7 @@ export class BackupRepository {
    */
   async findAllCredentials(): Promise<BackupCredential[]> {
     const credentials = await backupCredentialModel.find().sort({ createdAt: -1 }).lean();
-    return credentials as BackupCredential[];
+    return credentials as unknown as BackupCredential[];
   }
 
   /**
@@ -151,19 +150,20 @@ export class BackupRepository {
    * Create backup history record
    */
   async createBackupHistory(historyData: Partial<BackupHistory>): Promise<BackupHistory> {
-    const history = await backupHistoryModel.create(historyData);
-    return history.toObject() as BackupHistory;
+    const doc = await backupHistoryModel.create(historyData as unknown as Parameters<typeof backupHistoryModel.create>[0]);
+    const history = Array.isArray(doc) ? doc[0] : doc;
+    return history.toJSON() as BackupHistory;
   }
 
   /**
    * Find all backup history records
    */
   async findAllBackupHistory(
-    filter: FilterQuery<BackupHistory> = {},
+    filter: Record<string, any> = {},
     limit = 100
   ): Promise<BackupHistory[]> {
     const history = await backupHistoryModel.find(filter).sort({ startedAt: -1 }).limit(limit).lean();
-    return history as BackupHistory[];
+    return history as unknown as BackupHistory[];
   }
 
   /**
@@ -211,12 +211,12 @@ export class BackupRepository {
    * Find backups by storage type and location
    */
   async findBackupsByStorage(storageType: string, storageLocation?: string): Promise<BackupHistory[]> {
-    const filter: FilterQuery<BackupHistory> = { storageType };
+    const filter: Record<string, any> = { storageType };
     if (storageLocation) {
       filter.storageLocation = storageLocation;
     }
     const backups = await backupHistoryModel.find(filter).sort({ startedAt: -1 }).lean();
-    return backups as BackupHistory[];
+    return backups as unknown as BackupHistory[];
   }
 
   // ============================================
@@ -227,8 +227,9 @@ export class BackupRepository {
    * Create restore history record
    */
   async createRestoreHistory(historyData: Partial<RestoreHistory>): Promise<RestoreHistory> {
-    const history = await restoreHistoryModel.create(historyData);
-    return history.toObject() as RestoreHistory;
+    const doc = await restoreHistoryModel.create(historyData as unknown as Parameters<typeof restoreHistoryModel.create>[0]);
+    const history = Array.isArray(doc) ? doc[0] : doc;
+    return history.toJSON() as RestoreHistory;
   }
 
   /**
@@ -236,7 +237,7 @@ export class BackupRepository {
    */
   async findAllRestoreHistory(limit = 100): Promise<RestoreHistory[]> {
     const history = await restoreHistoryModel.find().sort({ startedAt: -1 }).limit(limit).lean();
-    return history as RestoreHistory[];
+    return history as unknown as RestoreHistory[];
   }
 
   /**
@@ -275,6 +276,9 @@ export class BackupRepository {
    * Get list of all collections in the database
    */
   async getAllCollections(): Promise<string[]> {
+    if (!mongoose.connection.db) {
+      throw new Error('Database connection not established');
+    }
     const collections = await mongoose.connection.db.listCollections().toArray();
     return collections.map((col) => col.name);
   }
@@ -283,11 +287,14 @@ export class BackupRepository {
    * Get collection metadata (document count and last modified)
    */
   async getCollectionMetadata(collectionName: string): Promise<CollectionMetadata> {
+    if (!mongoose.connection.db) {
+      throw new Error("Database connection not established");
+    }
     const collection = mongoose.connection.db.collection(collectionName);
-    
+
     // Get document count
     const documentCount = await collection.countDocuments();
-    
+
     // Get last modified date (from the most recent document's updatedAt or _id)
     let lastModified: Date | null = null;
     const latestDoc = await collection
@@ -295,7 +302,7 @@ export class BackupRepository {
       .sort({ updatedAt: -1, _id: -1 })
       .limit(1)
       .toArray();
-    
+
     if (latestDoc.length > 0) {
       const doc = latestDoc[0];
       // Try updatedAt first, fallback to extracting timestamp from ObjectId
@@ -305,11 +312,11 @@ export class BackupRepository {
         lastModified = doc._id.getTimestamp();
       }
     }
-    
+
     // Get collection stats for size
     const stats = await mongoose.connection.db.command({ collStats: collectionName });
     const sizeBytes = stats.size || 0;
-    
+
     return {
       name: collectionName,
       documentCount,
@@ -343,8 +350,9 @@ export class BackupRepository {
   /**
    * Export collection data as JSON array
    */
-  async exportCollectionData(collectionName: string): Promise<any[]> {
-    const collection = mongoose.connection.db.collection(collectionName);
+  async exportCollectionData(collectionName: string): Promise<any[]> {    if (!mongoose.connection.db) {
+      throw new Error("Database connection not established");
+    }    const collection = mongoose.connection.db.collection(collectionName);
     const documents = await collection.find().toArray();
     return documents;
   }
@@ -358,21 +366,24 @@ export class BackupRepository {
     documents: any[],
     mode: "merge" | "replace" = "merge"
   ): Promise<{ inserted: number; skipped: number }> {
+    if (!mongoose.connection.db) {
+      throw new Error("Database connection not established");
+    }
     const collection = mongoose.connection.db.collection(collectionName);
-    
+
     if (mode === "replace") {
       await collection.drop().catch(() => {
         // Collection might not exist, that's fine
       });
     }
-    
+
     let inserted = 0;
     let skipped = 0;
-    
+
     if (documents.length === 0) {
       return { inserted, skipped };
     }
-    
+
     if (mode === "replace") {
       // Bulk insert all documents
       const result = await collection.insertMany(documents, { ordered: false });
@@ -393,7 +404,7 @@ export class BackupRepository {
         }
       }
     }
-    
+
     return { inserted, skipped };
   }
 
@@ -406,8 +417,11 @@ export class BackupRepository {
     dataSize: number;
     indexSize: number;
   }> {
+    if (!mongoose.connection.db) {
+      throw new Error("Database connection not established");
+    }
     const stats = await mongoose.connection.db.stats();
-    
+
     return {
       collections: stats.collections || 0,
       totalDocuments: stats.objects || 0,

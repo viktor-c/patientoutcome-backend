@@ -19,7 +19,7 @@ export const CRON_PRESETS = {
  */
 interface ScheduledJob {
   jobId: string;
-  cronJob: cron.ScheduledTask;
+  cronJob: ReturnType<typeof cron.schedule>;
 }
 
 /**
@@ -98,7 +98,6 @@ export class BackupSchedulerService {
         await this.executeBackup(job);
       },
       {
-        scheduled: true,
         timezone: "UTC", // Use UTC for consistency
       }
     );
@@ -213,7 +212,9 @@ export class BackupSchedulerService {
       return job.cronExpression;
     }
 
-    return CRON_PRESETS[job.frequency] || CRON_PRESETS.daily;
+    // Use type guard to safely access CRON_PRESETS
+    const preset = job.frequency in CRON_PRESETS ? CRON_PRESETS[job.frequency as keyof typeof CRON_PRESETS] : CRON_PRESETS.daily;
+    return preset;
   }
 
   /**
@@ -222,7 +223,7 @@ export class BackupSchedulerService {
   getScheduledJobs(): Array<{ jobId: string; isRunning: boolean }> {
     return Array.from(this.scheduledJobs.values()).map((scheduled) => ({
       jobId: scheduled.jobId,
-      isRunning: scheduled.cronJob.getStatus() === "scheduled",
+      isRunning: true, // ScheduledTask is running if it exists in the map
     }));
   }
 
