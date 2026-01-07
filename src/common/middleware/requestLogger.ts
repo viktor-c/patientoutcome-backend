@@ -80,7 +80,7 @@ const customSuccessMessage = (req: IncomingMessage, res: ServerResponse<Incoming
 };
 
 const genReqId = (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
-  const existingID = req.id ?? req.headers["x-request-id"];
+  const existingID = (req as any).id ?? req.headers["x-request-id"];
   if (existingID) return existingID;
   const id = randomUUID();
   res.setHeader("X-Request-Id", id);

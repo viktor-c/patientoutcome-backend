@@ -224,7 +224,8 @@ describe("Storage Adapters", () => {
       // Mock will be called internally by the adapter
       const result = await adapter.upload(localFile, remoteFile);
 
-      expect(result).toBe(`${config.remotePath}/${remoteFile}`);
+      // SFTP adapter returns path with remotePath included
+      expect(result).toBe(`sftp://${config.host}${config.remotePath}/${remoteFile}`);
     });
 
     it("should download file from SFTP", async () => {
@@ -270,7 +271,7 @@ describe("Storage Adapters", () => {
       url: "https://webdav.example.com",
       username: "user",
       password: "pass",
-      remotePath: "/backups",
+      basePath: "/backups",
     };
 
     beforeEach(() => {
@@ -287,12 +288,12 @@ describe("Storage Adapters", () => {
       const result = await adapter.upload(localFile, remoteFile);
 
       expect(fs.readFile).toHaveBeenCalledWith(localFile);
-      expect(result).toBe(`${config.remotePath}/${remoteFile}`);
+      expect(result).toBe(`${config.basePath}/${remoteFile}`);
     });
 
     it("should download file from WebDAV", async () => {
       vi.mocked(fs.mkdir).mockResolvedValue(undefined);
-      
+
       // Mock writeFile
       const mockWriteFile = vi.fn().mockResolvedValue(undefined);
       (fs as any).writeFile = mockWriteFile;
@@ -318,10 +319,14 @@ describe("Storage Adapters", () => {
     it("should check if file exists on WebDAV", async () => {
       const remoteFile = "backup-2024.tar.gz";
 
+      // Mock the client's exists method directly on the adapter instance
+      const mockExists = vi.fn().mockResolvedValue(true);
+      (adapter as any).client.exists = mockExists;
+
       const result = await adapter.exists(remoteFile);
 
-      // Should return a boolean
-      expect(typeof result).toBe("boolean");
+      expect(mockExists).toHaveBeenCalledWith(`${config.basePath}/${remoteFile}`);
+      expect(result).toBe(true);
     });
   });
 });

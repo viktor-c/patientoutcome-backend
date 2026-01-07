@@ -36,7 +36,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup jobs retrieved", jobs);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup jobs:", error);
+      logger.error(error, "Failed to get backup jobs");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup jobs",
         null,
@@ -63,7 +63,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job retrieved", job);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup job:", error);
+      logger.error(error, "Failed to get backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup job",
         null,
@@ -96,7 +96,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job created", job, StatusCodes.CREATED);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create backup job:", error);
+      logger.error(error, "Failed to create backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create backup job",
         null,
@@ -133,7 +133,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job updated", job);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to update backup job:", error);
+      logger.error(error, "Failed to update backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to update backup job",
         null,
@@ -165,7 +165,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job deleted", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to delete backup job:", error);
+      logger.error(error, "Failed to delete backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to delete backup job",
         null,
@@ -188,7 +188,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job triggered", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to trigger backup job:", error);
+      logger.error(error, "Failed to trigger backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to trigger backup job",
         null,
@@ -225,7 +225,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup created successfully", result);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create manual backup:", error);
+      logger.error(error, "Failed to create manual backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create backup",
         null,
@@ -247,7 +247,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup history retrieved", history);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup history:", error);
+      logger.error(error, "Failed to get backup history");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup history",
         null,
@@ -269,7 +269,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup metadata retrieved", metadata);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup metadata:", error);
+      logger.error(error, "Failed to get backup metadata");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup metadata",
         null,
@@ -291,7 +291,7 @@ class BackupController {
       // Send file as download
       res.download(filePath, (err) => {
         if (err) {
-          logger.error("Failed to download backup file:", err);
+          logger.error(err, "Failed to download backup file");
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: "Failed to download backup file",
@@ -299,7 +299,7 @@ class BackupController {
         }
       });
     } catch (error) {
-      logger.error("Failed to download backup:", error);
+      logger.error(error, "Failed to download backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to download backup",
         null,
@@ -333,7 +333,7 @@ class BackupController {
       });
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to upload backup:", error);
+      logger.error(error, "Failed to upload backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to upload backup",
         null,
@@ -367,7 +367,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup restored successfully", result);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to restore backup:", error);
+      logger.error(error, "Failed to restore backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to restore backup",
         null,
@@ -389,7 +389,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Restore history retrieved", history);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get restore history:", error);
+      logger.error(error, "Failed to get restore history");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve restore history",
         null,
@@ -423,7 +423,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Credentials retrieved", sanitized);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get credentials:", error);
+      logger.error(error, "Failed to get credentials");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve credentials",
         null,
@@ -454,7 +454,7 @@ class BackupController {
       );
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create credentials:", error);
+      logger.error(error, "Failed to create credentials");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create credentials",
         null,
@@ -476,7 +476,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Credentials deleted", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to delete credentials:", error);
+      logger.error(error, "Failed to delete credentials");
       const serviceResponse = ServiceResponse.failure(
         error instanceof Error ? error.message : "Failed to delete credentials",
         null,
@@ -502,7 +502,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Collections retrieved", metadata);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get collections:", error);
+      logger.error(error, "Failed to get collections");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve collections",
         null,
@@ -523,7 +523,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Database statistics retrieved", stats);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get database stats:", error);
+      logger.error(error, "Failed to get database stats");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve database statistics",
         null,

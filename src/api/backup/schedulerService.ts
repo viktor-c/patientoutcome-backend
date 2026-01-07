@@ -57,14 +57,14 @@ export class BackupSchedulerService {
         try {
           await this.scheduleJob(job);
         } catch (error) {
-          logger.error(`Failed to schedule backup job ${job._id}:`, error);
+          logger.error(error, `Failed to schedule backup job ${job._id}`);
         }
       }
 
       this.initialized = true;
       logger.info("Backup scheduler initialized successfully");
     } catch (error) {
-      logger.error("Failed to initialize backup scheduler:", error);
+      logger.error(error, "Failed to initialize backup scheduler");
       throw error;
     }
   }
@@ -151,7 +151,7 @@ export class BackupSchedulerService {
       await this.cleanupOldBackups(job);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      logger.error(`Scheduled backup failed for job ${jobId}:`, error);
+      logger.error(error, `Scheduled backup failed for job ${jobId}`);
 
       // Update job status to failed
       await this.repository.updateJobLastRun(jobId, "failed", errorMessage);
@@ -196,11 +196,11 @@ export class BackupSchedulerService {
           
           logger.info(`Cleaned up old backup: ${backup.filename}`);
         } catch (error) {
-          logger.error(`Failed to delete old backup ${backup.filename}:`, error);
+          logger.error(error, `Failed to delete old backup ${backup.filename}`);
         }
       }
     } catch (error) {
-      logger.error(`Failed to cleanup old backups for job ${job._id}:`, error);
+      logger.error(error, `Failed to cleanup old backups for job ${job._id}`);
     }
   }
 

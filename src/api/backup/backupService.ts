@@ -195,7 +195,7 @@ export class BackupService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       await this.repository.completeBackup(history._id!.toString(), errorMessage);
-      logger.error(`Backup failed: ${errorMessage}`, error);
+      logger.error(error, `Backup failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -402,7 +402,7 @@ export class BackupService {
         } catch (error) {
           const errorMsg = `Failed to restore collection ${collectionName}: ${error}`;
           result.errors.push(errorMsg);
-          logger.error(errorMsg, error);
+          logger.error(error, errorMsg);
         }
       }
 

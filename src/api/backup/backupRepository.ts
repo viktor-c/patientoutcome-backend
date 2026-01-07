@@ -334,7 +334,7 @@ export class BackupRepository {
         try {
           return await this.getCollectionMetadata(name);
         } catch (error) {
-          logger.error(`Failed to get metadata for collection ${name}:`, error);
+          logger.error(error, `Failed to get metadata for collection ${name}`);
           return {
             name,
             documentCount: 0,
