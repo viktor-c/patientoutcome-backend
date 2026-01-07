@@ -210,9 +210,9 @@ export class BackupRepository {
   /**
    * Delete a specific backup history record
    */
-  async deleteBackupHistory(historyId: string): Promise<boolean> {
-    const result = await backupHistoryModel.findByIdAndDelete(historyId);
-    return !!result;
+  async deleteBackupHistory(backupId: string): Promise<boolean> {
+    const result = await backupHistoryModel.deleteOne({ _id: backupId });
+    return (result.deletedCount || 0) > 0;
   }
 
   /**
@@ -358,9 +358,11 @@ export class BackupRepository {
   /**
    * Export collection data as JSON array
    */
-  async exportCollectionData(collectionName: string): Promise<any[]> {    if (!mongoose.connection.db) {
+  async exportCollectionData(collectionName: string): Promise<any[]> {
+   if (!mongoose.connection.db) {
       throw new Error("Database connection not established");
-    }    const collection = mongoose.connection.db.collection(collectionName);
+    }
+    const collection = mongoose.connection.db.collection(collectionName);
     const documents = await collection.find().toArray();
     return documents;
   }

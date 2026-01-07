@@ -169,6 +169,7 @@ export class BackupService {
         isEncrypted: job.encryptionEnabled || false,
         encryptedWithPassword: !!job.encryptionPasswordHash,
         storageType: job.storageType || "local",
+        credentialId: job.credentialId?.toString() || null,
         status: "completed",
         startedAt,
         completedAt: new Date(),
