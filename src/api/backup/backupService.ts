@@ -127,21 +127,7 @@ export class BackupService {
     job: Partial<BackupJob>,
     userId?: string
   ): Promise<{ backupId: string; filename: string; sizeBytes: number }> {
-    // Create backup history record
-    const history = await this.repository.createBackupHistory({
-      jobId: job._id?.toString(),
-      jobName: job.name,
-      filename: "", // Will be set later
-      filePath: "",
-      sizeBytes: 0,
-      collections: [],
-      isEncrypted: job.encryptionEnabled || false,
-      storageType: job.storageType || "local",
-      status: "running",
-      startedAt: new Date(),
-      createdBy: userId,
-      departmentId: job.departmentId,
-    });
+    const startedAt = new Date();
 
     try {
       // Determine which collections to backup
@@ -171,15 +157,22 @@ export class BackupService {
       const storageAdapter = await this.getStorageAdapter(job);
       const storageLocation = await storageAdapter.upload(tempFilePath, filename);
 
-      // Update backup history
-      await this.repository.updateBackupHistory(history._id!.toString(), {
+      // Create backup history record with complete data
+      const history = await this.repository.createBackupHistory({
+        jobId: job._id?.toString(),
+        jobName: job.name,
         filename,
         filePath: job.storageType === "local" ? storageLocation : filename,
         storageLocation,
         sizeBytes,
         collections: collectionMetadata,
+        isEncrypted: job.encryptionEnabled || false,
+        storageType: job.storageType || "local",
         status: "completed",
+        startedAt,
         completedAt: new Date(),
+        createdBy: userId,
+        departmentId: job.departmentId,
       });
 
       // Clean up temp file
@@ -194,7 +187,6 @@ export class BackupService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      await this.repository.completeBackup(history._id!.toString(), errorMessage);
       logger.error(error, `Backup failed: ${errorMessage}`);
       throw error;
     }
