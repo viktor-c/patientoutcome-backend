@@ -1,3 +1,4 @@
+
 # Backend Development Guide
 
 ## Architecture Overview
@@ -47,3 +48,4 @@ This patient outcome management system follows a strict layered architecture: **
 
 ## General prompts
 - "commit changes" is an alias for "commit changes to patientoutcome-frontend following best practices, logically group related changes into single commits; create multiple commits if necessary for clarity"
+- do not solve typescript issues by using "as any" or "as unknown" with double assertion. Before doing this, check if an exact typing is possible. Ask if you are unsure. 

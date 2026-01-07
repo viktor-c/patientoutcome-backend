@@ -180,7 +180,7 @@ export class UserService {
       await newUser.save();
       // now get newUser without password and return it
       const newUserWithoutPassword: UserNoPassword | null = await this.userRepository.findByIdAsync(
-        newUser._id.toString(),
+        String(newUser._id),
       );
       if (!newUserWithoutPassword) {
         return ServiceResponse.failure("User not found after creation", null, StatusCodes.INTERNAL_SERVER_ERROR);

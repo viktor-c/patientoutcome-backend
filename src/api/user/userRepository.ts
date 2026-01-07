@@ -287,7 +287,7 @@ export class UserRepository {
         }
 
         // Insert the mock user
-        await userModel.create(mockUser);
+        await userModel.create(mockUser as unknown as Parameters<typeof userModel.create>[0]);
         inserted++;
       }
 

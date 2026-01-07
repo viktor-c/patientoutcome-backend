@@ -535,8 +535,8 @@ surgeryRegistry.registerPath({
   tags: ["surgery"],
   request: {
     params: z.object({
-      startDate: z.date({ required_error: "startDate is required" }),
-      endDate: z.date({ required_error: "endDate is required" }),
+      startDate: z.date({ message: "startDate is required" }),
+      endDate: z.date({ message: "endDate is required" }),
     }),
   },
   responses: createApiResponses([

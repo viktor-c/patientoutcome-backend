@@ -79,9 +79,9 @@ const customSuccessMessage = (req: IncomingMessage, res: ServerResponse<Incoming
   return `${req.method} completed`;
 };
 
-const genReqId = (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
-  const existingID = req.id ?? req.headers["x-request-id"];
-  if (existingID) return existingID;
+const genReqId = (req: IncomingMessage, res: ServerResponse<IncomingMessage>): string => {
+  const existingID = (req as IncomingMessage & { id?: string }).id ?? req.headers["x-request-id"];
+  if (existingID) return typeof existingID === 'string' ? existingID : String(existingID);
   const id = randomUUID();
   res.setHeader("X-Request-Id", id);
   return id;

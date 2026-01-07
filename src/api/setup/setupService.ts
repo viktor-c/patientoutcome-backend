@@ -77,7 +77,8 @@ export class SetupService {
         lastLogin: new Date().toISOString(),
       };
 
-      const createdUser = await userModel.create(newAdmin);
+      const doc = await userModel.create(newAdmin as unknown as Parameters<typeof userModel.create>[0]);
+      const createdUser = Array.isArray(doc) ? doc[0] : doc;
 
       logger.info(
         { adminId: createdUser._id, username: adminData.username },

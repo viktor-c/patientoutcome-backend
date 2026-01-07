@@ -111,7 +111,7 @@ feedbackRouter.post("/", async (req: Request, res: Response) => {
 
     if (!validationResult.success) {
       const serviceResponse = ServiceResponse.failure(
-        validationResult.error.errors.map((e) => e.message).join(", "),
+        validationResult.error.issues.map((e: any) => e.message).join(", "),
         null,
         400,
       );

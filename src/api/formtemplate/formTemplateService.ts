@@ -24,7 +24,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplateArray.safeParse(formTemplates);
       if (validationResult.success === false) {
-        logger.debug({ errors: validationResult.error.errors }, "Validation error");
+        logger.debug({ errors: validationResult.error.issues }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -58,7 +58,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplate.safeParse(formTemplate);
       if (validationResult.success === false) {
-        logger.debug({ errors: validationResult.error.errors }, "Validation error");
+        logger.debug({ errors: validationResult.error.issues }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -92,7 +92,7 @@ export class FormTemplateService {
       }
       const validationResult = FormTemplateListSchema.safeParse(formTemplates);
       if (validationResult.success === false) {
-        logger.debug({ errors: validationResult.error.errors }, "Validation error");
+        logger.debug({ errors: validationResult.error.issues }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,
@@ -130,7 +130,7 @@ export class FormTemplateService {
 
       const validationResult = FormTemplate.safeParse(updatedTemplate);
       if (validationResult.success === false) {
-        logger.debug({ errors: validationResult.error.errors }, "Validation error");
+        logger.debug({ errors: validationResult.error.issues }, "Validation error");
         return ServiceResponse.failure(
           "Invalid form template data as response",
           null,

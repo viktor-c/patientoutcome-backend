@@ -19,8 +19,8 @@ export const SubscaleScoreSchema = z.object({
 });
 
 export const ScoringDataSchema = z.object({
-  rawData: z.record(z.record(z.union([z.string(), z.number(), z.null()]))).nullable(),
-  subscales: z.record(SubscaleScoreSchema.nullable()).optional(),
+  rawData: z.record(z.string(), z.record(z.string(), z.union([z.string(), z.number(), z.null()]))).nullable(),
+  subscales: z.record(z.string(), SubscaleScoreSchema.nullable()).optional(),
   total: SubscaleScoreSchema.nullable(),
 });
 

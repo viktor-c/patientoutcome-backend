@@ -19,9 +19,9 @@ export const validateRequest = (schema: ZodSchema) => (req: Request, res: Respon
     let validationErrorsArray: unknown[] | null = null;
     if (err) {
       // If it's a ZodError, extract issues, otherwise stringify the error
-      if ((err as ZodError).errors) {
-        const issues = (err as ZodError).errors;
-        validationErrorsArray = issues.map((i) => ({ message: i.message, path: i.path, code: (i as any).code ?? undefined, expected: (i as any).expected ?? undefined, received: (i as any).received ?? undefined }));
+      if ((err as ZodError).issues) {
+        const issues = (err as ZodError).issues;
+        validationErrorsArray = issues.map((i: any) => ({ message: i.message, path: i.path, code: i.code ?? undefined, expected: i.expected ?? undefined, received: i.received ?? undefined }));
       } else {
         try {
           validationErrorsArray = [{ message: JSON.stringify(err) }];
@@ -47,9 +47,9 @@ export const validateRequestOnlyWithBody = (schema: ZodSchema) => (req: Request,
     const statusCode = StatusCodes.BAD_REQUEST;
     let validationErrorsArray: unknown[] | null = null;
     if (err) {
-      if ((err as ZodError).errors) {
-        const issues = (err as ZodError).errors;
-        validationErrorsArray = issues.map((i) => ({ message: i.message, path: i.path, code: (i as any).code ?? undefined, expected: (i as any).expected ?? undefined, received: (i as any).received ?? undefined }));
+      if ((err as ZodError).issues) {
+        const issues = (err as ZodError).issues;
+        validationErrorsArray = issues.map((i: any) => ({ message: i.message, path: i.path, code: i.code ?? undefined, expected: i.expected ?? undefined, received: i.received ?? undefined }));
       } else {
         try {
           validationErrorsArray = [{ message: JSON.stringify(err) }];

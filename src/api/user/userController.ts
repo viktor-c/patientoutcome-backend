@@ -303,7 +303,7 @@ class UserController {
     const parseResult = userRegistrationZod.safeParse(req.body);
     if (!parseResult.success) {
       return res.status(400).json({
-        message: parseResult.error.errors.map((e) => e.message).join(", "),
+        message: parseResult.error.issues.map((e: any) => e.message).join(", "),
       });
     }
     const serviceResponse = await userRegistrationService.registerUser(parseResult.data);
@@ -326,7 +326,7 @@ class UserController {
     if (!parseResult.success) {
       return res.status(400).json({
         success: false,
-        message: parseResult.error.errors.map((e) => e.message).join(", "),
+        message: parseResult.error.issues.map((e: any) => e.message).join(", "),
       });
     }
     const serviceResponse = await userRegistrationService.batchCreateCodes(parseResult.data);

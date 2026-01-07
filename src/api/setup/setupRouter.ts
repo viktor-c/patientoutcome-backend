@@ -101,7 +101,7 @@ setupRouter.post("/create-admin", async (req: Request, res: Response) => {
     // Validate request body
     const parseResult = CreateAdminRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
-      const errors = parseResult.error.errors.map((e) => e.message).join(", ");
+      const errors = parseResult.error.issues.map((e: any) => e.message).join(", ");
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: `Validation error: ${errors}`,
@@ -181,7 +181,7 @@ setupRouter.post("/seed", seedingMiddleware, async (req: Request, res: Response)
     // Parse request body with defaults
     const parseResult = SeedRequestSchema.safeParse(req.body || {});
     if (!parseResult.success) {
-      const errors = parseResult.error.errors.map((e) => e.message).join(", ");
+      const errors = parseResult.error.issues.map((e: any) => e.message).join(", ");
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: `Validation error: ${errors}`,
@@ -218,7 +218,7 @@ setupRegistry.registerPath({
     {
       schema: z.object({
         message: z.string(),
-        data: z.record(z.number()),
+        data: z.record(z.string(), z.number()),
       }),
       description: "Database statistics retrieved successfully",
       statusCode: 200,

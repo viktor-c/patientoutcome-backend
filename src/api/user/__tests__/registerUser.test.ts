@@ -50,7 +50,7 @@ describe("POST /user/register", () => {
     await RegistrationCodeModel.create({
       code: validCode,
       createdAt: new Date(),
-      activationAt: new Date(),
+      activatedAt: new Date(),
       validUntil: new Date(Date.now() + 1000 * 60 * 60),
       userCreatedWith: null,
       roles: ["doctor"],
@@ -98,7 +98,7 @@ describe("POST /user/register", () => {
     await RegistrationCodeModel.create({
       code: expiredCode,
       createdAt: new Date(),
-      activationAt: new Date(),
+      activatedAt: new Date(),
       validUntil: new Date(Date.now() - 1000),
       userCreatedWith: null,
       roles: ["doctor"],
