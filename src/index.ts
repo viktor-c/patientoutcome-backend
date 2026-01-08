@@ -12,7 +12,7 @@ const server = app.listen(env.PORT, async () => {
     await initializeScheduler();
     logger.info("Backup scheduler initialized successfully");
   } catch (error) {
-    logger.error("Failed to initialize backup scheduler:", error);
+    logger.error(error, "Failed to initialize backup scheduler");
   }
 });
 
@@ -24,7 +24,7 @@ const onCloseSignal = () => {
     shutdownScheduler();
     logger.info("Backup scheduler shutdown complete");
   } catch (error) {
-    logger.error("Error shutting down backup scheduler:", error);
+    logger.error(error, "Error shutting down backup scheduler");
   }
   
   server.close(() => {

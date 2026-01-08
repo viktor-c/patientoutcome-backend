@@ -1,10 +1,13 @@
 import type { Request, RequestHandler, Response } from "express";
+import { promises as fs } from "node:fs";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
 import { BackupRepository } from "@/api/backup/backupRepository";
 import { BackupService } from "@/api/backup/backupService";
+import { LocalStorageAdapter } from "@/api/backup/storageAdapters";
 import { getScheduler } from "@/api/backup/schedulerService";
+import { env } from "@/common/utils/envConfig";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
@@ -36,7 +39,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup jobs retrieved", jobs);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup jobs:", error);
+      logger.error(error, "Failed to get backup jobs");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup jobs",
         null,
@@ -63,7 +66,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job retrieved", job);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup job:", error);
+      logger.error(error, "Failed to get backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup job",
         null,
@@ -96,7 +99,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job created", job, StatusCodes.CREATED);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create backup job:", error);
+      logger.error(error, "Failed to create backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create backup job",
         null,
@@ -133,7 +136,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job updated", job);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to update backup job:", error);
+      logger.error(error, "Failed to update backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to update backup job",
         null,
@@ -165,7 +168,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job deleted", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to delete backup job:", error);
+      logger.error(error, "Failed to delete backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to delete backup job",
         null,
@@ -188,7 +191,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup job triggered", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to trigger backup job:", error);
+      logger.error(error, "Failed to trigger backup job");
       const serviceResponse = ServiceResponse.failure(
         "Failed to trigger backup job",
         null,
@@ -209,12 +212,13 @@ class BackupController {
   public createManualBackup: RequestHandler = async (req: Request, res: Response) => {
     try {
       const userId = req.session?.userId;
-      const { collections, storageType, encryptionEnabled, password } = req.body;
+      const { collections, storageType, credentialId, encryptionEnabled, password } = req.body;
 
       // Create a temporary job configuration for manual backup
       const jobConfig = {
         name: "Manual Backup",
         storageType: storageType || "local",
+        credentialId: credentialId || undefined,
         collections: collections || [],
         encryptionEnabled: encryptionEnabled || false,
         encryptionPasswordHash: password ? await this.hashPassword(password) : undefined,
@@ -225,7 +229,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup created successfully", result);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create manual backup:", error);
+      logger.error(error, "Failed to create manual backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create backup",
         null,
@@ -247,7 +251,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup history retrieved", history);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup history:", error);
+      logger.error(error, "Failed to get backup history");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup history",
         null,
@@ -269,7 +273,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup metadata retrieved", metadata);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get backup metadata:", error);
+      logger.error(error, "Failed to get backup metadata");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve backup metadata",
         null,
@@ -291,7 +295,7 @@ class BackupController {
       // Send file as download
       res.download(filePath, (err) => {
         if (err) {
-          logger.error("Failed to download backup file:", err);
+          logger.error(err, "Failed to download backup file");
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: "Failed to download backup file",
@@ -299,7 +303,7 @@ class BackupController {
         }
       });
     } catch (error) {
-      logger.error("Failed to download backup:", error);
+      logger.error(error, "Failed to download backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to download backup",
         null,
@@ -318,24 +322,51 @@ class BackupController {
       // File upload handling would be done by multer middleware
       // The uploaded file would be in req.file
       const file = (req as any).file;
-      
+
       if (!file) {
         const serviceResponse = ServiceResponse.failure("No file uploaded", null, StatusCodes.BAD_REQUEST);
         return handleServiceResponse(serviceResponse, res);
       }
 
-      // TODO: Process uploaded file and create backup history record
-      // This would involve extracting metadata and storing in the database
+      const tempPath = file.path;
+      const filename = file.originalname;
+      const sizeBytes = file.size;
+
+      // Extract metadata from the uploaded backup file
+      const metadata = await this.backupService.extractBackupMetadata(tempPath);
+
+      // Upload the file to storage (assume local for uploaded backups)
+      const storageAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+      const storageLocation = await storageAdapter.upload(tempPath, filename);
+
+      // Create backup history record
+      const history = await this.repository.createBackupHistory({
+        filename,
+        filePath: storageLocation,
+        sizeBytes,
+        collections: metadata.collections,
+        isEncrypted: metadata.isEncrypted,
+        encryptedWithPassword: metadata.encryptedWithPassword,
+        storageType: "local",
+        status: "completed",
+        startedAt: new Date(metadata.createdAt),
+        completedAt: new Date(metadata.createdAt),
+        createdBy: req.session?.userId,
+      });
+
+      // Clean up temp file
+      await fs.unlink(tempPath).catch(() => {});
 
       const serviceResponse = ServiceResponse.success("Backup uploaded successfully", {
-        filename: file.originalname,
-        size: file.size,
+        backupId: history._id,
+        filename: history.filename,
+        sizeBytes: history.sizeBytes,
       });
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to upload backup:", error);
+      logger.error(error, "Failed to upload backup");
       const serviceResponse = ServiceResponse.failure(
-        "Failed to upload backup",
+        error instanceof Error ? error.message : "Failed to upload backup",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR
       );
@@ -367,7 +398,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Backup restored successfully", result);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to restore backup:", error);
+      logger.error(error, "Failed to restore backup");
       const serviceResponse = ServiceResponse.failure(
         "Failed to restore backup",
         null,
@@ -389,7 +420,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Restore history retrieved", history);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get restore history:", error);
+      logger.error(error, "Failed to get restore history");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve restore history",
         null,
@@ -410,7 +441,7 @@ class BackupController {
   public getAllCredentials: RequestHandler = async (req: Request, res: Response) => {
     try {
       const credentials = await this.repository.findAllCredentials();
-      
+
       // Remove sensitive encrypted data from response
       const sanitized = credentials.map((cred) => ({
         _id: cred._id,
@@ -423,7 +454,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Credentials retrieved", sanitized);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get credentials:", error);
+      logger.error(error, "Failed to get credentials");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve credentials",
         null,
@@ -454,7 +485,7 @@ class BackupController {
       );
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to create credentials:", error);
+      logger.error(error, "Failed to create credentials");
       const serviceResponse = ServiceResponse.failure(
         "Failed to create credentials",
         null,
@@ -476,7 +507,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Credentials deleted", null);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to delete credentials:", error);
+      logger.error(error, "Failed to delete credentials");
       const serviceResponse = ServiceResponse.failure(
         error instanceof Error ? error.message : "Failed to delete credentials",
         null,
@@ -502,7 +533,7 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Collections retrieved", metadata);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get collections:", error);
+      logger.error(error, "Failed to get collections");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve collections",
         null,
@@ -523,9 +554,32 @@ class BackupController {
       const serviceResponse = ServiceResponse.success("Database statistics retrieved", stats);
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      logger.error("Failed to get database stats:", error);
+      logger.error(error, "Failed to get database stats");
       const serviceResponse = ServiceResponse.failure(
         "Failed to retrieve database statistics",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(serviceResponse, res);
+    }
+  };
+
+  /**
+   * Delete a backup
+   * @route DELETE /backup/history/:id
+   */
+  public deleteBackup: RequestHandler = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      await this.backupService.deleteBackup(id);
+
+      const serviceResponse = ServiceResponse.success("Backup deleted successfully", null);
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      logger.error(error, "Failed to delete backup");
+      const serviceResponse = ServiceResponse.failure(
+        error instanceof Error ? error.message : "Failed to delete backup",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR
       );

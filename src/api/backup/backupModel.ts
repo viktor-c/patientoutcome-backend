@@ -107,10 +107,12 @@ export const BackupHistorySchema = z.object({
   // Backup metadata
   collections: z.array(CollectionMetadataSchema),
   isEncrypted: z.boolean().default(false),
+  encryptedWithPassword: z.boolean().default(false),
   
   // Storage information
   storageType: StorageTypeSchema,
   storageLocation: z.string().optional(), // S3 bucket, SFTP path, etc.
+  credentialId: zId("Credential").optional().nullable(), // For remote storage
   
   // Execution details
   startedAt: z.date(),

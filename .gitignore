@@ -18,6 +18,8 @@ dist-ssr
 *.local
 .env
 docs
+# Backups folder generated at runtime
+backups
 
 *-lock.json
 

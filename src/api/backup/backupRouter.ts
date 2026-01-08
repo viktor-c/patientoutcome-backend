@@ -24,6 +24,7 @@ import {
 } from "@/api/backup/backupModel";
 import { backupController } from "./backupController";
 import { env } from "@/common/utils/envConfig";
+import { validateRequest } from "@/common/utils/httpHandlers";
 
 // Initialize OpenAPI registry
 export const backupRegistry = new OpenAPIRegistry();
@@ -80,7 +81,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/jobs", AclMiddleware("backup-jobs-get-all"), backupController.getAllBackupJobs);
+backupRouter.get(
+  "/jobs",
+  validateRequest(z.object({})),
+  AclMiddleware("backup-jobs-get-all"),
+  backupController.getAllBackupJobs
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -106,7 +112,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/jobs/:id", AclMiddleware("backup-jobs-get"), backupController.getBackupJob);
+backupRouter.get(
+  "/jobs/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-jobs-get"),
+  backupController.getBackupJob
+);
 
 backupRegistry.registerPath({
   method: "post",
@@ -131,7 +142,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/jobs", AclMiddleware("backup-jobs-create"), backupController.createBackupJob);
+backupRouter.post(
+  "/jobs",
+  validateRequest(z.object({ body: CreateBackupJobSchema.shape.body })),
+  AclMiddleware("backup-jobs-create"),
+  backupController.createBackupJob
+);
 
 backupRegistry.registerPath({
   method: "put",
@@ -162,7 +178,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.put("/jobs/:id", AclMiddleware("backup-jobs-update"), backupController.updateBackupJob);
+backupRouter.put(
+  "/jobs/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }), body: BackupJobSchema.partial() })),
+  AclMiddleware("backup-jobs-update"),
+  backupController.updateBackupJob
+);
 
 backupRegistry.registerPath({
   method: "delete",
@@ -188,7 +209,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.delete("/jobs/:id", AclMiddleware("backup-jobs-delete"), backupController.deleteBackupJob);
+backupRouter.delete(
+  "/jobs/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-jobs-delete"),
+  backupController.deleteBackupJob
+);
 
 backupRegistry.registerPath({
   method: "post",
@@ -209,7 +235,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/jobs/:id/trigger", AclMiddleware("backup-jobs-trigger"), backupController.triggerBackupJob);
+backupRouter.post(
+  "/jobs/:id/trigger",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-jobs-trigger"),
+  backupController.triggerBackupJob
+);
 
 // ============================================
 // Manual Backup Operations
@@ -219,6 +250,7 @@ const CreateManualBackupSchema = z.object({
   body: z.object({
     collections: z.array(z.string()).optional(),
     storageType: StorageTypeSchema.optional(),
+    credentialId: z.string().optional(),
     encryptionEnabled: z.boolean().optional(),
     password: z.string().optional(),
   }),
@@ -251,7 +283,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/create", AclMiddleware("backup-create"), backupController.createManualBackup);
+backupRouter.post(
+  "/create",
+  validateRequest(z.object({ body: CreateManualBackupSchema.shape.body })),
+  AclMiddleware("backup-create"),
+  backupController.createManualBackup
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -272,7 +309,43 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/history", AclMiddleware("backup-history-get"), backupController.getBackupHistory);
+backupRouter.get(
+  "/history",
+  validateRequest(z.object({ query: z.object({ limit: z.string().optional() }) })),
+  AclMiddleware("backup-history-get"),
+  backupController.getBackupHistory
+);
+
+backupRegistry.registerPath({
+  method: "delete",
+  path: "/backup/history/{id}",
+  tags: ["Backup"],
+  operationId: "deleteBackup",
+  description: "Delete a backup (removes both the file and database record)",
+  summary: "Delete backup",
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Backup not found",
+      statusCode: 404,
+    },
+  ]),
+});
+
+backupRouter.delete(
+  "/history/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-history-delete"),
+  backupController.deleteBackup
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -299,7 +372,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/:id/metadata", AclMiddleware("backup-metadata-get"), backupController.getBackupMetadata);
+backupRouter.get(
+  "/:id/metadata",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-metadata-get"),
+  backupController.getBackupMetadata
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -320,7 +398,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/:id/download", AclMiddleware("backup-download"), backupController.downloadBackup);
+backupRouter.get(
+  "/:id/download",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-download"),
+  backupController.downloadBackup
+);
 
 backupRegistry.registerPath({
   method: "post",
@@ -333,9 +416,17 @@ backupRegistry.registerPath({
     body: {
       content: {
         "multipart/form-data": {
-          schema: z.object({
-            file: z.any(),
-          }),
+          schema: {
+            type: "object",
+            properties: {
+              file: {
+                type: "string",
+                format: "binary",
+                description: "Backup file (.tar.gz)",
+              },
+            },
+            required: ["file"],
+          },
         },
       },
     },
@@ -352,7 +443,13 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/upload", AclMiddleware("backup-upload"), upload.single("file"), backupController.uploadBackup);
+backupRouter.post(
+  "/upload",
+  validateRequest(z.object({})),
+  AclMiddleware("backup-upload"),
+  upload.single("file"),
+  backupController.uploadBackup
+);
 
 const RestoreBackupSchema = z.object({
   body: z.object({
@@ -391,7 +488,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/:id/restore", AclMiddleware("backup-restore"), backupController.restoreBackup);
+backupRouter.post(
+  "/:id/restore",
+  validateRequest(z.object({ params: z.object({ id: z.string() }), body: RestoreBackupSchema.shape.body })),
+  AclMiddleware("backup-restore"),
+  backupController.restoreBackup
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -412,7 +514,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/restore/history", AclMiddleware("backup-restore-history-get"), backupController.getRestoreHistory);
+backupRouter.get(
+  "/restore/history",
+  validateRequest(z.object({ query: z.object({ limit: z.string().optional() }) })),
+  AclMiddleware("backup-restore-history-get"),
+  backupController.getRestoreHistory
+);
 
 // ============================================
 // Credentials Management
@@ -422,7 +529,7 @@ const CreateCredentialSchema = z.object({
   body: z.object({
     name: z.string(),
     storageType: StorageTypeSchema,
-    credentials: z.record(z.any()),
+    credentials: z.record(z.string(), z.any()),
   }),
 });
 
@@ -450,7 +557,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/credentials", AclMiddleware("backup-credentials-get-all"), backupController.getAllCredentials);
+backupRouter.get(
+  "/credentials",
+  validateRequest(z.object({})),
+  AclMiddleware("backup-credentials-get-all"),
+  backupController.getAllCredentials
+);
 
 backupRegistry.registerPath({
   method: "post",
@@ -479,7 +591,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.post("/credentials", AclMiddleware("backup-credentials-create"), backupController.createCredentials);
+backupRouter.post(
+  "/credentials",
+  validateRequest(z.object({ body: CreateCredentialSchema.shape.body })),
+  AclMiddleware("backup-credentials-create"),
+  backupController.createCredentials
+);
 
 backupRegistry.registerPath({
   method: "delete",
@@ -500,7 +617,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.delete("/credentials/:id", AclMiddleware("backup-credentials-delete"), backupController.deleteCredentials);
+backupRouter.delete(
+  "/credentials/:id",
+  validateRequest(z.object({ params: z.object({ id: z.string() }) })),
+  AclMiddleware("backup-credentials-delete"),
+  backupController.deleteCredentials
+);
 
 // ============================================
 // Database Info
@@ -522,7 +644,12 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/collections", AclMiddleware("backup-collections-get"), backupController.getCollections);
+backupRouter.get(
+  "/collections",
+  validateRequest(z.object({})),
+  AclMiddleware("backup-collections-get"),
+  backupController.getCollections
+);
 
 backupRegistry.registerPath({
   method: "get",
@@ -545,4 +672,9 @@ backupRegistry.registerPath({
   ]),
 });
 
-backupRouter.get("/stats", AclMiddleware("backup-stats-get"), backupController.getDatabaseStats);
+backupRouter.get(
+  "/stats",
+  validateRequest(z.object({})),
+  AclMiddleware("backup-stats-get"),
+  backupController.getDatabaseStats
+);

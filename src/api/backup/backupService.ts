@@ -79,7 +79,7 @@ export class BackupService {
 
     return await this.repository.createCredential({
       name,
-      storageType,
+      storageType: storageType as 'local' | 's3' | 'sftp' | 'webdav',
       encryptedData,
       iv,
       authTag,
@@ -127,21 +127,7 @@ export class BackupService {
     job: Partial<BackupJob>,
     userId?: string
   ): Promise<{ backupId: string; filename: string; sizeBytes: number }> {
-    // Create backup history record
-    const history = await this.repository.createBackupHistory({
-      jobId: job._id?.toString(),
-      jobName: job.name,
-      filename: "", // Will be set later
-      filePath: "",
-      sizeBytes: 0,
-      collections: [],
-      isEncrypted: job.encryptionEnabled || false,
-      storageType: job.storageType || "local",
-      status: "running",
-      startedAt: new Date(),
-      createdBy: userId,
-      departmentId: job.departmentId,
-    });
+    const startedAt = new Date();
 
     try {
       // Determine which collections to backup
@@ -171,15 +157,24 @@ export class BackupService {
       const storageAdapter = await this.getStorageAdapter(job);
       const storageLocation = await storageAdapter.upload(tempFilePath, filename);
 
-      // Update backup history
-      await this.repository.updateBackupHistory(history._id!.toString(), {
+      // Create backup history record with complete data
+      const history = await this.repository.createBackupHistory({
+        jobId: job._id?.toString(),
+        jobName: job.name,
         filename,
         filePath: job.storageType === "local" ? storageLocation : filename,
         storageLocation,
         sizeBytes,
         collections: collectionMetadata,
+        isEncrypted: job.encryptionEnabled || false,
+        encryptedWithPassword: !!job.encryptionPasswordHash,
+        storageType: job.storageType || "local",
+        credentialId: job.credentialId?.toString() || null,
         status: "completed",
+        startedAt,
         completedAt: new Date(),
+        createdBy: userId,
+        departmentId: job.departmentId,
       });
 
       // Clean up temp file
@@ -194,8 +189,7 @@ export class BackupService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      await this.repository.completeBackup(history._id!.toString(), errorMessage);
-      logger.error(`Backup failed: ${errorMessage}`, error);
+      logger.error(error, `Backup failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -340,6 +334,20 @@ export class BackupService {
   }
 
   /**
+   * Validate a backup is available and completed before attempting restore
+   */
+  async validateBackupForRestore(backupId: string): Promise<any> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+    if (history.status !== "completed") {
+      throw new Error("Backup is not in a valid state for restore");
+    }
+    return history;
+  }
+
+  /**
    * Restore backup
    */
   async restoreBackup(
@@ -402,7 +410,7 @@ export class BackupService {
         } catch (error) {
           const errorMsg = `Failed to restore collection ${collectionName}: ${error}`;
           result.errors.push(errorMsg);
-          logger.error(errorMsg, error);
+          logger.error(error, errorMsg);
         }
       }
 
@@ -558,9 +566,14 @@ export class BackupService {
       return new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
     }
 
-    // For remote storage, we'd need to look up the job and get credentials
-    // This is simplified - in production, might want to store credential ID in history
-    throw new Error("Remote storage restore not fully implemented");
+    // Get credentials for remote storage using stored credentialId
+    if (!history.credentialId) {
+      throw new Error("Credential ID not found in backup history for remote storage");
+    }
+
+    const credentials = await this.getDecryptedCredential(history.credentialId.toString());
+
+    return StorageAdapterFactory.create(history.storageType, credentials);
   }
 
   /**
@@ -598,5 +611,82 @@ export class BackupService {
     const storageAdapter = await this.getStorageAdapterForBackup(history);
     await storageAdapter.download(history.filename, tempFilePath);
     return tempFilePath;
+  }
+
+  /**
+   * Delete a backup (removes both the file and database record)
+   */
+  async deleteBackup(backupId: string): Promise<void> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+
+    try {
+      // Delete the backup file from storage
+      if (history.storageType === "local") {
+        // Delete local file
+        const localAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+        await localAdapter.delete(history.filename);
+      } else {
+        // Delete remote file
+        const storageAdapter = await this.getStorageAdapterForBackup(history);
+        await storageAdapter.delete(history.filename);
+      }
+
+      logger.info(`Backup file deleted: ${history.filename}`);
+    } catch (error) {
+      // Log error but continue to delete database record
+      logger.error(error, `Failed to delete backup file: ${history.filename}`);
+    }
+
+    // Delete the backup history record from database
+    await this.repository.deleteBackupHistory(backupId);
+    
+    logger.info(`Backup history deleted: ${backupId}`);
+  }
+
+  /**
+   * Delete only the backup file from storage (keeps history record)
+   */
+  async deleteBackupFile(backupId: string): Promise<void> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+
+    // Delete the backup file from storage
+    if (history.storageType === "local") {
+      const localAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+      await localAdapter.delete(history.filename);
+    } else {
+      const storageAdapter = await this.getStorageAdapterForBackup(history);
+      await storageAdapter.delete(history.filename);
+    }
+
+    logger.info(`Backup file deleted: ${history.filename}`);
+  }
+
+  /**
+   * Extract backup metadata from a local file path
+   */
+  async extractBackupMetadata(filePath: string): Promise<BackupMetadata> {
+    const extractDir = path.join(this.tempDir, `extract-${Date.now()}`);
+    await fs.mkdir(extractDir, { recursive: true });
+
+    try {
+      // Extract the archive (assume not encrypted for uploaded files)
+      await this.extractArchive(filePath, extractDir, false);
+      
+      // Read metadata
+      const metadataPath = path.join(extractDir, "metadata.json");
+      const metadataContent = await fs.readFile(metadataPath, "utf-8");
+      const metadata = JSON.parse(metadataContent) as BackupMetadata;
+      
+      return metadata;
+    } finally {
+      // Clean up extracted files
+      await fs.rm(extractDir, { recursive: true, force: true }).catch(() => {});
+    }
   }
 }

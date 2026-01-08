@@ -174,9 +174,9 @@ export class S3StorageAdapter implements IStorageAdapter {
 
     // Write stream to file
     const writeStream = createWriteStream(localFilePath);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       (response.Body as Readable).pipe(writeStream)
-        .on("finish", resolve)
+        .on("finish", () => resolve())
         .on("error", reject);
     });
 
@@ -311,7 +311,8 @@ export class SftpStorageAdapter implements IStorageAdapter {
     const sftp = await this.getClient();
     try {
       const remotePath = this.getRemotePath(remoteFileName);
-      return await sftp.exists(remotePath);
+      const result = await sftp.exists(remotePath);
+      return result !== false; // sftp.exists returns false | string, convert to boolean
     } finally {
       await sftp.end();
     }
@@ -348,7 +349,8 @@ export class WebDavStorageAdapter implements IStorageAdapter {
     } catch (error) {
       // Directory might already exist
     }
-
+    // BUG serious security issue, but ignoring TLS errors for now; this is needed when uploading to webdav with letsencrypt certificates, not sure why
+    // process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     await this.client.putFileContents(remotePath, fileContent);
     logger.info(`File uploaded to WebDAV: ${remotePath}`);
     return remotePath;
@@ -367,6 +369,8 @@ export class WebDavStorageAdapter implements IStorageAdapter {
 
   async delete(remoteFileName: string): Promise<void> {
     const remotePath = this.getRemotePath(remoteFileName);
+    // BUG serious security issue, but ignoring TLS errors for now; this is needed when uploading to webdav with letsencrypt certificates, not sure why
+    // process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     await this.client.deleteFile(remotePath);
     logger.info(`File deleted from WebDAV: ${remotePath}`);
   }

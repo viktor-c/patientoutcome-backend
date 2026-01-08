@@ -19,7 +19,7 @@ export const CRON_PRESETS = {
  */
 interface ScheduledJob {
   jobId: string;
-  cronJob: cron.ScheduledTask;
+  cronJob: ReturnType<typeof cron.schedule>;
 }
 
 /**
@@ -57,14 +57,14 @@ export class BackupSchedulerService {
         try {
           await this.scheduleJob(job);
         } catch (error) {
-          logger.error(`Failed to schedule backup job ${job._id}:`, error);
+          logger.error(error, `Failed to schedule backup job ${job._id}`);
         }
       }
 
       this.initialized = true;
       logger.info("Backup scheduler initialized successfully");
     } catch (error) {
-      logger.error("Failed to initialize backup scheduler:", error);
+      logger.error(error, "Failed to initialize backup scheduler");
       throw error;
     }
   }
@@ -98,7 +98,6 @@ export class BackupSchedulerService {
         await this.executeBackup(job);
       },
       {
-        scheduled: true,
         timezone: "UTC", // Use UTC for consistency
       }
     );
@@ -152,7 +151,7 @@ export class BackupSchedulerService {
       await this.cleanupOldBackups(job);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      logger.error(`Scheduled backup failed for job ${jobId}:`, error);
+      logger.error(error, `Scheduled backup failed for job ${jobId}`);
 
       // Update job status to failed
       await this.repository.updateJobLastRun(jobId, "failed", errorMessage);
@@ -188,20 +187,17 @@ export class BackupSchedulerService {
       // Delete old backup files and history records
       for (const backup of oldBackups) {
         try {
-          // TODO: Delete the actual backup file from storage
-          // This would require getting the storage adapter and calling delete()
-          
-          // Delete history record
-          // For now, we keep the history but could optionally delete it
-          // await this.repository.deleteBackupHistory(backup._id.toString());
-          
-          logger.info(`Cleaned up old backup: ${backup.filename}`);
+          // Delete the actual backup file from storage
+          if (backup._id) {
+            await this.backupService.deleteBackupFile(backup._id.toString());
+            logger.info(`Cleaned up old backup: ${backup.filename}`);
+          }
         } catch (error) {
-          logger.error(`Failed to delete old backup ${backup.filename}:`, error);
+          logger.error(error, `Failed to delete old backup ${backup.filename}`);
         }
       }
     } catch (error) {
-      logger.error(`Failed to cleanup old backups for job ${job._id}:`, error);
+      logger.error(error, `Failed to cleanup old backups for job ${job._id}`);
     }
   }
 
@@ -213,7 +209,9 @@ export class BackupSchedulerService {
       return job.cronExpression;
     }
 
-    return CRON_PRESETS[job.frequency] || CRON_PRESETS.daily;
+    // Use type guard to safely access CRON_PRESETS
+    const preset = job.frequency in CRON_PRESETS ? CRON_PRESETS[job.frequency as keyof typeof CRON_PRESETS] : CRON_PRESETS.daily;
+    return preset;
   }
 
   /**
@@ -222,7 +220,7 @@ export class BackupSchedulerService {
   getScheduledJobs(): Array<{ jobId: string; isRunning: boolean }> {
     return Array.from(this.scheduledJobs.values()).map((scheduled) => ({
       jobId: scheduled.jobId,
-      isRunning: scheduled.cronJob.getStatus() === "scheduled",
+      isRunning: true, // ScheduledTask is running if it exists in the map
     }));
   }
 
