@@ -566,9 +566,14 @@ export class BackupService {
       return new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
     }
 
-    // For remote storage, we'd need to look up the job and get credentials
-    // This is simplified - in production, might want to store credential ID in history
-    throw new Error("Remote storage restore not fully implemented");
+    // Get credentials for remote storage using stored credentialId
+    if (!history.credentialId) {
+      throw new Error("Credential ID not found in backup history for remote storage");
+    }
+
+    const credentials = await this.getDecryptedCredential(history.credentialId.toString());
+
+    return StorageAdapterFactory.create(history.storageType, credentials);
   }
 
   /**
