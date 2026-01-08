@@ -187,14 +187,11 @@ export class BackupSchedulerService {
       // Delete old backup files and history records
       for (const backup of oldBackups) {
         try {
-          // TODO: Delete the actual backup file from storage
-          // This would require getting the storage adapter and calling delete()
-          
-          // Delete history record
-          // For now, we keep the history but could optionally delete it
-          // await this.repository.deleteBackupHistory(backup._id.toString());
-          
-          logger.info(`Cleaned up old backup: ${backup.filename}`);
+          // Delete the actual backup file from storage
+          if (backup._id) {
+            await this.backupService.deleteBackupFile(backup._id.toString());
+            logger.info(`Cleaned up old backup: ${backup.filename}`);
+          }
         } catch (error) {
           logger.error(error, `Failed to delete old backup ${backup.filename}`);
         }

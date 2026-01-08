@@ -416,9 +416,17 @@ backupRegistry.registerPath({
     body: {
       content: {
         "multipart/form-data": {
-          schema: z.object({
-            file: z.any(),
-          }),
+          schema: {
+            type: "object",
+            properties: {
+              file: {
+                type: "string",
+                format: "binary",
+                description: "Backup file (.tar.gz)",
+              },
+            },
+            required: ["file"],
+          },
         },
       },
     },

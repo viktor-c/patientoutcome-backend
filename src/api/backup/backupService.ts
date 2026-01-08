@@ -645,4 +645,48 @@ export class BackupService {
     
     logger.info(`Backup history deleted: ${backupId}`);
   }
+
+  /**
+   * Delete only the backup file from storage (keeps history record)
+   */
+  async deleteBackupFile(backupId: string): Promise<void> {
+    const history = await this.repository.findBackupHistoryById(backupId);
+    if (!history) {
+      throw new Error("Backup not found");
+    }
+
+    // Delete the backup file from storage
+    if (history.storageType === "local") {
+      const localAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+      await localAdapter.delete(history.filename);
+    } else {
+      const storageAdapter = await this.getStorageAdapterForBackup(history);
+      await storageAdapter.delete(history.filename);
+    }
+
+    logger.info(`Backup file deleted: ${history.filename}`);
+  }
+
+  /**
+   * Extract backup metadata from a local file path
+   */
+  async extractBackupMetadata(filePath: string): Promise<BackupMetadata> {
+    const extractDir = path.join(this.tempDir, `extract-${Date.now()}`);
+    await fs.mkdir(extractDir, { recursive: true });
+
+    try {
+      // Extract the archive (assume not encrypted for uploaded files)
+      await this.extractArchive(filePath, extractDir, false);
+      
+      // Read metadata
+      const metadataPath = path.join(extractDir, "metadata.json");
+      const metadataContent = await fs.readFile(metadataPath, "utf-8");
+      const metadata = JSON.parse(metadataContent) as BackupMetadata;
+      
+      return metadata;
+    } finally {
+      // Clean up extracted files
+      await fs.rm(extractDir, { recursive: true, force: true }).catch(() => {});
+    }
+  }
 }

@@ -1,10 +1,13 @@
 import type { Request, RequestHandler, Response } from "express";
+import { promises as fs } from "node:fs";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
 import { BackupRepository } from "@/api/backup/backupRepository";
 import { BackupService } from "@/api/backup/backupService";
+import { LocalStorageAdapter } from "@/api/backup/storageAdapters";
 import { getScheduler } from "@/api/backup/schedulerService";
+import { env } from "@/common/utils/envConfig";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/common/utils/logger";
@@ -319,24 +322,51 @@ class BackupController {
       // File upload handling would be done by multer middleware
       // The uploaded file would be in req.file
       const file = (req as any).file;
-      
+
       if (!file) {
         const serviceResponse = ServiceResponse.failure("No file uploaded", null, StatusCodes.BAD_REQUEST);
         return handleServiceResponse(serviceResponse, res);
       }
 
-      // TODO: Process uploaded file and create backup history record
-      // This would involve extracting metadata and storing in the database
+      const tempPath = file.path;
+      const filename = file.originalname;
+      const sizeBytes = file.size;
+
+      // Extract metadata from the uploaded backup file
+      const metadata = await this.backupService.extractBackupMetadata(tempPath);
+
+      // Upload the file to storage (assume local for uploaded backups)
+      const storageAdapter = new LocalStorageAdapter(env.BACKUP_STORAGE_PATH);
+      const storageLocation = await storageAdapter.upload(tempPath, filename);
+
+      // Create backup history record
+      const history = await this.repository.createBackupHistory({
+        filename,
+        filePath: storageLocation,
+        sizeBytes,
+        collections: metadata.collections,
+        isEncrypted: metadata.isEncrypted,
+        encryptedWithPassword: metadata.encryptedWithPassword,
+        storageType: "local",
+        status: "completed",
+        startedAt: new Date(metadata.createdAt),
+        completedAt: new Date(metadata.createdAt),
+        createdBy: req.session?.userId,
+      });
+
+      // Clean up temp file
+      await fs.unlink(tempPath).catch(() => {});
 
       const serviceResponse = ServiceResponse.success("Backup uploaded successfully", {
-        filename: file.originalname,
-        size: file.size,
+        backupId: history._id,
+        filename: history.filename,
+        sizeBytes: history.sizeBytes,
       });
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       logger.error(error, "Failed to upload backup");
       const serviceResponse = ServiceResponse.failure(
-        "Failed to upload backup",
+        error instanceof Error ? error.message : "Failed to upload backup",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR
       );
@@ -411,7 +441,7 @@ class BackupController {
   public getAllCredentials: RequestHandler = async (req: Request, res: Response) => {
     try {
       const credentials = await this.repository.findAllCredentials();
-      
+
       // Remove sensitive encrypted data from response
       const sanitized = credentials.map((cred) => ({
         _id: cred._id,
@@ -541,7 +571,7 @@ class BackupController {
   public deleteBackup: RequestHandler = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      
+
       await this.backupService.deleteBackup(id);
 
       const serviceResponse = ServiceResponse.success("Backup deleted successfully", null);
