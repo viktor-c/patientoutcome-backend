@@ -9,8 +9,7 @@ interface Logger {
   warn(msg: string): void;
   warn(data: object, msg: string): void;
   error(msg: string): void;
-  error(msg: string, error: Error | unknown): void;
-  error(data: object | Error, msg?: string): void;
+  error(data: unknown, msg: string): void;
 }
 
 // In development, use console directly (outputs to stdout in VS Code)
@@ -39,7 +38,7 @@ export const logger: Logger =
             console.warn(`[WARN] ${msg || ""}`, data);
           }
         },
-        error: (msgOrData: string | object | Error, errorOrMsg?: string | Error | unknown) => {
+        error: (msgOrData: string | object | Error, errorOrMsg?: string | unknown) => {
           if (typeof msgOrData === 'string') {
             if (errorOrMsg !== undefined) {
               // Pattern: logger.error("message", error)
@@ -50,7 +49,8 @@ export const logger: Logger =
             }
           } else {
             // Pattern: logger.error(error, "message") or logger.error(data, "message")
-            console.error(`[ERROR] ${errorOrMsg || ""}`, msgOrData);
+            const err = msgOrData instanceof Error ? msgOrData : new Error(String(msgOrData));
+            console.error(`[ERROR] ${errorOrMsg || ""}`, err);
           }
         },
       } as Logger
