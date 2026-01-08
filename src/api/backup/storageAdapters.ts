@@ -349,8 +349,8 @@ export class WebDavStorageAdapter implements IStorageAdapter {
     } catch (error) {
       // Directory might already exist
     }
-    // BUG serious security issue, but ignoring TLS errors for now
-    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+    // BUG serious security issue, but ignoring TLS errors for now; this is needed when uploading to webdav with letsencrypt certificates, not sure why
+    // process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     await this.client.putFileContents(remotePath, fileContent);
     logger.info(`File uploaded to WebDAV: ${remotePath}`);
     return remotePath;
@@ -369,8 +369,8 @@ export class WebDavStorageAdapter implements IStorageAdapter {
 
   async delete(remoteFileName: string): Promise<void> {
     const remotePath = this.getRemotePath(remoteFileName);
-    // BUG serious security issue, but ignoring TLS errors for now
-    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+    // BUG serious security issue, but ignoring TLS errors for now; this is needed when uploading to webdav with letsencrypt certificates, not sure why
+    // process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     await this.client.deleteFile(remotePath);
     logger.info(`File deleted from WebDAV: ${remotePath}`);
   }
