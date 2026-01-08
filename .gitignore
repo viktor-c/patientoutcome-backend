@@ -1,5 +1,6 @@
 github-copilot-project-description.md
 *.ignore
+backups
 # Logs
 logs
 *.log

@@ -216,6 +216,29 @@ export class UserService {
   // Delete a user by their ID
   async deleteUser(username: string): Promise<ServiceResponse<User | null>> {
     try {
+      // First, find the user to check their role
+      const userToDelete = await this.userRepository.findByQueryAsync({ username });
+      if (!userToDelete) {
+        return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Check if the user is an admin
+      const isAdmin = userToDelete.roles?.includes("admin");
+
+      if (isAdmin) {
+        // Count total number of admin users
+        const allAdmins = await this.userRepository.findAllByRoleAsync("admin");
+
+        // Prevent deletion if this is the only admin
+        if (allAdmins.length <= 1) {
+          return ServiceResponse.failure(
+            "Cannot delete the only admin user. Please create another admin user before deleting this one.",
+            null,
+            StatusCodes.CONFLICT
+          );
+        }
+      }
+
       const deletedUser = await this.userRepository.deleteByUsernameAsync(username);
       if (!deletedUser) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);

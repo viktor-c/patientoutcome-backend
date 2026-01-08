@@ -519,6 +519,11 @@ userRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
+      description: "Cannot delete the only admin user",
+      statusCode: 409,
+    },
+    {
+      schema: z.object({ message: z.string() }),
       description: "An error occurred while deleting the user.",
       statusCode: 500,
     },
