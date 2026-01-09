@@ -81,34 +81,6 @@ export const CreateAdminRequestSchema = z.object({
 export type CreateAdminRequest = z.infer<typeof CreateAdminRequestSchema>;
 
 /**
- * Seed Request Schema - options for seeding demo data
- */
-export const SeedRequestSchema = z.object({
-  seedUsers: z.boolean().default(true).openapi({
-    description: "Whether to seed demo users",
-    example: true,
-  }),
-  seedPatients: z.boolean().default(true).openapi({
-    description: "Whether to seed demo patients",
-    example: true,
-  }),
-  seedBlueprints: z.boolean().default(true).openapi({
-    description: "Whether to seed blueprint templates",
-    example: true,
-  }),
-  seedForms: z.boolean().default(true).openapi({
-    description: "Whether to seed demo forms",
-    example: true,
-  }),
-  seedAll: z.boolean().default(false).openapi({
-    description: "Seed all demo data (overrides individual options)",
-    example: true,
-  }),
-});
-
-export type SeedRequest = z.infer<typeof SeedRequestSchema>;
-
-/**
  * Setup Complete Response Schema
  */
 export const SetupCompleteResponseSchema = z.object({
