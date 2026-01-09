@@ -259,7 +259,7 @@ export class SftpStorageAdapter implements IStorageAdapter {
     const sftp = await this.getClient();
     try {
       const remotePath = this.getRemotePath(remoteFileName);
-      
+
       // Ensure remote directory exists
       const remoteDir = path.posix.dirname(remotePath);
       await sftp.mkdir(remoteDir, true);
@@ -359,7 +359,7 @@ export class WebDavStorageAdapter implements IStorageAdapter {
   async download(remoteFileName: string, localFilePath: string): Promise<void> {
     const remotePath = this.getRemotePath(remoteFileName);
     const content = await this.client.getFileContents(remotePath);
-    
+
     const destDir = path.dirname(localFilePath);
     await fs.mkdir(destDir, { recursive: true });
 
