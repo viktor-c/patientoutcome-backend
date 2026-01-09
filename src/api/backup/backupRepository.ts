@@ -402,11 +402,39 @@ export class BackupRepository {
       // Insert one by one, skip duplicates
       for (const doc of documents) {
         try {
+          // Special handling for users collection - check for unique username
+          if (collectionName === "users") {
+            const existingUser = await collection.findOne({
+              $or: [
+                { _id: doc._id },
+                { username: doc.username }
+              ]
+            });
+
+            if (existingUser) {
+              logger.debug(
+                {
+                  username: doc.username,
+                  _id: doc._id,
+                  existingId: existingUser._id,
+                  existingUsername: existingUser.username
+                },
+                "Skipping user - already exists (by _id or username)"
+              );
+              skipped++;
+              continue;
+            }
+          }
+
           await collection.insertOne(doc);
           inserted++;
         } catch (error: any) {
           // Duplicate key error (code 11000)
           if (error.code === 11000) {
+            logger.debug(
+              { error: error.message, collectionName },
+              "Duplicate key error - skipping document"
+            );
             skipped++;
           } else {
             throw error;
