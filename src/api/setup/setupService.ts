@@ -3,7 +3,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/common/utils/logger";
 import bcrypt from "bcrypt";
 import { StatusCodes } from "http-status-codes";
-import type { CreateAdminRequest, SeedRequest, SetupStatus } from "./setupModel";
+import type { CreateAdminRequest, SetupStatus } from "./setupModel";
 import { setupRepository } from "./setupRepository";
 
 // Import repository classes to create fresh instances

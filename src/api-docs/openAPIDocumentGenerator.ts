@@ -24,6 +24,7 @@ export function generateOpenAPIDocument() {
   const { healthCheckRegistry } = require("@/api/healthCheck/healthCheckRouter");
   const { kioskRegistry } = require("@/api/kiosk/kioskRouter");
   const { patientRegistry } = require("@/api/patient/patientRouter");
+  const { settingsRegistry } = require("@/api/settings/settingsRouter");
   const { statisticsRegistry } = require("@/api/statistics/statisticsRouter");
   const { surgeryRegistry } = require("@/api/surgery/surgeryRouter");
   const { userRegistry } = require("@/api/user/userRouter");
@@ -42,6 +43,7 @@ export function generateOpenAPIDocument() {
     patientCaseRegistry,
     surgeryRegistry,
     consultationRegistry,
+    settingsRegistry,
     statisticsRegistry,
     formTemplateRegistry,
     formRegistry,

@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "settings": {
+    "smtp": {
+      "category": "email",
+      "priority": 1,
+      "fields": {
+        "SMTP_HOST": {
+          "value": "smtp.example.com",
+          "type": "string",
+          "required": true,
+          "validation": {
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "en": "SMTP server hostname or IP address",
+            "de": "SMTP-Server Hostname oder IP-Adresse"
+          },
+          "helpText": {
+            "en": "Enter the hostname or IP address of your SMTP mail server (e.g., smtp.gmail.com, mail.example.com)",
+            "de": "Geben Sie den Hostnamen oder die IP-Adresse Ihres SMTP-Mailservers ein (z.B. smtp.gmail.com, mail.example.com)"
+          }
+        },
+        "SMTP_PORT": {
+          "value": "587",
+          "type": "number",
+          "required": true,
+          "validation": {
+            "min": 1,
+            "max": 65535
+          },
+          "description": {
+            "en": "SMTP server port number",
+            "de": "SMTP-Server Portnummer"
+          },
+          "helpText": {
+            "en": "Common ports: 25 (unencrypted), 587 (STARTTLS), 465 (SSL/TLS)",
+            "de": "Übliche Ports: 25 (unverschlüsselt), 587 (STARTTLS), 465 (SSL/TLS)"
+          }
+        },
+        "SMTP_SECURE": {
+          "value": "false",
+          "type": "boolean",
+          "required": true,
+          "description": {
+            "en": "Use SSL/TLS encryption",
+            "de": "SSL/TLS-Verschlüsselung verwenden"
+          },
+          "helpText": {
+            "en": "Enable this for port 465 (SSL/TLS). Disable for port 587 (STARTTLS) or port 25 (unencrypted)",
+            "de": "Aktivieren Sie dies für Port 465 (SSL/TLS). Deaktivieren für Port 587 (STARTTLS) oder Port 25 (unverschlüsselt)"
+          }
+        },
+        "SMTP_USER": {
+          "value": "",
+          "type": "string",
+          "required": false,
+          "sensitive": true,
+          "validation": {
+            "maxLength": 255
+          },
+          "description": {
+            "en": "SMTP authentication username",
+            "de": "SMTP-Authentifizierung Benutzername"
+          },
+          "helpText": {
+            "en": "Username for authenticating with the SMTP server. Leave empty if no authentication is required",
+            "de": "Benutzername für die Authentifizierung beim SMTP-Server. Leer lassen, wenn keine Authentifizierung erforderlich ist"
+          }
+        },
+        "SMTP_PASS": {
+          "value": "",
+          "type": "string",
+          "required": false,
+          "sensitive": true,
+          "validation": {
+            "maxLength": 255
+          },
+          "description": {
+            "en": "SMTP authentication password",
+            "de": "SMTP-Authentifizierung Passwort"
+          },
+          "helpText": {
+            "en": "Password for authenticating with the SMTP server. Leave empty if no authentication is required",
+            "de": "Passwort für die Authentifizierung beim SMTP-Server. Leer lassen, wenn keine Authentifizierung erforderlich ist"
+          }
+        },
+        "SMTP_FROM_EMAIL": {
+          "value": "",
+          "type": "string",
+          "required": false,
+          "validation": {
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "maxLength": 255
+          },
+          "description": {
+            "en": "Default sender email address",
+            "de": "Standard-Absender E-Mail-Adresse"
+          },
+          "helpText": {
+            "en": "The email address that will appear as the sender in outgoing emails (e.g., noreply@example.com)",
+            "de": "Die E-Mail-Adresse, die als Absender in ausgehenden E-Mails erscheint (z.B. noreply@example.com)"
+          }
+        },
+        "SMTP_TO_EMAIL": {
+          "value": "",
+          "type": "string",
+          "required": false,
+          "validation": {
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "maxLength": 255
+          },
+          "description": {
+            "en": "Default recipient email address",
+            "de": "Standard-Empfänger E-Mail-Adresse"
+          },
+          "helpText": {
+            "en": "Default email address for receiving notifications or reports (e.g., admin@example.com)",
+            "de": "Standard-E-Mail-Adresse für den Empfang von Benachrichtigungen oder Berichten (z.B. admin@example.com)"
+          }
+        }
+      }
+    },
+    "backup": {
+      "category": "system",
+      "priority": 2,
+      "fields": {
+        "BACKUP_MASTER_KEY": {
+          "value": "",
+          "type": "string",
+          "required": false,
+          "sensitive": true,
+          "validation": {
+            "minLength": 32,
+            "maxLength": 64
+          },
+          "description": {
+            "en": "Master encryption key for backups",
+            "de": "Master-Verschlüsselungsschlüssel für Backups"
+          },
+          "helpText": {
+            "en": "A secure key used to encrypt backup files. Must be at least 32 characters. Keep this key safe - you'll need it to restore backups!",
+            "de": "Ein sicherer Schlüssel zur Verschlüsselung von Backup-Dateien. Muss mindestens 32 Zeichen lang sein. Bewahren Sie diesen Schlüssel sicher auf - Sie benötigen ihn zum Wiederherstellen von Backups!"
+          }
+        },
+        "BACKUP_RETENTION_DAYS": {
+          "value": "",
+          "type": "number",
+          "required": false,
+          "validation": {
+            "min": 1,
+            "max": 3650
+          },
+          "description": {
+            "en": "Number of days to retain backup files",
+            "de": "Anzahl der Tage, für die Backup-Dateien aufbewahrt werden"
+          },
+          "helpText": {
+            "en": "Automatic cleanup of backups older than this number of days. Set between 1 and 3650 days (10 years)",
+            "de": "Automatische Bereinigung von Backups, die älter als diese Anzahl von Tagen sind. Zwischen 1 und 3650 Tagen (10 Jahre) einstellen"
+          }
+        }
+      }
+    }
+  }
+}
