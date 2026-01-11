@@ -37,10 +37,7 @@ setupRegistry.registerPath({
   tags: ["Setup"],
   responses: createApiResponses([
     {
-      schema: z.object({
-        message: z.string(),
-        data: SetupStatusSchema,
-      }),
+      schema: SetupStatusSchema,
       description: "Setup status retrieved successfully",
       statusCode: 200,
     },
@@ -103,7 +100,7 @@ setupRouter.post("/create-admin", async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: `Validation error: ${errors}`,
-        data: null,
+        responseObject: null,
         statusCode: StatusCodes.BAD_REQUEST,
       });
     }
@@ -121,7 +118,7 @@ setupRouter.post("/create-admin", async (req: Request, res: Response) => {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      responseObject: null,
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     });
   }

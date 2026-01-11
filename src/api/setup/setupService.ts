@@ -85,7 +85,7 @@ export class SetupService {
         "Initial admin user created successfully",
       );
 
-      return ServiceResponse.success("Admin user created successfully", {
+      return ServiceResponse.created("Admin user created successfully", {
         adminUserId: createdUser._id.toString(),
       });
     } catch (error) {
