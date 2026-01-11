@@ -55,8 +55,8 @@ COPY --from=build --chown=appuser:appuser /app/dist /app/dist
 COPY --from=build --chown=appuser:appuser /app/package.json /app/package.json
 COPY --from=build --chown=appuser:appuser /app/tsconfig.json /app/tsconfig.json
 
-# Create backup directory and set permissions
-RUN mkdir -p /backups/patientoutcome && chown -R appuser:appuser /backups
+# Create backup directory as well as subdirs and set permissions, to avoid permission problems at runtime
+RUN mkdir -p /backups/patientoutcome/uploads && mkdir -p /backups/patientoutcome/temp && chown -R appuser:appuser /backups
 
 USER appuser
 
