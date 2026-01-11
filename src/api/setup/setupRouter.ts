@@ -135,7 +135,7 @@ setupRegistry.registerPath({
   method: "get",
   summary: "Get Database Statistics",
   description: "Get counts of documents in all major collections",
-  operationId: "getDatabaseStats",
+  operationId: "getSetupDatabaseStats",
   path: "/setup/stats",
   tags: ["Setup"],
   responses: createApiResponses([
