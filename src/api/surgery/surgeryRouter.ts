@@ -45,18 +45,13 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries",
+      description: "Returns an array of surgeries (empty if none exist)",
       statusCode: 200,
     },
     {
       schema: z.object({ message: z.string() }),
       description: "An error occurred while retrieving surgeries.",
       statusCode: 500,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No surgeries found",
-      statusCode: 404,
     },
   ]),
 });
@@ -130,13 +125,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries for the given patient case",
+      description: "Returns an array of surgeries for the given patient case (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No surgeries found for this patient case",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -176,13 +166,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns a list of surgeries whose IDs match the given query",
+      description: "Returns a list of surgeries whose IDs match the given query (empty if none match)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -367,13 +352,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries with the given diagnosis",
+      description: "Returns an array of surgeries with the given diagnosis (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -407,13 +387,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries with the given diagnosis ICD10",
+      description: "Returns an array of surgeries with the given diagnosis ICD10 (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -447,13 +422,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries performed by the given surgeon",
+      description: "Returns an array of surgeries performed by the given surgeon (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -542,13 +512,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries within the given date range",
+      description: "Returns an array of surgeries within the given date range (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -590,13 +555,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries on the given side",
+      description: "Returns an array of surgeries on the given side (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -634,13 +594,8 @@ surgeryRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(SurgeryWithUsersSchema),
-      description: "Returns an array of surgeries with the given therapy",
+      description: "Returns an array of surgeries with the given therapy (empty if none exist)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Surgeries not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),

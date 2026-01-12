@@ -137,10 +137,7 @@ setupRegistry.registerPath({
   tags: ["Setup"],
   responses: createApiResponses([
     {
-      schema: z.object({
-        message: z.string(),
-        data: z.record(z.string(), z.number()),
-      }),
+      schema: z.record(z.string(), z.number()),
       description: "Database statistics retrieved successfully",
       statusCode: 200,
     },

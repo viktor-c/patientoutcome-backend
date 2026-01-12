@@ -245,66 +245,51 @@ export class PatientCaseService {
   /**
    * @description Get cases by diagnosis
    * @param diagnosis to search for
-   * @returns an array of patient cases with the specified diagnosis, or null if no cases are found
-   * @throws {ServiceResponse} if an error occurs while finding cases
-   * @throws {ServiceResponse} if no cases are found
+   * @returns an array of patient cases with the specified diagnosis (may be empty if no cases are found)
    * @throws {ServiceResponse} if an error occurs while finding cases
    */
-  async getCasesByDiagnosis(diagnosis: string): Promise<ServiceResponse<PatientCase[] | null>> {
+  async getCasesByDiagnosis(diagnosis: string): Promise<ServiceResponse<PatientCase[]>> {
     try {
       const cases = await this.repository.findCasesByDiagnosis(diagnosis);
-      if (!cases || cases.length === 0) {
-        return ServiceResponse.failure("No cases found for this diagnosis", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Cases found", cases);
+      return ServiceResponse.success("Cases retrieved successfully", cases || []);
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ${diagnosis}: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure("An error occurred while finding cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
   /**
    * @description Get cases by diagnosis ICD10
    * @param diagnosisICD10 diagnosis ICD10 to search for
-   * @returns an array of patient cases with the specified diagnosis ICD10, or null if no cases are found
-   * @throws {ServiceResponse} if an error occurs while finding cases
-   * @throws {ServiceResponse} if no cases are found
+   * @returns an array of patient cases with the specified diagnosis ICD10 (may be empty if no cases are found)
    * @throws {ServiceResponse} if an error occurs while finding cases
    */
-  async getCasesByDiagnosisICD10(diagnosisICD10: string): Promise<ServiceResponse<PatientCase[] | null>> {
+  async getCasesByDiagnosisICD10(diagnosisICD10: string): Promise<ServiceResponse<PatientCase[]>> {
     try {
       const cases = await this.repository.findCasesByDiagnosisICD10(diagnosisICD10);
-      if (!cases || cases.length === 0) {
-        return ServiceResponse.failure("No cases found for this diagnosis ICD10", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Cases found", cases);
+      return ServiceResponse.success("Cases retrieved successfully", cases || []);
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ICD10 ${diagnosisICD10}: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure("An error occurred while finding cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
   /**
    * @description Get cases by supervisor
    * @param supervisorId supervisor ID to search for
-   * @returns an array of patient cases with the specified supervisor, or null if no cases are found
-   * @throws {ServiceResponse} if an error occurs while finding cases
-   * @throws {ServiceResponse} if no cases are found
+   * @returns an array of patient cases with the specified supervisor (may be empty if no cases are found)
    * @throws {ServiceResponse} if an error occurs while finding cases
    */
-  async getCasesBySupervisor(supervisorId: string): Promise<ServiceResponse<PatientCase[] | null>> {
+  async getCasesBySupervisor(supervisorId: string): Promise<ServiceResponse<PatientCase[]>> {
     try {
       const cases = await this.repository.findCasesBySupervisor(supervisorId);
-      if (!cases || cases.length === 0) {
-        return ServiceResponse.failure("No cases found for this supervisor", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Cases found", cases);
+      return ServiceResponse.success("Cases retrieved successfully", cases || []);
     } catch (ex) {
       const errorMessage = `Error finding cases with supervisor id ${supervisorId}: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure("An error occurred while finding cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 

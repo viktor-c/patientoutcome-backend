@@ -104,7 +104,8 @@ describe("Surgery API", () => {
       const response = await request(app).get("/surgeries/diagnosis/test-diagnosis");
 
       // Assert
-      expect(response.status).toBe(StatusCodes.NOT_FOUND); // Since no surgeries exist with that diagnosis
+      expect(response.status).toBe(StatusCodes.OK); // Returns empty array if no surgeries exist
+      expect(response.body.responseObject).toBeInstanceOf(Array);
     });
   });
 

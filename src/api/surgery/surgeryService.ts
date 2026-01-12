@@ -18,22 +18,19 @@ export class SurgeryService {
 
   /**
    * @description Get all surgeries
-   * @returns an array of surgeries, or null if no surgeries are found
+   * @returns an array of surgeries (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getAllSurgeries(): Promise<ServiceResponse<Surgery[] | null>> {
+  async getAllSurgeries(): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.getAllSurgeries();
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding all surgeries: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while retrieving surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -70,22 +67,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by patient case ID
    * @param patientCaseId the ID of the patient case
-   * @returns an array of surgeries for the specified patient case, or null if no surgeries are found
+   * @returns an array of surgeries for the specified patient case (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesByPatientCaseId(patientCaseId: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesByPatientCaseId(patientCaseId: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.getSurgeriesByPatientCaseId(patientCaseId);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this patient case", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries for patient case ${patientCaseId}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while retrieving surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -168,22 +162,19 @@ export class SurgeryService {
   /**
    * @description Search surgeries by external ID
    * @param searchQuery the query to search for
-   * @returns an array of surgeries matching the search query, or null if no surgeries are found
+   * @returns an array of surgeries matching the search query (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while searching surgeries
    */
-  async searchSurgeriesByExternalId(searchQuery: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async searchSurgeriesByExternalId(searchQuery: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.searchSurgeriesByExternalId(searchQuery);
-      if (!surgeries || !surgeries.length) {
-        return ServiceResponse.failure("No surgeries match query", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error searching for surgeries: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while searching for surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -192,22 +183,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by diagnosis
    * @param diagnosis diagnosis to search for
-   * @returns an array of surgeries with the specified diagnosis, or null if no surgeries are found
+   * @returns an array of surgeries with the specified diagnosis (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesByDiagnosis(diagnosis: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesByDiagnosis(diagnosis: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesByDiagnosis(diagnosis);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this diagnosis", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries with diagnosis ${diagnosis}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -216,22 +204,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by diagnosis ICD10
    * @param diagnosisICD10 diagnosis ICD10 to search for
-   * @returns an array of surgeries with the specified diagnosis ICD10, or null if no surgeries are found
+   * @returns an array of surgeries with the specified diagnosis ICD10 (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesByDiagnosisICD10(diagnosisICD10: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesByDiagnosisICD10(diagnosisICD10: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesByDiagnosisICD10(diagnosisICD10);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this diagnosis ICD10", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries with diagnosis ICD10 ${diagnosisICD10}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -240,22 +225,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by surgeon
    * @param surgeonId surgeon ID to search for
-   * @returns an array of surgeries with the specified surgeon, or null if no surgeries are found
+   * @returns an array of surgeries with the specified surgeon (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesBySurgeon(surgeonId: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesBySurgeon(surgeonId: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesBySurgeon(surgeonId);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this surgeon", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries with surgeon id ${surgeonId}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -348,22 +330,19 @@ export class SurgeryService {
    * @description Get surgeries by date range
    * @param startDate start date for the range
    * @param endDate end date for the range
-   * @returns an array of surgeries within the specified date range, or null if no surgeries are found
+   * @returns an array of surgeries within the specified date range (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesByDateRange(startDate: Date, endDate: Date): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesByDateRange(startDate: Date, endDate: Date): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesByDateRange(startDate, endDate);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this date range", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries for date range ${startDate} to ${endDate}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -372,22 +351,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by side
    * @param side the side to search for
-   * @returns an array of surgeries with the specified side, or null if no surgeries are found
+   * @returns an array of surgeries with the specified side (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesBySide(side: "left" | "right" | "none"): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesBySide(side: "left" | "right" | "none"): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesBySide(side);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this side", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries with side ${side}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
@@ -396,22 +372,19 @@ export class SurgeryService {
   /**
    * @description Get surgeries by therapy
    * @param therapy the therapy to search for
-   * @returns an array of surgeries with the specified therapy, or null if no surgeries are found
+   * @returns an array of surgeries with the specified therapy (may be empty if no surgeries are found)
    * @throws {ServiceResponse} if an error occurs while finding surgeries
    */
-  async getSurgeriesByTherapy(therapy: string): Promise<ServiceResponse<Surgery[] | null>> {
+  async getSurgeriesByTherapy(therapy: string): Promise<ServiceResponse<Surgery[]>> {
     try {
       const surgeries = await this.repository.findSurgeriesByTherapy(therapy);
-      if (!surgeries || surgeries.length === 0) {
-        return ServiceResponse.failure("No surgeries found for this therapy", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success("Surgeries found", surgeries);
+      return ServiceResponse.success("Surgeries retrieved successfully", surgeries || []);
     } catch (ex) {
       const errorMessage = `Error finding surgeries with therapy ${therapy}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure(
         "An error occurred while finding surgeries.",
-        null,
+        [],
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
