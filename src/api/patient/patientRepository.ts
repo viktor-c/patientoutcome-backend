@@ -3,12 +3,46 @@ import mongoose from "mongoose";
 import { patientModel } from "./patientModel";
 import type { Patient } from "./patientModel";
 
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResult<T> {
+  patients: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export class PatientRepository {
-  async findAllAsync(): Promise<Patient[]> {
+  async findAllAsync(options: PaginationOptions = {}): Promise<PaginatedResult<Patient>> {
     try {
-      const patients = await patientModel.find().lean();
-      return patients;
+      const { page = 1, limit = 10 } = options;
+      const skip = (page - 1) * limit;
+
+      const [patients, total] = await Promise.all([
+        patientModel.find()
+          .populate("cases")
+          .sort({ _id: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        patientModel.countDocuments(),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        patients: patients,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
     } catch (error) {
+      logger.error({ error }, "Error finding patients");
       return Promise.reject(error);
     }
   }

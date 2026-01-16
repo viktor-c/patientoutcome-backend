@@ -15,7 +15,9 @@ import { PatientCaseSchema } from "@/api/case/patientCaseModel";
 import {
   CreatePatientSchema,
   GetPatientByExternalIdSchema,
+  GetPatientsQuerySchema,
   GetPatientSchema,
+  PatientListSchema,
   PatientSchema,
   PatientSearchResultSchema,
   SearchPatientsByExternalIdSchema,
@@ -38,6 +40,7 @@ const PatientWithCasesSchema = PatientSchema.extend({
 /* Define schemas and paths to create openapi */
 patientRegistry.register("Patient", PatientSchema);
 patientRegistry.register("PatientWithCases", PatientWithCasesSchema);
+patientRegistry.register("PatientList", PatientListSchema);
 
 // Register the path for getting all patients
 patientRegistry.registerPath({
@@ -46,11 +49,14 @@ patientRegistry.registerPath({
   tags: ["Patient"],
   operationId: "getPatients",
   summary: "Get all patients",
-  description: "Get all patients",
+  description: "Retrieve a paginated list of all patients with optional filtering.",
+  request: {
+    query: GetPatientsQuerySchema.shape.query,
+  },
   responses: createApiResponses([
     {
-      schema: z.array(PatientWithCasesSchema),
-      description: "Success",
+      schema: PatientListSchema,
+      description: "Patients retrieved successfully",
       statusCode: 200,
     },
     {
@@ -66,7 +72,7 @@ patientRegistry.registerPath({
   ]),
 });
 
-patientRouter.get("/", patientController.getPatients);
+patientRouter.get("/", validateRequest(GetPatientsQuerySchema), patientController.getPatients);
 
 // Register the path for getting a patient by ID
 patientRegistry.registerPath({

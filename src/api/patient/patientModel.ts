@@ -61,3 +61,20 @@ export const UpdatePatientSchema = z.object({
 export const DeletePatientSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
+
+// Schema for pagination query parameters
+export const GetPatientsQuerySchema = z.object({
+  query: z.object({
+    page: z.string().transform(Number).pipe(z.number().min(1)).default("1"),
+    limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default("10"),
+  }),
+});
+
+// Response schema for paginated patient list
+export const PatientListSchema = z.object({
+  patients: z.array(PatientSchema),
+  total: z.number(),
+  page: z.number(),
+  limit: z.number(),
+  totalPages: z.number(),
+});

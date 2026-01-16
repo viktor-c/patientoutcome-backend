@@ -9,15 +9,22 @@ import type { Request, RequestHandler, Response } from "express";
  */
 class PatientController {
   /**
-   * Get all patients
+   * Get all patients with pagination
    * @route GET /patient
-   * @param {Request} _req - Express request object
+   * @param {Request} req - Express request object with optional query params: page, limit
    * @param {Response} res - Express response object
-   * @returns {Promise<Response>} ServiceResponse with array of all patients with populated cases
-   * @description Retrieves all patients including their associated cases
+   * @returns {Promise<Response>} ServiceResponse with paginated patient list
+   * @description Retrieves all patients with pagination, including their associated cases
    */
-  public getPatients: RequestHandler = async (_req: Request, res: Response) => {
-    const serviceResponse = await patientService.findAll();
+  public getPatients: RequestHandler = async (req: Request, res: Response) => {
+    const { page, limit } = req.query;
+
+    const options = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    };
+
+    const serviceResponse = await patientService.findAll(options);
     return handleServiceResponse(serviceResponse, res);
   };
 

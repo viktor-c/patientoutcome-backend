@@ -2,7 +2,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import type { Patient } from "./patientModel";
-import { PatientRepository } from "./patientRepository";
+import { PatientRepository, type PaginatedResult, type PaginationOptions } from "./patientRepository";
 
 export class PatientService {
   private patientRepository: PatientRepository;
@@ -11,11 +11,12 @@ export class PatientService {
     this.patientRepository = repository;
   }
 
-  async findAll(): Promise<ServiceResponse<Patient[] | null>> {
+  async findAll(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<Patient> | null>> {
     try {
-      const patients = await this.patientRepository.findAllAsync();
-      return ServiceResponse.success("Patients found", patients);
+      const result = await this.patientRepository.findAllAsync(options);
+      return ServiceResponse.success("Patients found", result);
     } catch (error) {
+      logger.error({ error }, "Error retrieving patients");
       return ServiceResponse.failure(
         "An error occurred while retrieving patients.",
         null,
