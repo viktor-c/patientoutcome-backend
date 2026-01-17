@@ -59,10 +59,12 @@ export const GetUserSchema = z.object({
 // Input Validation for 'PUT user' endpoint (no id param)
 export const UpdateUserSchema = z
   .object({
+    id: z.string().min(1).optional(),
     username: z.string().min(3).max(50).optional(),
     name: z.string().min(3).max(50).optional(),
     department: z.string().min(3).max(50).optional(),
     email: z.string().email().optional(),
+    roles: z.array(z.string()).optional(),
     belongsToCenter: z.array(z.string()).optional(),
     daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   })

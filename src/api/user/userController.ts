@@ -100,12 +100,23 @@ class UserController {
 
   public updateUser: RequestHandler = async (req: Request, res: Response) => {
     // Get user id from session (or JWT, adjust as needed)
-    const id = req.session?.userId;
-    if (!id) {
+    const sessionUserId = req.session?.userId;
+    if (!sessionUserId) {
       return res.status(401).json({ message: "Authentication required: User id not found in session" });
     }
-    const userData = req.body;
-    const serviceResponse = await userService.updateUser(id, userData);
+
+    const userData = req.body as any;
+    // Determine which user is being updated
+    // If an id is provided in the request body and it's different from the session user,
+    // the user is attempting to update another user (admin operation)
+    const targetUserId = userData.id || sessionUserId;
+
+    // If updating another user, remove the id from userData before passing to service
+    if (userData.id) {
+      delete userData.id;
+    }
+
+    const serviceResponse = await userService.updateUser(targetUserId, userData);
     return handleServiceResponse(serviceResponse, res);
   };
 

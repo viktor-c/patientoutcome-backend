@@ -402,51 +402,6 @@ userRegistry.registerPath({
 
 userRouter.put("/update", AclMiddleware(), validateRequestOnlyWithBody(UpdateUserSchema), userController.updateUser);
 
-// Register the path for updating a user by ID (for admin updating other users)
-// userRegistry.registerPath({
-//   method: "put",
-//   path: "/user/{id}",
-//   tags: ["User"],
-//   operationId: "updateUserById",
-//   description: "Update a user by ID (admin only, or user updating themselves)",
-//   summary: "Update a user by ID",
-//   request: {
-//     params: z.object({ id: z.string() }),
-//     body: {
-//       content: {
-//         "application/json": { schema: UpdateUserSchema },
-//       },
-//     },
-//   },
-//   responses: createApiResponses([
-//     {
-//       schema: UserSchema,
-//       description: "Success",
-//       statusCode: 200,
-//     },
-//     {
-//       schema: z.object({ message: z.string() }),
-//       description: "User not found",
-//       statusCode: 404,
-//     },
-//     {
-//       schema: z.object({ message: z.string() }),
-//       description: "Access denied",
-//       statusCode: 403,
-//     },
-//     {
-//       schema: z.object({ message: z.string() }),
-//       description: "An error occurred while updating the user.",
-//       statusCode: 500,
-//     },
-//     {
-//       schema: z.object({ message: z.string() }),
-//       description: "Validation error",
-//       statusCode: 400,
-//     },
-//   ]),
-// });
-
 // Register the path for changing password (must come before /:id route to avoid conflicts)
 userRegistry.registerPath({
   method: "put",
