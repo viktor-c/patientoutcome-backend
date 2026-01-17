@@ -10,6 +10,7 @@ export class PatientCaseRepository {
     try {
       return PatientCaseModel.find({
         externalId: { $regex: searchCasesById, $options: "i" },
+        deletedAt: null,
       })
         .select("_id externalId")
         .lean() as unknown as Promise<PatientCase[]>;
@@ -21,7 +22,7 @@ export class PatientCaseRepository {
   // find case by externalId
   async getPatientCaseByExternalId(externalId: string): Promise<PatientCase[] | null> {
     try {
-      return PatientCaseModel.find({ externalId: externalId }).lean() as unknown as PatientCase[];
+      return PatientCaseModel.find({ externalId: externalId, deletedAt: null }).lean() as unknown as PatientCase[];
     } catch (error) {
       return Promise.reject(error);
     }
@@ -32,6 +33,7 @@ export class PatientCaseRepository {
     try {
       return PatientCaseModel.find({
         patient: patientId,
+        deletedAt: null,
       })
         .populate(["patient", "surgeries", "supervisors", "consultations"])
         .lean() as unknown as Promise<PatientCase[]>;
@@ -45,6 +47,7 @@ export class PatientCaseRepository {
       return PatientCaseModel.findById({
         _id: caseId,
         patient: patientId,
+        deletedAt: null,
       })
         .populate(["patient", "surgeries", "supervisors", "consultations"])
         .lean() as unknown as Promise<PatientCase | null>;
@@ -107,6 +110,103 @@ export class PatientCaseRepository {
       return Promise.reject(error);
     }
   }
+
+  /**
+   * Soft delete a patient case
+   * @param patientId - Patient ID
+   * @param caseId - Case ID
+   * @returns True if successful
+   */
+  async softDeletePatientCaseById(patientId: string, caseId: string): Promise<PatientCase | null> {
+    try {
+      const result = await PatientCaseModel.findOneAndUpdate(
+        { patient: patientId, _id: caseId },
+        { deletedAt: new Date() },
+        { new: true }
+      );
+      return result;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Soft delete multiple patient cases
+   * @param caseIds - Array of case IDs
+   * @returns Number of cases soft deleted
+   */
+  async softDeleteManyCases(caseIds: string[]): Promise<number> {
+    try {
+      const result = await PatientCaseModel.updateMany(
+        { _id: { $in: caseIds } },
+        { deletedAt: new Date() }
+      );
+      return result.modifiedCount;
+    } catch (error) {
+      logger.error({ error }, "Error soft deleting cases");
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Restore a soft deleted patient case
+   * @param caseId - Case ID
+   * @returns Restored case
+   */
+  async restoreCaseById(caseId: string): Promise<PatientCase | null> {
+    try {
+      const result = await PatientCaseModel.findByIdAndUpdate(
+        caseId,
+        { deletedAt: null },
+        { new: true }
+      );
+      return result;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Get all soft deleted cases with pagination
+   * @param page - Page number
+   * @param limit - Items per page
+   * @returns Paginated list of soft deleted cases
+   */
+  async findAllDeletedCases(page: number = 1, limit: number = 10): Promise<{
+    cases: PatientCase[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [cases, total] = await Promise.all([
+        PatientCaseModel.find({ deletedAt: { $ne: null } })
+          .populate(["patient", "surgeries", "supervisors", "consultations"])
+          .sort({ deletedAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        PatientCaseModel.countDocuments({ deletedAt: { $ne: null } }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        cases: cases as unknown as PatientCase[],
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      logger.error({ error }, "Error finding deleted cases");
+      return Promise.reject(error);
+    }
+  }
+
 
   async findNotesByCaseId(caseId: string): Promise<PatientCase["notes"]> {
     try {

@@ -25,6 +25,20 @@ export class PatientService {
     }
   }
 
+  async findAllDeleted(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<Patient> | null>> {
+    try {
+      const result = await this.patientRepository.findAllDeletedAsync(options);
+      return ServiceResponse.success("Deleted patients found", result);
+    } catch (error) {
+      logger.error({ error }, "Error retrieving deleted patients");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving deleted patients.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async findById(id: string): Promise<ServiceResponse<Patient | null>> {
     try {
       const patient = await this.patientRepository.findByIdAsync(id);
@@ -135,6 +149,65 @@ export class PatientService {
       }
       return ServiceResponse.failure(
         "An error occurred while deleting the patient.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async softDeletePatient(id: string): Promise<ServiceResponse<Patient | null>> {
+    try {
+      const softDeletedPatient = await this.patientRepository.softDeleteByIdAsync(id);
+      if (!softDeletedPatient) {
+        return ServiceResponse.failure("Patient not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Patient soft deleted successfully", softDeletedPatient);
+    } catch (ex) {
+      const errorMessage = `Error soft deleting patient with id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
+        logger.error(`Invalid ID: ${id}`);
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
+      }
+      return ServiceResponse.failure(
+        "An error occurred while soft deleting the patient.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async softDeletePatients(ids: string[]): Promise<ServiceResponse<{ count: number } | null>> {
+    try {
+      const count = await this.patientRepository.softDeleteManyAsync(ids);
+      return ServiceResponse.success(`${count} patients soft deleted successfully`, { count });
+    } catch (ex) {
+      const errorMessage = `Error soft deleting patients: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while soft deleting patients.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async restorePatient(id: string): Promise<ServiceResponse<Patient | null>> {
+    try {
+      const restoredPatient = await this.patientRepository.restoreByIdAsync(id);
+      if (!restoredPatient) {
+        return ServiceResponse.failure("Patient not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Patient restored successfully", restoredPatient);
+    } catch (ex) {
+      const errorMessage = `Error restoring patient with id ${id}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
+        logger.error(`Invalid ID: ${id}`);
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
+      }
+      return ServiceResponse.failure(
+        "An error occurred while restoring the patient.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

@@ -14,13 +14,17 @@ import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { PatientCaseSchema } from "@/api/case/patientCaseModel";
 import {
   CreatePatientSchema,
+  GetDeletedPatientsQuerySchema,
   GetPatientByExternalIdSchema,
   GetPatientsQuerySchema,
   GetPatientSchema,
   PatientListSchema,
   PatientSchema,
   PatientSearchResultSchema,
+  PermanentDeletePatientSchema,
+  RestorePatientSchema,
   SearchPatientsByExternalIdSchema,
+  SoftDeletePatientsSchema,
   UpdatePatientSchema,
 } from "@/api/patient/patientModel";
 import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
@@ -73,6 +77,33 @@ patientRegistry.registerPath({
 });
 
 patientRouter.get("/", validateRequest(GetPatientsQuerySchema), patientController.getPatients);
+
+// Register the path for getting deleted patients (MUST be before /:id route)
+patientRegistry.registerPath({
+  method: "get",
+  path: "/patient/deleted",
+  tags: ["Patient"],
+  operationId: "getDeletedPatients",
+  summary: "Get all soft deleted patients",
+  description: "Retrieve a paginated list of all soft deleted patients.",
+  request: {
+    query: GetDeletedPatientsQuerySchema.shape.query,
+  },
+  responses: createApiResponses([
+    {
+      schema: PatientListSchema,
+      description: "Deleted patients retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving deleted patients.",
+      statusCode: 500,
+    },
+  ]),
+});
+
+patientRouter.get("/deleted", validateRequest(GetDeletedPatientsQuerySchema), patientController.getDeletedPatients);
 
 // Register the path for getting a patient by ID
 patientRegistry.registerPath({
@@ -291,3 +322,94 @@ patientRegistry.registerPath({
 });
 
 patientRouter.delete("/:id", validateRequest(GetPatientSchema), patientController.deletePatient);
+
+// Register the path for soft deleting a patient
+patientRegistry.registerPath({
+  method: "post",
+  path: "/patient/{id}/soft-delete",
+  tags: ["Patient"],
+  operationId: "softDeletePatient",
+  request: { params: GetPatientSchema.shape.params },
+  summary: "Soft delete a patient",
+  description: "Soft delete a patient by ID (sets deletedAt timestamp)",
+  responses: createApiResponses([
+    {
+      schema: PatientSchema,
+      description: "Patient soft deleted successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while soft deleting the patient",
+      statusCode: 500,
+    },
+  ]),
+});
+
+patientRouter.post("/:id/soft-delete", validateRequest(GetPatientSchema), patientController.softDeletePatient);
+
+// Register the path for soft deleting multiple patients
+patientRegistry.registerPath({
+  method: "post",
+  path: "/patient/soft-delete",
+  tags: ["Patient"],
+  operationId: "softDeletePatients",
+  summary: "Soft delete multiple patients",
+  description: "Soft delete multiple patients by IDs",
+  request: {
+    body: {
+      content: {
+        "application/json": { schema: SoftDeletePatientsSchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({ count: z.number() }),
+      description: "Patients soft deleted successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while soft deleting patients",
+      statusCode: 500,
+    },
+  ]),
+});
+
+patientRouter.post("/soft-delete", validateRequest(SoftDeletePatientsSchema), patientController.softDeletePatients);
+
+// Register the path for restoring a patient
+patientRegistry.registerPath({
+  method: "post",
+  path: "/patient/{id}/restore",
+  tags: ["Patient"],
+  operationId: "restorePatient",
+  request: { params: RestorePatientSchema.shape.params },
+  summary: "Restore a soft deleted patient",
+  description: "Restore a soft deleted patient by removing the deletedAt timestamp",
+  responses: createApiResponses([
+    {
+      schema: PatientSchema,
+      description: "Patient restored successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Patient not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while restoring the patient",
+      statusCode: 500,
+    },
+  ]),
+});
+
+patientRouter.post("/:id/restore", validateRequest(RestorePatientSchema), patientController.restorePatient);

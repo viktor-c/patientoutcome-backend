@@ -145,6 +145,65 @@ class PatientCaseController {
   };
 
   /**
+   * Soft delete a patient case
+   * @route POST /patient/:patientId/case/:caseId/soft-delete
+   * @param {Request} req - Express request with patientId and caseId in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming soft deletion
+   * @description Soft deletes a patient case by setting deletedAt timestamp
+   */
+  public softDeletePatientCaseById: RequestHandler = async (req: Request, res: Response) => {
+    const patientId = z.string().parse(req.params.patientId);
+    const caseId = z.string().parse(req.params.caseId);
+    const serviceResponse = await service.softDeletePatientCaseById(patientId, caseId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Soft delete multiple patient cases
+   * @route POST /case/soft-delete
+   * @param {Request} req - Express request with array of case IDs in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming soft deletion
+   * @description Soft deletes multiple patient cases
+   */
+  public softDeleteCases: RequestHandler = async (req: Request, res: Response) => {
+    const { caseIds } = req.body;
+    const serviceResponse = await service.softDeleteCases(caseIds);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Restore a soft deleted patient case
+   * @route POST /case/:caseId/restore
+   * @param {Request} req - Express request with caseId in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming restoration
+   * @description Restores a soft deleted patient case
+   */
+  public restoreCase: RequestHandler = async (req: Request, res: Response) => {
+    const caseId = z.string().parse(req.params.caseId);
+    const serviceResponse = await service.restoreCase(caseId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Get all soft deleted cases
+   * @route GET /case/deleted
+   * @param {Request} req - Express request object with optional query params: page, limit
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with paginated list of deleted cases
+   * @description Retrieves all soft deleted cases with pagination
+   */
+  public getDeletedCases: RequestHandler = async (req: Request, res: Response) => {
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const serviceResponse = await service.getAllDeletedCases(page, limit);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+
+  /**
    * Get all notes for a specific case
    * @route GET /case/:caseId/notes
    * @param {Request} req - Express request with caseId in params

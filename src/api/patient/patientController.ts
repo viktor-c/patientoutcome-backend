@@ -11,17 +11,18 @@ class PatientController {
   /**
    * Get all patients with pagination
    * @route GET /patient
-   * @param {Request} req - Express request object with optional query params: page, limit
+   * @param {Request} req - Express request object with optional query params: page, limit, includeDeleted
    * @param {Response} res - Express response object
    * @returns {Promise<Response>} ServiceResponse with paginated patient list
    * @description Retrieves all patients with pagination, including their associated cases
    */
   public getPatients: RequestHandler = async (req: Request, res: Response) => {
-    const { page, limit } = req.query;
+    const { page, limit, includeDeleted } = req.query;
 
     const options = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      includeDeleted: includeDeleted === 'true',
     };
 
     const serviceResponse = await patientService.findAll(options);
@@ -110,6 +111,68 @@ class PatientController {
   public deletePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
     const serviceResponse = await patientService.deletePatient(id);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Soft delete a patient
+   * @route POST /patient/:id/soft-delete
+   * @param {Request} req - Express request with patient ID in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming soft deletion
+   * @description Soft deletes a patient by setting deletedAt timestamp
+   */
+  public softDeletePatient: RequestHandler = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const serviceResponse = await patientService.softDeletePatient(id);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Soft delete multiple patients
+   * @route POST /patient/soft-delete
+   * @param {Request} req - Express request with array of patient IDs in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming soft deletion
+   * @description Soft deletes multiple patients
+   */
+  public softDeletePatients: RequestHandler = async (req: Request, res: Response) => {
+    const { patientIds } = req.body;
+    const serviceResponse = await patientService.softDeletePatients(patientIds);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Restore a soft deleted patient
+   * @route POST /patient/:id/restore
+   * @param {Request} req - Express request with patient ID in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse confirming restoration
+   * @description Restores a soft deleted patient
+   */
+  public restorePatient: RequestHandler = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const serviceResponse = await patientService.restorePatient(id);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Get all soft deleted patients
+   * @route GET /patient/deleted
+   * @param {Request} req - Express request object with optional query params: page, limit
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with paginated list of deleted patients
+   * @description Retrieves all soft deleted patients with pagination
+   */
+  public getDeletedPatients: RequestHandler = async (req: Request, res: Response) => {
+    const { page, limit } = req.query;
+
+    const options = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    };
+
+    const serviceResponse = await patientService.findAllDeleted(options);
     return handleServiceResponse(serviceResponse, res);
   };
 }

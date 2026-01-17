@@ -10,6 +10,7 @@ export const PatientSchema = z.object({
   externalPatientId: z.array(z.string()).optional(),
   sex: z.string().optional().nullable(),
   cases: z.array(zId("PatientCase")).optional(),
+  deletedAt: z.date().optional().nullable(),
 });
 
 // Infer TypeScript type from the schema
@@ -62,8 +63,34 @@ export const DeletePatientSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
+// Input validation for soft delete (batch)
+export const SoftDeletePatientsSchema = z.object({
+  body: z.object({
+    patientIds: z.array(commonValidations.id),
+  }),
+});
+
+// Input validation for restore patient
+export const RestorePatientSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+});
+
+// Input validation for permanent delete
+export const PermanentDeletePatientSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+});
+
 // Schema for pagination query parameters
 export const GetPatientsQuerySchema = z.object({
+  query: z.object({
+    page: z.string().transform(Number).pipe(z.number().min(1)).default("1"),
+    limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default("10"),
+    includeDeleted: z.string().transform((val) => val === 'true').default("false").optional(),
+  }),
+});
+
+// Schema for getting deleted patients (pagination only, no includeDeleted)
+export const GetDeletedPatientsQuerySchema = z.object({
   query: z.object({
     page: z.string().transform(Number).pipe(z.number().min(1)).default("1"),
     limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default("10"),

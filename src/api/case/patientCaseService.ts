@@ -181,6 +181,96 @@ export class PatientCaseService {
   }
 
   /**
+   * @description Soft delete a patient case by ID
+   * @param patientId the ID of the patient
+   * @param caseId the ID of the case to soft delete
+   * @returns the soft deleted case
+   * @throws {ServiceResponse} if an error occurs while soft deleting the case
+   */
+  async softDeletePatientCaseById(patientId: string, caseId: string): Promise<ServiceResponse<PatientCase | null>> {
+    try {
+      const softDeletedCase = await this.repository.softDeletePatientCaseById(patientId, caseId);
+      if (!softDeletedCase) {
+        return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Case soft deleted successfully", softDeletedCase);
+    } catch (ex) {
+      const errorMessage = `Error soft deleting case with id ${caseId}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while soft deleting case.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * @description Soft delete multiple patient cases
+   * @param caseIds array of case IDs to soft delete
+   * @returns count of soft deleted cases
+   * @throws {ServiceResponse} if an error occurs while soft deleting cases
+   */
+  async softDeleteCases(caseIds: string[]): Promise<ServiceResponse<{ count: number } | null>> {
+    try {
+      const count = await this.repository.softDeleteManyCases(caseIds);
+      return ServiceResponse.success(`${count} cases soft deleted successfully`, { count });
+    } catch (ex) {
+      const errorMessage = `Error soft deleting cases: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while soft deleting cases.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Restore a soft deleted case
+   * @param caseId the ID of the case to restore
+   * @returns the restored case
+   * @throws {ServiceResponse} if an error occurs while restoring the case
+   */
+  async restoreCase(caseId: string): Promise<ServiceResponse<PatientCase | null>> {
+    try {
+      const restoredCase = await this.repository.restoreCaseById(caseId);
+      if (!restoredCase) {
+        return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Case restored successfully", restoredCase);
+    } catch (ex) {
+      const errorMessage = `Error restoring case with id ${caseId}: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure("An error occurred while restoring case.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * @description Get all soft deleted cases with pagination
+   * @param page page number
+   * @param limit items per page
+   * @returns paginated list of soft deleted cases
+   * @throws {ServiceResponse} if an error occurs while retrieving deleted cases
+   */
+  async getAllDeletedCases(page: number = 1, limit: number = 10): Promise<ServiceResponse<{
+    cases: PatientCase[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } | null>> {
+    try {
+      const result = await this.repository.findAllDeletedCases(page, limit);
+      return ServiceResponse.success("Deleted cases found", result);
+    } catch (error) {
+      logger.error({ error }, "Error retrieving deleted cases");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving deleted cases.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+
+  /**
    * @description Get notes by case ID
    * @param caseId the ID of the case
    * @returns an array of notes for the specified case, or null if no notes are found

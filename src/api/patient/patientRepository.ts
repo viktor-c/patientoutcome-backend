@@ -6,6 +6,7 @@ import type { Patient } from "./patientModel";
 export interface PaginationOptions {
   page?: number;
   limit?: number;
+  includeDeleted?: boolean;
 }
 
 export interface PaginatedResult<T> {
@@ -19,17 +20,20 @@ export interface PaginatedResult<T> {
 export class PatientRepository {
   async findAllAsync(options: PaginationOptions = {}): Promise<PaginatedResult<Patient>> {
     try {
-      const { page = 1, limit = 10 } = options;
+      const { page = 1, limit = 10, includeDeleted = false } = options;
       const skip = (page - 1) * limit;
 
+      // Build query filter
+      const filter = includeDeleted ? {} : { deletedAt: null };
+
       const [patients, total] = await Promise.all([
-        patientModel.find()
+        patientModel.find(filter)
           .populate("cases")
           .sort({ _id: -1 })
           .skip(skip)
           .limit(limit)
           .lean(),
-        patientModel.countDocuments(),
+        patientModel.countDocuments(filter),
       ]);
 
       const totalPages = Math.ceil(total / limit);
@@ -54,7 +58,7 @@ export class PatientRepository {
       return Promise.reject(error);
     }
     try {
-      const patient = await patientModel.findById(id).populate(["cases"]);
+      const patient = await patientModel.findOne({ _id: id, deletedAt: null }).populate(["cases"]);
       return patient;
     } catch (error) {
       return Promise.reject(error);
@@ -68,8 +72,8 @@ export class PatientRepository {
    */
   async findByExternalIdAsync(externalId: string): Promise<Patient | null> {
     try {
-      // Exact match - the externalId must be exactly in the array
-      const patient = await patientModel.findOne({ externalPatientId: externalId }).lean();
+      // Exact match - the externalId must be exactly in the array, and not deleted
+      const patient = await patientModel.findOne({ externalPatientId: externalId, deletedAt: null }).lean();
       return patient || null;
     } catch (error) {
       return Promise.reject(error);
@@ -83,10 +87,10 @@ export class PatientRepository {
    */
   async searchByExternalIdAsync(searchQuery: string): Promise<Patient[]> {
     try {
-      // Partial match using regex - case insensitive
+      // Partial match using regex - case insensitive, exclude deleted
       const regex = new RegExp(searchQuery, "i");
       const patients = await patientModel
-        .find({ externalPatientId: { $elemMatch: { $regex: regex } } })
+        .find({ externalPatientId: { $elemMatch: { $regex: regex } }, deletedAt: null })
         .select("_id externalPatientId")
         .lean();
       return patients;
@@ -132,6 +136,106 @@ export class PatientRepository {
       return Promise.reject(error);
     }
   }
+
+  /**
+   * Soft delete a patient by setting deletedAt timestamp
+   * @param id - Patient ID
+   * @returns Updated patient with deletedAt set
+   */
+  async softDeleteByIdAsync(id: string): Promise<Patient | null> {
+    try {
+      mongoose.isValidObjectId(id);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    try {
+      const softDeletedPatient = await patientModel.findByIdAndUpdate(
+        id,
+        { deletedAt: new Date() },
+        { new: true, lean: true }
+      );
+      return softDeletedPatient;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Soft delete multiple patients
+   * @param ids - Array of patient IDs
+   * @returns Number of patients soft deleted
+   */
+  async softDeleteManyAsync(ids: string[]): Promise<number> {
+    try {
+      const result = await patientModel.updateMany(
+        { _id: { $in: ids } },
+        { deletedAt: new Date() }
+      );
+      return result.modifiedCount;
+    } catch (error) {
+      logger.error({ error }, "Error soft deleting patients");
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Restore a soft deleted patient
+   * @param id - Patient ID
+   * @returns Restored patient
+   */
+  async restoreByIdAsync(id: string): Promise<Patient | null> {
+    try {
+      mongoose.isValidObjectId(id);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    try {
+      const restoredPatient = await patientModel.findByIdAndUpdate(
+        id,
+        { deletedAt: null },
+        { new: true, lean: true }
+      );
+      return restoredPatient;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Get all soft deleted patients with pagination
+   * @param options - Pagination options
+   * @returns Paginated list of soft deleted patients
+   */
+  async findAllDeletedAsync(options: PaginationOptions = {}): Promise<PaginatedResult<Patient>> {
+    try {
+      const { page = 1, limit = 10 } = options;
+      const skip = (page - 1) * limit;
+
+      const [patients, total] = await Promise.all([
+        patientModel.find({ deletedAt: { $ne: null } })
+          .populate("cases")
+          .sort({ deletedAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        patientModel.countDocuments({ deletedAt: { $ne: null } }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        patients: patients,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      logger.error({ error }, "Error finding deleted patients");
+      return Promise.reject(error);
+    }
+  }
+
   /**
    * Creates mock data for testing and development purposes.
    * This method is only available in development and test environments.

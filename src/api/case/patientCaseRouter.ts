@@ -352,6 +352,193 @@ caseRouter.delete(
   patientCaseController.deletePatientCaseById,
 );
 
+/**
+ * description: soft delete a patient case by patientId and caseId
+ */
+patientCaseRegistry.registerPath({
+  method: "post",
+  summary: "Soft delete a patient case",
+  description: "Soft delete a patient case by setting deletedAt timestamp",
+  operationId: "softDeletePatientCaseById",
+  path: "/patient/{patientId}/case/{caseId}/soft-delete",
+  tags: ["patient case"],
+  request: {
+    params: z.object({
+      patientId: commonValidations.id,
+      caseId: commonValidations.id,
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Case soft deleted successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while soft deleting the case",
+      statusCode: 500,
+    },
+  ]),
+});
+caseRouter.post(
+  "/patient/:patientId/case/:caseId/soft-delete",
+  validateRequest(
+    z.object({
+      params: z.object({
+        patientId: commonValidations.id,
+        caseId: commonValidations.id,
+      }),
+    }),
+  ),
+  patientCaseController.softDeletePatientCaseById,
+);
+
+/**
+ * description: soft delete multiple cases
+ */
+patientCaseRegistry.registerPath({
+  method: "post",
+  summary: "Soft delete multiple cases",
+  description: "Soft delete multiple cases by IDs",
+  operationId: "softDeleteCases",
+  path: "/case/soft-delete",
+  tags: ["patient case"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            caseIds: z.array(commonValidations.id),
+          }),
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({ count: z.number() }),
+      description: "Cases soft deleted successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while soft deleting cases",
+      statusCode: 500,
+    },
+  ]),
+});
+caseRouter.post(
+  "/case/soft-delete",
+  validateRequest(
+    z.object({
+      body: z.object({
+        caseIds: z.array(commonValidations.id),
+      }),
+    }),
+  ),
+  patientCaseController.softDeleteCases,
+);
+
+/**
+ * description: restore a soft deleted case
+ */
+patientCaseRegistry.registerPath({
+  method: "post",
+  summary: "Restore a soft deleted case",
+  description: "Restore a soft deleted case by removing deletedAt timestamp",
+  operationId: "restoreCase",
+  path: "/case/{caseId}/restore",
+  tags: ["patient case"],
+  request: {
+    params: z.object({
+      caseId: commonValidations.id,
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: PatientCaseSchema,
+      description: "Case restored successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Case not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while restoring the case",
+      statusCode: 500,
+    },
+  ]),
+});
+caseRouter.post(
+  "/case/:caseId/restore",
+  validateRequest(
+    z.object({
+      params: z.object({
+        caseId: commonValidations.id,
+      }),
+    }),
+  ),
+  patientCaseController.restoreCase,
+);
+
+/**
+ * description: get all soft deleted cases
+ */
+patientCaseRegistry.registerPath({
+  method: "get",
+  summary: "Get all soft deleted cases",
+  description: "Retrieve a paginated list of soft deleted cases",
+  operationId: "getDeletedCases",
+  path: "/case/deleted",
+  tags: ["patient case"],
+  request: {
+    query: z.object({
+      page: z.string().transform(Number).pipe(z.number().min(1)).default("1").optional(),
+      limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default("10").optional(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        cases: z.array(PatientCaseWithPopulatedFieldsSchema),
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      }),
+      description: "Deleted cases retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving deleted cases",
+      statusCode: 500,
+    },
+  ]),
+});
+caseRouter.get(
+  "/case/deleted",
+  validateRequest(
+    z.object({
+      query: z.object({
+        page: z.string().transform(Number).pipe(z.number().min(1)).default("1"),
+        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default("10"),
+      }).optional().default({}),
+    }),
+  ),
+  patientCaseController.getDeletedCases,
+);
+
+
 // Extra endpoints
 /**
  * description: Get all notes for a patient case by patientId and caseId

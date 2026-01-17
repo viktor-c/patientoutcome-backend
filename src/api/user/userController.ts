@@ -105,7 +105,7 @@ class UserController {
       return res.status(401).json({ message: "Authentication required: User id not found in session" });
     }
 
-    const userData = req.body as any;
+    const userData = req.body;
     // Determine which user is being updated
     // If an id is provided in the request body and it's different from the session user,
     // the user is attempting to update another user (admin operation)
