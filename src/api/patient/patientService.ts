@@ -1,7 +1,7 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
-import type { Patient } from "./patientModel";
+import type { Patient, PatientWithCounts } from "./patientModel";
 import { PatientRepository, type PaginatedResult, type PaginationOptions } from "./patientRepository";
 
 export class PatientService {
@@ -11,7 +11,7 @@ export class PatientService {
     this.patientRepository = repository;
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<Patient> | null>> {
+  async findAll(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<PatientWithCounts> | null>> {
     try {
       const result = await this.patientRepository.findAllAsync(options);
       return ServiceResponse.success("Patients found", result);
@@ -25,7 +25,7 @@ export class PatientService {
     }
   }
 
-  async findAllDeleted(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<Patient> | null>> {
+  async findAllDeleted(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<PatientWithCounts> | null>> {
     try {
       const result = await this.patientRepository.findAllDeletedAsync(options);
       return ServiceResponse.success("Deleted patients found", result);

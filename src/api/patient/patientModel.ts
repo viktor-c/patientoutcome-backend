@@ -24,6 +24,14 @@ export const PatientSearchResultSchema = z.object({
 
 export type PatientSearchResult = z.infer<typeof PatientSearchResultSchema>;
 
+// Extended schema for patient list responses - includes case and consultation counts
+export const PatientWithCountsSchema = PatientSchema.extend({
+  caseCount: z.number().optional(),
+  consultationCount: z.number().optional(),
+});
+
+export type PatientWithCounts = z.infer<typeof PatientWithCountsSchema>;
+
 /** Create Mongoose Schema and Model */
 const MongoosePatientSchema = zodSchema(PatientSchema.omit({ _id: true }));
 export const patientModel = mongoose.model("Patient", MongoosePatientSchema, "patients");
@@ -99,7 +107,7 @@ export const GetDeletedPatientsQuerySchema = z.object({
 
 // Response schema for paginated patient list
 export const PatientListSchema = z.object({
-  patients: z.array(PatientSchema),
+  patients: z.array(PatientWithCountsSchema),
   total: z.number(),
   page: z.number(),
   limit: z.number(),

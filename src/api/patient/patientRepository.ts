@@ -1,7 +1,8 @@
 import { logger } from "@/common/utils/logger";
 import mongoose from "mongoose";
+import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import { patientModel } from "./patientModel";
-import type { Patient } from "./patientModel";
+import type { Patient, PatientWithCounts } from "./patientModel";
 
 export interface PaginationOptions {
   page?: number;
@@ -18,7 +19,63 @@ export interface PaginatedResult<T> {
 }
 
 export class PatientRepository {
-  async findAllAsync(options: PaginationOptions = {}): Promise<PaginatedResult<Patient>> {
+  /**
+   * Helper method to enrich patients with case and consultation counts
+   * @param patients Array of patient documents
+   * @returns Array of patients with caseCount and consultationCount
+   */
+  private async enrichPatientsWithCounts(patients: Patient[]): Promise<PatientWithCounts[]> {
+    const patientIds = patients.map(p => p._id).filter(id => id !== undefined);
+    
+    if (patientIds.length === 0) {
+      return patients.map(p => ({ ...p, caseCount: 0, consultationCount: 0 }));
+    }
+
+    // Aggregate patient cases with consultation counts
+    // Use $lookup to join with Consultation collection and get actual consultation counts
+    const counts = await PatientCaseModel.aggregate([
+      {
+        $match: {
+          patient: { $in: patientIds },
+          deletedAt: null // Only count non-deleted cases
+        }
+      },
+      {
+        // Join with Consultation collection to count actual consultations per case
+        $lookup: {
+          from: "consultations",
+          localField: "_id",
+          foreignField: "patientCaseId",
+          as: "consultationsList"
+        }
+      },
+      {
+        $group: {
+          _id: "$patient",
+          caseCount: { $sum: 1 },
+          // Sum the count of consultations across all cases for this patient
+          consultationCount: {
+            $sum: { $size: "$consultationsList" }
+          }
+        }
+      }
+    ]);
+
+    // Create a map of patient ID to counts
+    const countMap = new Map(counts.map(c => [c._id.toString(), { caseCount: c.caseCount, consultationCount: c.consultationCount }]));
+
+    // Enrich patients with counts
+    return patients.map(p => {
+      const countData = countMap.get(p._id?.toString() ?? "");
+      return {
+        ...p,
+        caseCount: countData?.caseCount ?? 0,
+        consultationCount: countData?.consultationCount ?? 0
+      };
+    });
+  }
+
+  async findAllAsync(options: PaginationOptions = {}): Promise<PaginatedResult<PatientWithCounts>> {
     try {
       const { page = 1, limit = 10, includeDeleted = false } = options;
       const skip = (page - 1) * limit;
@@ -28,7 +85,6 @@ export class PatientRepository {
 
       const [patients, total] = await Promise.all([
         patientModel.find(filter)
-          .populate("cases")
           .sort({ _id: -1 })
           .skip(skip)
           .limit(limit)
@@ -38,8 +94,11 @@ export class PatientRepository {
 
       const totalPages = Math.ceil(total / limit);
 
+      // Enrich patients with case and consultation counts
+      const enrichedPatients = await this.enrichPatientsWithCounts(patients as Patient[]);
+
       return {
-        patients: patients,
+        patients: enrichedPatients,
         total,
         page,
         limit,
@@ -206,14 +265,13 @@ export class PatientRepository {
    * @param options - Pagination options
    * @returns Paginated list of soft deleted patients
    */
-  async findAllDeletedAsync(options: PaginationOptions = {}): Promise<PaginatedResult<Patient>> {
+  async findAllDeletedAsync(options: PaginationOptions = {}): Promise<PaginatedResult<PatientWithCounts>> {
     try {
       const { page = 1, limit = 10 } = options;
       const skip = (page - 1) * limit;
 
       const [patients, total] = await Promise.all([
         patientModel.find({ deletedAt: { $ne: null } })
-          .populate("cases")
           .sort({ deletedAt: -1 })
           .skip(skip)
           .limit(limit)
@@ -223,8 +281,11 @@ export class PatientRepository {
 
       const totalPages = Math.ceil(total / limit);
 
+      // Enrich patients with case and consultation counts
+      const enrichedPatients = await this.enrichPatientsWithCounts(patients as Patient[]);
+
       return {
-        patients: patients,
+        patients: enrichedPatients,
         total,
         page,
         limit,

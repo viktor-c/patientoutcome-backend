@@ -9,7 +9,7 @@ import { type ClinicalStudy, clinicalStudyModel } from "./clinicalStudyModel";
 export class ClinicalStudyRepository {
   async getClinicalStudies(): Promise<ClinicalStudy[]> {
     try {
-      return clinicalStudyModel.find().populate(["supervisors", "studyNurses"]).lean().exec() as unknown as Promise<
+      return clinicalStudyModel.find().lean().exec() as unknown as Promise<
         ClinicalStudy[]
       >;
     } catch (error) {
@@ -22,7 +22,6 @@ export class ClinicalStudyRepository {
       logger.debug(`clinicalStudyRepository.ts: Finding clinical study with id ${id}`);
       return clinicalStudyModel
         .findById(id)
-        .populate(["supervisors", "studyNurses"])
         .lean()
         .exec() as unknown as Promise<ClinicalStudy | null>;
     } catch (error: any) {
