@@ -11,6 +11,7 @@ export const PatientSchema = z.object({
   sex: z.string().optional().nullable(),
   cases: z.array(zId("PatientCase")).optional(),
   deletedAt: z.date().optional().nullable(),
+  department: zId("UserDepartment").optional().nullable(), // Department the patient belongs to
 });
 
 // Infer TypeScript type from the schema

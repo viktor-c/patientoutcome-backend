@@ -95,8 +95,8 @@ export class UserRegistrationRepository {
       userCreatedWith: null,
       roles: ["doctor"],
       permissions: ["read", "write"],
-      userDepartment: "IT",
-      userBelongsToCenter: ["center1", "center2"],
+      userDepartment: ["675000000000000000000001"], // Orthopädie department
+      userBelongsToCenter: "675000000000000000000003", // Klinikum Fulda
       active: true,
     },
     {
@@ -106,8 +106,8 @@ export class UserRegistrationRepository {
       validUntil: faker.date.soon({ days: 90 }),
       userCreatedWith: null,
       roles: ["nurse"],
-      userDepartment: "HR",
-      userBelongsToCenter: ["center3"],
+      userDepartment: ["675000000000000000000002"], // Kardiologie department
+      userBelongsToCenter: "675000000000000000000003", // Klinikum Fulda
       active: true,
     },
     {
@@ -117,8 +117,8 @@ export class UserRegistrationRepository {
       validUntil: faker.date.soon({ days: 90 }),
       userCreatedWith: null,
       roles: ["admin"],
-      userDepartment: "Finance",
-      userBelongsToCenter: ["center4", "center5"],
+      userDepartment: ["675000000000000000000001"], // Orthopädie department
+      userBelongsToCenter: "675000000000000000000004", // Klinikum Musterstadt
       active: true,
     },
   ];
@@ -143,8 +143,8 @@ export class UserRegistrationRepository {
     roleInfo: {
       roles: string[];
       permissions?: string[];
-      userDepartment: string;
-      userBelongsToCenter: string[];
+      userDepartment: string[];
+      userBelongsToCenter?: string;
     },
     validUntil: Date,
   ): Promise<RegistrationCode[]> {

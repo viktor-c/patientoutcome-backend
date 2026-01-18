@@ -13,8 +13,8 @@ export interface BatchCreateCodesRequest {
     role: string;
     count: number;
   }[];
-  department: string;
-  belongsToCenter: string[];
+  department: string[];
+  belongsToCenter?: string;
   expiryType: 'days' | 'months' | 'years' | 'date';
   expiryValue: number | string; // number for relative, date string for absolute
 }
@@ -41,7 +41,7 @@ export class UserRegistrationService {
         roles: registrationCodeInfo.roles,
         permissions: registrationCodeInfo.permissions,
         department: registrationCodeInfo.userDepartment,
-        belongsToCenter: registrationCodeInfo.userBelongsToCenter,
+        belongsToCenter: registrationCodeInfo.userBelongsToCenter || undefined,
       };
     } catch (error) {
       return ServiceResponse.failure(

@@ -10,8 +10,8 @@ export const registrationCodeZod = z.object({
   userCreatedWith: zId().nullable(),
   roles: z.array(z.string()),
   permissions: z.array(z.string()).optional(),
-  userDepartment: z.string(),
-  userBelongsToCenter: z.array(z.string()),
+  userDepartment: z.array(z.string()),
+  userBelongsToCenter: z.string().optional(),
   active: z.boolean(),
 });
 export type RegistrationCode = z.infer<typeof registrationCodeZod>;

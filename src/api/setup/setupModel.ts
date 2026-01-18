@@ -68,12 +68,55 @@ export const CreateAdminRequestSchema = z.object({
     description: "Department of the admin user",
     example: "Administration",
   }),
+  departmentShortName: z
+    .string()
+    .min(0)
+    .max(20)
+    .optional()
+    .openapi({
+      description: "Short name for the department",
+      example: "ADM",
+    }),
+  departmentDescription: z
+    .string()
+    .min(0)
+    .max(500)
+    .optional()
+    .openapi({
+      description: "Description of the department",
+      example: "Administration department",
+    }),
+  centerName: z
+    .string()
+    .min(1)
+    .default("Default Center")
+    .openapi({
+      description: "Name of the center/clinic",
+      example: "Klinikum Fulda",
+    }),
+  centerShortName: z
+    .string()
+    .min(0)
+    .max(20)
+    .optional()
+    .openapi({
+      description: "Short name for the center",
+      example: "KliFulda",
+    }),
+  centerDescription: z
+    .string()
+    .min(0)
+    .max(500)
+    .optional()
+    .openapi({
+      description: "Description of the center",
+      example: "Main medical center",
+    }),
   belongsToCenter: z
     .array(z.string())
-    .min(1, "At least one center is required")
-    .default(["1"])
+    .optional()
     .openapi({
-      description: "Center IDs the admin belongs to",
+      description: "Center IDs the admin belongs to (optional, will use created center if not provided)",
       example: ["1"],
     }),
 });

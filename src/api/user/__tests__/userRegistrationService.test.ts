@@ -54,6 +54,15 @@ describe("User Registration API", () => {
 
   describe("POST /user/register", () => {
     it("should successfully register user with valid code", async () => {
+      // Use unique username and email for this test
+      const uniqueId = Date.now();
+      const testUsername = `johndoe${uniqueId}`;
+      const testEmail = `johndoe${uniqueId}@example.com`;
+      
+      // Clean up any existing test data
+      await userModel.deleteOne({ username: testUsername });
+      await RegistrationCodeModel.deleteOne({ code: "ABC-123-XYZ" });
+      
       // Create a valid registration code
       const testCode = "ABC-123-XYZ";
       await RegistrationCodeModel.create({
@@ -64,15 +73,15 @@ describe("User Registration API", () => {
         userCreatedWith: null,
         roles: ["doctor"],
         permissions: ["read", "write"],
-        userDepartment: "Cardiology",
-        userBelongsToCenter: ["center1"],
+        userDepartment: ["675000000000000000000001"], // Orthopädie department
+        userBelongsToCenter: "675000000000000000000003", // Use valid ObjectId (Klinikum Fulda)
         active: true,
       });
 
       const userData = {
         name: "John Doe",
-        username: "johndoe",
-        email: "johndoe@example.com",
+        username: testUsername,
+        email: testEmail,
         password: "Password123",
         confirmPassword: "Password123",
         registrationCode: testCode,
@@ -80,15 +89,21 @@ describe("User Registration API", () => {
 
       const response = await request(app).post("/user/register").send(userData);
 
+      // Debug output
+      if (response.statusCode !== StatusCodes.CREATED) {
+        console.log("Registration failed:", response.body);
+      }
+
       expect(response.statusCode).toBe(StatusCodes.CREATED);
       expect(response.body.success).toBe(true);
 
       // Verify user was created
-      const createdUser = await userModel.findOne({ username: "johndoe" });
+      const createdUser = await userModel.findOne({ username: testUsername });
       expect(createdUser).toBeDefined();
-      expect(createdUser?.email).toBe("johndoe@example.com");
+      expect(createdUser?.email).toBe(testEmail);
       expect(createdUser?.roles).toContain("doctor");
-      expect(createdUser?.department).toBe("Cardiology");
+      expect(Array.isArray(createdUser?.department)).toBe(true);
+      expect(createdUser?.department?.[0]?.toString()).toBe("675000000000000000000001");
     });
 
     it("should fail with invalid registration code", async () => {
@@ -118,8 +133,8 @@ describe("User Registration API", () => {
         userCreatedWith: null,
         roles: ["nurse"],
         permissions: ["read"],
-        userDepartment: "Emergency",
-        userBelongsToCenter: ["center1"],
+        userDepartment: ["675000000000000000000001"], // Orthopädie department
+        userBelongsToCenter: "675000000000000000000003", // Use valid ObjectId
         active: true,
       });
 
@@ -150,8 +165,8 @@ describe("User Registration API", () => {
         userCreatedWith: null,
         roles: ["doctor"],
         permissions: ["read", "write"],
-        userDepartment: "Cardiology",
-        userBelongsToCenter: ["center1"],
+        userDepartment: ["675000000000000000000001"], // Orthopädie department
+        userBelongsToCenter: "675000000000000000000003", // Use valid ObjectId
         active: true,
       });
 

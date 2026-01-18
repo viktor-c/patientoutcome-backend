@@ -56,8 +56,12 @@ export class UserService {
 
       // If user is admin, get all users (optionally filtered by role)
       // If not admin, get users from same department (optionally filtered by role)
+      // Convert ObjectId[] to string[] for MongoDB query
+      const departments = isAdmin 
+        ? undefined 
+        : currentUser.department?.map(d => d.toString());
       const users = await this.userRepository.findAllFilteredAsync(
-        isAdmin ? undefined : currentUser.department,
+        departments,
         roleFilter,
       );
 

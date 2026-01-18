@@ -81,7 +81,8 @@ class PatientController {
    */
   public createPatient: RequestHandler = async (req: Request, res: Response) => {
     const patientData = req.body;
-    const serviceResponse = await patientService.createPatient(patientData);
+    const userId = req.session?.userId;
+    const serviceResponse = await patientService.createPatient(patientData, userId);
     return handleServiceResponse(serviceResponse, res);
   };
 

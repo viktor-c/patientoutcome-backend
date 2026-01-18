@@ -17,7 +17,9 @@ import {
   ChangePasswordSchema,
   CreateUserSchema,
   GetUserSchema,
+  UpdateUserApiSchema,
   UpdateUserSchema,
+  UserNoPasswordApiSchema,
   UserNoPasswordSchema,
   UserSchema,
 } from "@/api/user/userModel";
@@ -175,7 +177,7 @@ userRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: z.array(UserSchema),
+      schema: z.array(UserNoPasswordApiSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -222,7 +224,7 @@ userRegistry.registerPath({
   summary: "Get all kiosk users",
   responses: createApiResponses([
     {
-      schema: z.array(UserNoPasswordSchema),
+      schema: z.array(UserNoPasswordApiSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -262,7 +264,7 @@ userRegistry.registerPath({
   summary: "Get available kiosk users",
   responses: createApiResponses([
     {
-      schema: z.array(UserNoPasswordSchema),
+      schema: z.array(UserNoPasswordApiSchema),
       description: "Success",
       statusCode: 200,
     },
@@ -304,7 +306,7 @@ userRegistry.registerPath({
   request: { params: GetUserSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: UserSchema,
+      schema: UserNoPasswordApiSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -372,13 +374,13 @@ userRegistry.registerPath({
   request: {
     body: {
       content: {
-        "application/json": { schema: UpdateUserSchema },
+        "application/json": { schema: UpdateUserApiSchema },
       },
     },
   },
   responses: createApiResponses([
     {
-      schema: UserSchema,
+      schema: UserNoPasswordApiSchema,
       description: "Success",
       statusCode: 200,
     },
@@ -514,7 +516,7 @@ userRegistry.registerPath({
   },
   responses: createApiResponses([
     {
-      schema: UserNoPasswordSchema,
+      schema: UserNoPasswordApiSchema,
       description: "User registered successfully",
       statusCode: 201,
     },

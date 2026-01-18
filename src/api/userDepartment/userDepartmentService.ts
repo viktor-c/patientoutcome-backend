@@ -76,6 +76,15 @@ export class UserDepartmentService {
   // Creates a new department
   async create(departmentData: Omit<UserDepartment, "_id">): Promise<ServiceResponse<UserDepartment | null>> {
     try {
+      // Validate that centers don't have parent centers (prevent circular references)
+      if (departmentData.departmentType === "center" && departmentData.center) {
+        return ServiceResponse.failure(
+          "Centers cannot have a parent center assigned",
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
       // Check if department with same name already exists
       const existingDepartment = await this.userDepartmentRepository.findByNameAsync(departmentData.name);
       if (existingDepartment) {
@@ -102,6 +111,15 @@ export class UserDepartmentService {
   // Updates an existing department
   async update(id: string, departmentData: Partial<Omit<UserDepartment, "_id">>): Promise<ServiceResponse<UserDepartment | null>> {
     try {
+      // Validate that centers don't have parent centers (prevent circular references)
+      if (departmentData.departmentType === "center" && departmentData.center) {
+        return ServiceResponse.failure(
+          "Centers cannot have a parent center assigned",
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
       // If name is being updated, check for conflicts
       if (departmentData.name) {
         const existingDepartment = await this.userDepartmentRepository.findByNameAsync(departmentData.name);

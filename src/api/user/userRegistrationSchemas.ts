@@ -18,8 +18,8 @@ export const batchCreateCodesSchema = z.object({
       count: z.number().int().min(0).max(100),
     })
   ).min(1),
-  department: z.string().min(1),
-  belongsToCenter: z.array(z.string()).min(1),
+  department: z.array(z.string().min(1)).min(1),
+  belongsToCenter: z.string().min(1).optional(),
   expiryType: z.enum(['days', 'months', 'years', 'date']),
   expiryValue: z.union([z.number().int().positive(), z.string().datetime()]),
 });

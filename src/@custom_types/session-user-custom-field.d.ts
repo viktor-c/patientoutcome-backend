@@ -23,5 +23,6 @@ declare module "express-session" {
     loggedIn?: boolean;
     username?: string;
     consultationId?: string;
+    department?: string[];
   }
 }

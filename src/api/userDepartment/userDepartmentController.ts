@@ -68,7 +68,7 @@ class UserDepartmentController {
     const userDepartmentId = userResponse.responseObject.department;
     
     // Get department by ID directly
-    const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId);
+    const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId?.toString() || '');
     return handleServiceResponse(serviceResponse, res);
   };
 

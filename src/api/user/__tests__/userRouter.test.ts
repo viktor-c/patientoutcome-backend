@@ -76,7 +76,7 @@ describe("User API Endpoints", () => {
     });
 
     it("should return only users from same department for non-admin users", async () => {
-      const agent = await loginUserAgent("doctor"); // bwhite user in "Oncology" department
+      const agent = await loginUserAgent("doctor"); // bwhite user in "Orthopädie" department
       // Act
       const response = await agent.get("/user");
       const responseBody: ServiceResponse<User[]> = response.body;
@@ -87,13 +87,15 @@ describe("User API Endpoints", () => {
       expect(responseBody.message).toContain("Users found");
       if (!responseBody.responseObject) throw new Error("Response object is null");
 
+      // Department is now an array, compare first elements
       const sameDepartmentUsers = userRepository.mockUsers.filter(
-        (user) => user.department === responseBody.responseObject![0].department,
+        (user) => user.department[0] === responseBody.responseObject![0].department[0],
       );
       expect(responseBody.responseObject.length).toEqual(sameDepartmentUsers.length);
 
-      // Department is now returned as ID, not name
-      expect(responseBody.responseObject[0].department).toEqual("675000000000000000000001");
+      // Department is now returned as array of IDs
+      expect(Array.isArray(responseBody.responseObject[0].department)).toBe(true);
+      expect(responseBody.responseObject[0].department[0]).toEqual("675000000000000000000001");
       const expectedUsername = sameDepartmentUsers[0].username;
       expect(responseBody.responseObject[0].username).toEqual(expectedUsername);
 
@@ -117,7 +119,7 @@ describe("User API Endpoints", () => {
       expect(responseBody.responseObject.length).toEqual(2);
       responseBody.responseObject.forEach((user) => {
         // Department is now returned as ID, not name
-        expect(user.department).toEqual("675000000000000000000001");
+        expect(user.department).toEqual(["675000000000000000000001"]);
         expect(user.roles).toContain("kiosk");
       });
 

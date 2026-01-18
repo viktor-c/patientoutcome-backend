@@ -1,4 +1,5 @@
 import { type User, userModel } from "@/api/user/userModel";
+import { UserDepartmentRepository } from "@/api/userDepartment/userDepartmentRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/common/utils/logger";
 import bcrypt from "bcrypt";
@@ -61,6 +62,83 @@ export class SetupService {
         return ServiceResponse.failure("Username already exists", null, StatusCodes.CONFLICT);
       }
 
+      // Create the department if provided
+      let departmentId = adminData.department;
+      const userDepartmentRepository = new UserDepartmentRepository();
+
+      // Create the center if provided
+      let centerIds: string[] = [];
+      let centerId: string | null = null;
+      const existingCenter = await userDepartmentRepository.findByNameAsync(adminData.centerName);
+      
+      if (!existingCenter) {
+        // Create new center with the provided data
+        const newCenterData = {
+          name: adminData.centerName,
+          shortName: adminData.centerShortName || adminData.centerName.substring(0, 3).toUpperCase(),
+          description: adminData.centerDescription || `${adminData.centerName} medical center`,
+          contactEmail: adminData.email, // Use admin email as contact
+          contactPhone: "",
+          departmentType: "center" as const,
+          center: null, // Centers don't have a parent center
+        };
+
+        try {
+          const createdCenter = await userDepartmentRepository.createAsync(newCenterData);
+          if (createdCenter._id) {
+            centerId = createdCenter._id.toString();
+            centerIds = [centerId];
+            logger.info(
+              { centerId: createdCenter._id, centerName: adminData.centerName },
+              "Center created during setup"
+            );
+          }
+        } catch (centerError) {
+          logger.warn(
+            { centerError, centerName: adminData.centerName },
+            "Failed to create center, user will have no center assignment"
+          );
+        }
+      } else {
+        if (existingCenter._id) {
+          centerId = existingCenter._id.toString();
+          centerIds = [centerId];
+        }
+      }
+
+      // Now create/update the department with link to center
+      const existingDepartment = await userDepartmentRepository.findByNameAsync(adminData.department);
+      
+      if (!existingDepartment) {
+        // Create new department with the provided data
+        const newDepartmentData = {
+          name: adminData.department,
+          shortName: adminData.departmentShortName || adminData.department.substring(0, 3).toUpperCase(),
+          description: adminData.departmentDescription || `${adminData.department} department`,
+          contactEmail: adminData.email, // Use admin email as contact
+          contactPhone: "",
+          departmentType: "department" as const,
+          center: centerId, // Link department to center
+        };
+
+        try {
+          const createdDepartment = await userDepartmentRepository.createAsync(newDepartmentData);
+          departmentId = createdDepartment._id?.toString() || adminData.department;
+          logger.info(
+            { departmentId, departmentName: adminData.department, centerId },
+            "Department created during setup and linked to center"
+          );
+        } catch (departmentError) {
+          logger.warn(
+            { departmentError, departmentName: adminData.department },
+            "Failed to create department, will use department name instead"
+          );
+          // Continue with department name as fallback
+        }
+      } else {
+        departmentId = existingDepartment._id?.toString() || adminData.department;
+      }
+
       // Hash the password
       const hashedPassword = await bcrypt.hash(adminData.password, SALT_ROUNDS);
 
@@ -70,8 +148,8 @@ export class SetupService {
         password: hashedPassword,
         name: adminData.name,
         email: adminData.email,
-        department: adminData.department,
-        belongsToCenter: adminData.belongsToCenter,
+        department: [departmentId],
+        belongsToCenter: centerId || undefined,
         roles: ["admin"],
         permissions: [],
         lastLogin: new Date().toISOString(),
@@ -81,7 +159,7 @@ export class SetupService {
       const createdUser = Array.isArray(doc) ? doc[0] : doc;
 
       logger.info(
-        { adminId: createdUser._id, username: adminData.username },
+        { adminId: createdUser._id, username: adminData.username, departmentId, centerIds },
         "Initial admin user created successfully",
       );
 

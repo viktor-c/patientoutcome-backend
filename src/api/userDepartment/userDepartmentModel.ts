@@ -11,6 +11,8 @@ export const UserDepartmentSchema = z.object({
   description: z.string().min(0).max(500).optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().min(0).max(50).optional(),
+  departmentType: z.enum(["department", "center"]).default("department"),
+  center: zId("UserDepartment").optional().nullable(), // Reference to center (only for departments)
 });
 
 // Infer TypeScript type from the schema

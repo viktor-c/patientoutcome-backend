@@ -3,12 +3,15 @@ import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import type { Patient, PatientWithCounts } from "./patientModel";
 import { PatientRepository, type PaginatedResult, type PaginationOptions } from "./patientRepository";
+import { UserRepository } from "@/api/user/userRepository";
 
 export class PatientService {
   private patientRepository: PatientRepository;
+  private userRepository: UserRepository;
 
   constructor(repository: PatientRepository = new PatientRepository()) {
     this.patientRepository = repository;
+    this.userRepository = new UserRepository();
   }
 
   async findAll(options: PaginationOptions = {}): Promise<ServiceResponse<PaginatedResult<PatientWithCounts> | null>> {
@@ -97,7 +100,7 @@ export class PatientService {
     }
   }
 
-  async createPatient(patientData: Patient): Promise<ServiceResponse<Patient | null>> {
+  async createPatient(patientData: Patient, userId?: string): Promise<ServiceResponse<Patient | null>> {
     try {
       //must check if external patient id already exists (only if provided)
       if (patientData.externalPatientId && patientData.externalPatientId.length > 0) {
@@ -106,6 +109,22 @@ export class PatientService {
           return ServiceResponse.conflict("Patient with the same external ID already exists", null, StatusCodes.CONFLICT);
         }
       }
+      
+      // Handle department assignment
+      // If no department provided by frontend, assign user's first department ObjectId
+      if (userId && !patientData.department) {
+        const user = await this.userRepository.findByIdAsync(userId);
+        
+        if (user && user.department && user.department.length > 0) {
+          // Auto-assign the user's first department ObjectId to the patient
+          patientData.department = user.department[0];
+          logger.info(
+            { userId, departmentId: user.department[0], patientId: patientData.externalPatientId },
+            "Auto-assigned user's department to patient"
+          );
+        }
+      }
+      
       const newPatient = await this.patientRepository.createAsync(patientData);
       return ServiceResponse.created("Patient created successfully", newPatient);
     } catch (ex) {

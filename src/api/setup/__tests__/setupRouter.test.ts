@@ -70,7 +70,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Admin",
         email: "test-admin@example.com",
         department: "675000000000000000000001",
-        belongsToCenter: ["1"],
+        belongsToCenter: ["675000000000000000000003"], // Klinikum Fulda
         roles: ["admin"],
         permissions: [],
         lastLogin: new Date().toISOString(),
@@ -123,7 +123,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Setup Admin",
         email: "setup-admin@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(adminData);
@@ -162,7 +162,7 @@ describe("Setup API Endpoints", () => {
         name: "Another Admin",
         email: "another-admin@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center 2",
       };
 
       const response = await request(app).post("/setup/create-admin").send(adminData);
@@ -186,7 +186,7 @@ describe("Setup API Endpoints", () => {
         name: "Duplicate Username",
         email: "duplicate@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Duplicate Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(adminData);
@@ -213,7 +213,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Admin",
         email: "test@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(invalidData);
@@ -241,7 +241,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Admin",
         email: "test@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(invalidData);
@@ -268,7 +268,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Admin",
         email: "test@example.com",
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(invalidData);
@@ -294,7 +294,7 @@ describe("Setup API Endpoints", () => {
         name: "Test Admin",
         email: "not-an-email", // Invalid email format
         department: "Administration",
-        belongsToCenter: ["1"],
+        centerName: "Test Center",
       };
 
       const response = await request(app).post("/setup/create-admin").send(invalidData);
@@ -355,8 +355,9 @@ describe("Setup API Endpoints", () => {
 
       // Verify defaults were applied
       const createdUser = await userModel.findById(result.responseObject.adminUserId);
-      expect(createdUser?.department).toBe("Administration");
-      expect(createdUser?.belongsToCenter).toEqual(["1"]);
+      expect(createdUser?.department).toBeDefined();
+      expect(Array.isArray(createdUser?.department)).toBe(true);
+      expect(createdUser?.belongsToCenter).toBeDefined();
 
       // Clean up
       await userModel.findByIdAndDelete(result.responseObject.adminUserId);

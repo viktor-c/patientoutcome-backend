@@ -55,8 +55,8 @@ describe("POST /user/register", () => {
       userCreatedWith: null,
       roles: ["doctor"],
       permissions: ["read", "write"],
-      userDepartment: "IT",
-      userBelongsToCenter: ["center1", "center2"],
+      userDepartment: ["675000000000000000000001"], // Orthopädie department
+      userBelongsToCenter: "675000000000000000000003", // Klinikum Fulda
       active: true,
     });
   });
@@ -102,8 +102,8 @@ describe("POST /user/register", () => {
       validUntil: new Date(Date.now() - 1000),
       userCreatedWith: null,
       roles: ["doctor"],
-      userDepartment: "IT",
-      userBelongsToCenter: ["center1", "center2"],
+      userDepartment: ["675000000000000000000001"], // Orthopädie department
+      userBelongsToCenter: "675000000000000000000003", // Klinikum Fulda
       active: true,
     });
     const res = await request(app).post("/user/register").send({

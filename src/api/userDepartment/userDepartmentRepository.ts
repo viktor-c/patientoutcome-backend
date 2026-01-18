@@ -17,6 +17,8 @@ export class UserDepartmentRepository {
       description: "Orthopedic Department",
       contactEmail: "ortho@example.com",
       contactPhone: "+49 123 456 7890",
+      departmentType: "department",
+      center: "675000000000000000000003", // Klinikum Fulda
     },
     {
       _id: "675000000000000000000002",
@@ -25,6 +27,38 @@ export class UserDepartmentRepository {
       description: "Radiology Department",
       contactEmail: "radiology@example.com",
       contactPhone: "+49 123 456 7891",
+      departmentType: "department",
+      center: "675000000000000000000003", // Klinikum Fulda
+    },
+    {
+      _id: "675000000000000000000003",
+      name: "Klinikum Fulda",
+      shortName: "KliFulda",
+      description: "Klinikum Fulda - Main Medical Center",
+      contactEmail: "info@klinikum-fulda.de",
+      contactPhone: "+49 661 84-0",
+      departmentType: "center",
+      center: null, // Centers don't have a parent center
+    },
+    {
+      _id: "675000000000000000000004",
+      name: "Klinikum Musterstadt",
+      shortName: "KliMuSta",
+      description: "Universitätsklinikum bei Musterstadt",
+      contactEmail: "klimu@example.com",
+      contactPhone: "+49 123 456 7891",
+      departmentType: "center",
+      center: null, // Centers don't have a parent center
+    },
+    {
+      _id: "675000000000000000000005",
+      name: "Klinikum Maisfeld",
+      shortName: "KliMaisfeld",
+      description: "Klinikum Maisfeld",
+      contactEmail: "klimaisfeld@example.com",
+      contactPhone: "+49 123 456 7892",
+      departmentType: "center",
+      center: null, // Centers don't have a parent center
     },
   ];
 

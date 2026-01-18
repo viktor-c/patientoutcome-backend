@@ -63,8 +63,8 @@ describe("Batch User Creation API", () => {
           { role: "doctor", count: 3 },
           { role: "nurse", count: 2 },
         ],
-        department: "Cardiology",
-        belongsToCenter: ["center1"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "days",
         expiryValue: 30,
       };
@@ -103,8 +103,8 @@ describe("Batch User Creation API", () => {
       const doctorCodes = createdCodes.filter((c) => c.roles.includes("doctor"));
       expect(doctorCodes).toHaveLength(3);
       doctorCodes.forEach((code) => {
-        expect(code.userDepartment).toBe("Cardiology");
-        expect(code.userBelongsToCenter).toEqual(["center1"]);
+        expect(code.userDepartment).toEqual(["675000000000000000000001"]);
+        expect(code.userBelongsToCenter).toBe("675000000000000000000003");
         expect(code.active).toBe(true);
         // Check expiry is approximately 30 days from now
         const expiryTime = code.validUntil.getTime();
@@ -116,8 +116,8 @@ describe("Batch User Creation API", () => {
       const nurseCodes = createdCodes.filter((c) => c.roles.includes("nurse"));
       expect(nurseCodes).toHaveLength(2);
       nurseCodes.forEach((code) => {
-        expect(code.userDepartment).toBe("Cardiology");
-        expect(code.userBelongsToCenter).toEqual(["center1"]);
+        expect(code.userDepartment).toEqual(["675000000000000000000001"]);
+        expect(code.userBelongsToCenter).toBe("675000000000000000000003");
         expect(code.active).toBe(true);
       });
 
@@ -129,8 +129,8 @@ describe("Batch User Creation API", () => {
 
       const batchRequest = {
         roles: [{ role: "doctor", count: 2 }],
-        department: "Neurology",
-        belongsToCenter: ["center2"],
+        department: ["675000000000000000000002"],
+        belongsToCenter: "675000000000000000000004",
         expiryType: "months",
         expiryValue: 3,
       };
@@ -166,8 +166,8 @@ describe("Batch User Creation API", () => {
 
       const batchRequest = {
         roles: [{ role: "nurse", count: 1 }],
-        department: "Emergency",
-        belongsToCenter: ["center1", "center2"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "years",
         expiryValue: 1,
       };
@@ -207,8 +207,8 @@ describe("Batch User Creation API", () => {
 
       const batchRequest = {
         roles: [{ role: "doctor", count: 1 }],
-        department: "Orthopedics",
-        belongsToCenter: ["center3"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000005",
         expiryType: "date",
         expiryValue: futureDateString,
       };
@@ -239,8 +239,8 @@ describe("Batch User Creation API", () => {
 
       const batchRequest = {
         roles: [{ role: "nurse", count: 1 }],
-        department: "Oncology",
-        belongsToCenter: ["center1"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "days",
         expiryValue: 7,
       };
@@ -255,8 +255,8 @@ describe("Batch User Creation API", () => {
     it("should reject batch creation when not authenticated", async () => {
       const batchRequest = {
         roles: [{ role: "doctor", count: 1 }],
-        department: "Surgery",
-        belongsToCenter: ["center1"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "months",
         expiryValue: 1,
       };
@@ -273,8 +273,8 @@ describe("Batch User Creation API", () => {
 
       const batchRequest = {
         roles: [{ role: "doctor", count: 150 }], // exceeds max of 100
-        department: "Radiology",
-        belongsToCenter: ["center1"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "days",
         expiryValue: 30,
       };
@@ -292,7 +292,7 @@ describe("Batch User Creation API", () => {
       const batchRequest = {
         roles: [{ role: "doctor", count: 2 }],
         // missing department
-        belongsToCenter: ["center1"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "days",
         expiryValue: 30,
       };
@@ -312,8 +312,8 @@ describe("Batch User Creation API", () => {
           { role: "doctor", count: 2 },
           { role: "nurse", count: 0 }, // zero count
         ],
-        department: "ICU",
-        belongsToCenter: ["center1"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000003",
         expiryType: "days",
         expiryValue: 14,
       };
@@ -329,13 +329,13 @@ describe("Batch User Creation API", () => {
       await logoutUser(agent);
     });
 
-    it("should create codes for multiple centers", async () => {
+    it("should create codes with optional center", async () => {
       const agent = await loginUserAgent("admin");
 
       const batchRequest = {
         roles: [{ role: "admin", count: 1 }],
-        department: "Administration",
-        belongsToCenter: ["center1", "center2", "center3"],
+        department: ["675000000000000000000001"],
+        belongsToCenter: "675000000000000000000004",
         expiryType: "months",
         expiryValue: 6,
       };
@@ -347,15 +347,12 @@ describe("Batch User Creation API", () => {
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.responseObject.admin).toHaveLength(1);
 
-      // Verify code has all centers
+      // Verify code has the correct center
       const codes = await RegistrationCodeModel.find({
         code: { $in: responseBody.responseObject.admin },
       });
       
-      expect(codes[0].userBelongsToCenter).toHaveLength(3);
-      expect(codes[0].userBelongsToCenter).toContain("center1");
-      expect(codes[0].userBelongsToCenter).toContain("center2");
-      expect(codes[0].userBelongsToCenter).toContain("center3");
+      expect(codes[0].userBelongsToCenter).toBe("675000000000000000000004");
 
       await logoutUser(agent);
     });
