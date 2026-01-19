@@ -184,6 +184,54 @@ export class SetupService {
       return ServiceResponse.failure("Failed to get database statistics", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  /**
+   * Seed starter data (blueprints and form templates) for new instance
+   * This provides minimum starting point for everyday practice
+   */
+  async seedStarterData(): Promise<ServiceResponse<{ seeded: string[] } | null>> {
+    try {
+      const seeded: string[] = [];
+      const errors: string[] = [];
+
+      // Seed form templates first (blueprints may depend on them)
+      try {
+        const formTemplateRepository = new FormTemplateRepository();
+        await formTemplateRepository.createMockDataFormTemplate();
+        seeded.push("formTemplates");
+        logger.info("Form templates seeded successfully during setup");
+      } catch (error) {
+        const message = `Failed to seed form templates: ${error instanceof Error ? error.message : String(error)}`;
+        errors.push(message);
+        logger.error({ error }, message);
+      }
+
+      // Seed blueprints
+      try {
+        const blueprintRepository = new BlueprintRepository();
+        await blueprintRepository.createMockData();
+        seeded.push("blueprints");
+        logger.info("Blueprints seeded successfully during setup");
+      } catch (error) {
+        const message = `Failed to seed blueprints: ${error instanceof Error ? error.message : String(error)}`;
+        errors.push(message);
+        logger.error({ error }, message);
+      }
+
+      if (errors.length > 0) {
+        return ServiceResponse.failure(
+          `Starter data partially seeded. Errors: ${errors.join("; ")}`,
+          { seeded },
+          StatusCodes.MULTI_STATUS,
+        );
+      }
+
+      return ServiceResponse.success("Starter data seeded successfully", { seeded });
+    } catch (error) {
+      logger.error({ error }, "Error seeding starter data");
+      return ServiceResponse.failure("Failed to seed starter data", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
 
 export const setupService = new SetupService();

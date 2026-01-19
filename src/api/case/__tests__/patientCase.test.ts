@@ -13,6 +13,12 @@ describe("PatientCase API", () => {
   // seed the mongodb table "patientcases"; if it fails, then fail all tests
   beforeAll(async () => {
     try {
+      // Seed users first
+      const usersRes = await request(app).get("/seed/users");
+      if (usersRes.status !== 200) {
+        throw new Error("Failed to seed users");
+      }
+
       const res = await request(app).get("/seed/patientCase");
       if (res.status !== 200) {
         throw new Error("Failed to insert mock data");

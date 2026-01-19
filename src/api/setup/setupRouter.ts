@@ -148,3 +148,30 @@ setupRouter.get("/stats", async (_req: Request, res: Response) => {
   const serviceResponse = await setupService.getDatabaseStats();
   return handleServiceResponse(serviceResponse, res);
 });
+
+/**
+ * Seed starter data (blueprints and form templates)
+ * @route POST /setup/seed-starter
+ */
+setupRegistry.registerPath({
+  method: "post",
+  summary: "Seed Starter Data",
+  description: "Seed form templates and blueprints for new instance. Provides minimum starting point for everyday practice.",
+  operationId: "seedStarterData",
+  path: "/setup/seed-starter",
+  tags: ["Setup"],
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        seeded: z.array(z.string()),
+      }),
+      description: "Starter data seeded successfully",
+      statusCode: 200,
+    },
+  ]),
+});
+
+setupRouter.post("/seed-starter", async (_req: Request, res: Response) => {
+  const serviceResponse = await setupService.seedStarterData();
+  return handleServiceResponse(serviceResponse, res);
+});
