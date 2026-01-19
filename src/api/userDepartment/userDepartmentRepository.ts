@@ -128,6 +128,16 @@ export class UserDepartmentRepository {
     }
   }
 
+  async countChildDepartments(centerId: string): Promise<number> {
+    try {
+      const count = await userDepartmentModel.countDocuments({ center: centerId });
+      return count;
+    } catch (error) {
+      logger.error({ error, centerId }, `Error counting child departments for center ${centerId}`);
+      return Promise.reject(error);
+    }
+  }
+
   async seedMockData(): Promise<void> {
     try {
       await assertSeedingAllowed();

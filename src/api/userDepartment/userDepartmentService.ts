@@ -23,7 +23,21 @@ export class UserDepartmentService {
       if (!departments || departments.length === 0) {
         return ServiceResponse.failure("No departments found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<UserDepartment[]>("Departments found", departments);
+
+      // Enrich departments with hasChildDepartments info
+      const enrichedDepartments = await Promise.all(
+        departments.map(async (dept) => {
+          const hasChildDepartments = dept.departmentType === "center" 
+            ? await this.userDepartmentRepository.countChildDepartments(dept._id?.toString() || "") > 0
+            : false;
+          return {
+            ...dept,
+            hasChildDepartments,
+          };
+        })
+      );
+
+      return ServiceResponse.success<UserDepartment[]>("Departments found", enrichedDepartments);
     } catch (ex) {
       const errorMessage = `Error finding all departments: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -42,7 +56,18 @@ export class UserDepartmentService {
       if (!department) {
         return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<UserDepartment>("Department found", department);
+
+      // Add hasChildDepartments info
+      const hasChildDepartments = department.departmentType === "center" 
+        ? await this.userDepartmentRepository.countChildDepartments(department._id?.toString() || "") > 0
+        : false;
+      
+      const enrichedDepartment = {
+        ...department,
+        hasChildDepartments,
+      };
+
+      return ServiceResponse.success<UserDepartment>("Department found", enrichedDepartment);
     } catch (ex) {
       const errorMessage = `Error finding department by id: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -111,6 +136,27 @@ export class UserDepartmentService {
   // Updates an existing department
   async update(id: string, departmentData: Partial<Omit<UserDepartment, "_id">>): Promise<ServiceResponse<UserDepartment | null>> {
     try {
+      // Get existing department first
+      const existingDepartment = await this.userDepartmentRepository.findByIdAsync(id);
+      if (!existingDepartment) {
+        return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Check if department type is being changed
+      if (departmentData.departmentType && departmentData.departmentType !== existingDepartment.departmentType) {
+        // Check if current type is "center" and has child departments
+        if (existingDepartment.departmentType === "center") {
+          const childCount = await this.userDepartmentRepository.countChildDepartments(id);
+          if (childCount > 0) {
+            return ServiceResponse.failure(
+              "Cannot change department type. This center has child departments assigned to it.",
+              null,
+              StatusCodes.BAD_REQUEST,
+            );
+          }
+        }
+      }
+
       // Validate that centers don't have parent centers (prevent circular references)
       if (departmentData.departmentType === "center" && departmentData.center) {
         return ServiceResponse.failure(
@@ -136,7 +182,18 @@ export class UserDepartmentService {
       if (!department) {
         return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<UserDepartment>("Department updated successfully", department);
+
+      // Add hasChildDepartments info
+      const hasChildDepartments = department.departmentType === "center" 
+        ? await this.userDepartmentRepository.countChildDepartments(department._id?.toString() || "") > 0
+        : false;
+      
+      const enrichedDepartment = {
+        ...department,
+        hasChildDepartments,
+      };
+
+      return ServiceResponse.success<UserDepartment>("Department updated successfully", enrichedDepartment);
     } catch (ex) {
       const errorMessage = `Error updating department: ${(ex as Error).message}`;
       logger.error(errorMessage);
