@@ -59,6 +59,10 @@ COPY --from=build --chown=appuser:appuser /app/tsconfig.json /app/tsconfig.json
 RUN mkdir -p /backups/patientoutcome/uploads /backups/patientoutcome/temp && \
     chown -R appuser:appuser /backups
 
+# Create log directory with proper permissions
+RUN mkdir -p /var/log/patientoutcome && \
+    chown -R appuser:appuser /var/log/patientoutcome
+
 USER appuser
 
 # Expose port

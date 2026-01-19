@@ -15,6 +15,9 @@ COPY package.json pnpm-workspace.yaml ./
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
+# Create log directory
+RUN mkdir -p /var/log/patientoutcome
+
 # Expose port
 EXPOSE 40001
 
