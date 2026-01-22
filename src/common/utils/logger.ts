@@ -21,13 +21,28 @@ const LOG_MAX_SIZE = process.env.LOG_MAX_SIZE || "20m";
 const LOG_MAX_FILES = process.env.LOG_MAX_FILES || "14d";
 const LOG_TO_FILE = process.env.LOG_TO_FILE === "true" || process.env.NODE_ENV === "production";
 
-// Custom format for console output
-const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  winston.format.colorize(),
-  winston.format.printf(({ level, message, timestamp, ...meta }) => {
-    const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : "";
-    return `${timestamp} [${level}]: ${message} ${metaStr}`;
+// Service identifier for logs
+const SERVICE_NAME = process.env.SERVICE_NAME || "patientoutcome-backend";
+
+// Custom format for console output: structured JSON for easier parsing by log collectors
+const structuredConsoleFormat = winston.format.combine(
+  winston.format.timestamp({ format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }),
+  winston.format.errors({ stack: true }),
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+    const base: any = {
+      timestamp,
+      level,
+      message,
+      service: SERVICE_NAME,
+      environment: process.env.NODE_ENV,
+    };
+    // Merge meta fields into the JSON object
+    const merged = Object.assign(base, meta);
+    try {
+      return JSON.stringify(merged);
+    } catch (err) {
+      return JSON.stringify({ ...base, meta: String(err) });
+    }
   }),
 );
 
@@ -40,9 +55,9 @@ const fileFormat = winston.format.combine(
 
 // Create transports array
 const transports: winston.transport[] = [
-  // Console transport (always enabled)
+  // Console transport (always enabled) - emit structured JSON for container logs
   new winston.transports.Console({
-    format: consoleFormat,
+    format: structuredConsoleFormat,
   }),
 ];
 

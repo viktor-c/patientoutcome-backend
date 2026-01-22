@@ -197,7 +197,8 @@ export class SetupService {
       // Seed form templates first (blueprints may depend on them)
       try {
         const formTemplateRepository = new FormTemplateRepository();
-        await formTemplateRepository.createMockDataFormTemplate();
+        // Allow seeding mock data in production during initial setup
+        await formTemplateRepository.createMockDataFormTemplate(true);
         seeded.push("formTemplates");
         logger.info("Form templates seeded successfully during setup");
       } catch (error) {

@@ -30,10 +30,11 @@ export class FormTemplateRepository {
     return !!result;
   }
 
-  async createMockDataFormTemplate(): Promise<void> {
+  async createMockDataFormTemplate(allowInProduction: boolean = false): Promise<void> {
     try {
       // Ensure mock templates have unique _id values to prevent duplicate-key errors during insert
-      const ids = this.mockFormTemplateData.map((t) => (t as any)._id).filter(Boolean);
+      const mockData = this.getMockFormTemplateData(allowInProduction);
+      const ids = mockData.map((t) => (t as any)._id).filter(Boolean);
       const dupes = ids.filter((id, idx) => ids.indexOf(id) !== idx);
       if (dupes.length > 0) {
         const uniqueDupes = Array.from(new Set(dupes));
@@ -41,7 +42,7 @@ export class FormTemplateRepository {
         return Promise.reject(new Error(`Duplicate _id values detected in mock form template data: ${uniqueDupes.join(", ")}`));
       }
       await FormTemplateModel.deleteMany({});
-      const result = await FormTemplateModel.insertMany(this.mockFormTemplateData);
+      const result = await FormTemplateModel.insertMany(mockData);
       logger.debug({ count: result.length }, "Form template mock data created");
     } catch (error) {
       return Promise.reject(error);
@@ -53,12 +54,16 @@ export class FormTemplateRepository {
     plugin.formTemplate as unknown as FormTemplate
   ));
 
-  public get mockFormTemplateData() {
-    if (env.NODE_ENV === "production") {
+  private getMockFormTemplateData(allowInProduction: boolean = false): FormTemplate[] {
+    if (env.NODE_ENV === "production" && !allowInProduction) {
       logger.error("Attempted to access mock data in production environment");
       throw new Error("Mock data is not available in production environment");
     }
     return this._mockFormTemplateData;
+  }
+
+  public get mockFormTemplateData() {
+    return this.getMockFormTemplateData(false);
   }
 }
 
