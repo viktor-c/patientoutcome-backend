@@ -61,7 +61,7 @@ userDepartmentRouter.get(
   userDepartmentController.getAllDepartments,
 );
 
-// GET user's own department (all authenticated users)
+// GET user's own department (all authenticated users) - MUST come before /:id
 userDepartmentRegistry.registerPath({
   method: "get",
   path: "/userDepartment/my-department",

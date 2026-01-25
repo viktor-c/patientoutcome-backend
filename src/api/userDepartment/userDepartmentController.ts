@@ -64,11 +64,13 @@ class UserDepartmentController {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // User's department is now stored as an ObjectId reference
-    const userDepartmentId = userResponse.responseObject.department;
+    // User's department is stored as an array of ObjectIds, get the first one
+    const userDepartmentId = Array.isArray(userResponse.responseObject.department)
+      ? userResponse.responseObject.department[0]?.toString() || ''
+      : (userResponse.responseObject.department?.toString() || '');
     
     // Get department by ID directly
-    const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId?.toString() || '');
+    const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId);
     return handleServiceResponse(serviceResponse, res);
   };
 

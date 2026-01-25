@@ -110,17 +110,17 @@ export class PatientService {
         }
       }
       
-      // Handle department assignment
-      // If no department provided by frontend, assign user's first department ObjectId
-      if (userId && !patientData.department) {
+      // Handle departments assignment
+      // If no departments provided by frontend, assign user's departments
+      if (userId && (!patientData.departments || patientData.departments.length === 0)) {
         const user = await this.userRepository.findByIdAsync(userId);
         
         if (user && user.department && user.department.length > 0) {
-          // Auto-assign the user's first department ObjectId to the patient
-          patientData.department = user.department[0];
+          // Auto-assign the user's departments to the patient
+          patientData.departments = user.department;
           logger.info(
-            { userId, departmentId: user.department[0], patientId: patientData.externalPatientId },
-            "Auto-assigned user's department to patient"
+            { userId, departmentIds: user.department, patientId: patientData.externalPatientId },
+            "Auto-assigned user's departments to patient"
           );
         }
       }
