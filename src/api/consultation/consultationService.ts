@@ -229,7 +229,7 @@ export class ConsultationService {
           const form = await formRepository.createFormByTemplateId(
             typeof originalConsultation.patientCaseId === 'string'
               ? originalConsultation.patientCaseId
-              : originalConsultation.patientCaseId.toString(),
+              : originalConsultation.patientCaseId._id.toString(),
             consultationId,
             templateId.toString(),
           );

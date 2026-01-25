@@ -65,9 +65,13 @@ class UserDepartmentController {
     }
 
     // User's department is stored as an array of ObjectIds, get the first one
-    const userDepartmentId = Array.isArray(userResponse.responseObject.department)
-      ? userResponse.responseObject.department[0]?.toString() || ''
-      : (userResponse.responseObject.department?.toString() || '');
+    let userDepartmentId = '';
+    if (Array.isArray(userResponse.responseObject.department) && userResponse.responseObject.department.length > 0) {
+      const dept = userResponse.responseObject.department[0];
+      userDepartmentId = dept ? String(dept) : '';
+    } else if (userResponse.responseObject.department) {
+      userDepartmentId = String(userResponse.responseObject.department);
+    }
     
     // Get department by ID directly
     const serviceResponse = await userDepartmentService.getUserDepartment(userDepartmentId);
