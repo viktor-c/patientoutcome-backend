@@ -10,7 +10,7 @@ import type { ObjectId } from "mongoose";
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
-    return FormModel.find().lean();
+    return FormModel.find({ deletedAt: null }).lean();
   }
 
   async getFormByPatientCaseConsultationFormId(
@@ -24,7 +24,7 @@ export class FormRepository {
 
   async getFormById(id: string): Promise<Form | null> {
     // populate caseId, consultationId, formTemplateId
-    return FormModel.findById(id).populate("caseId consultationId formTemplateId").lean();
+    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean();
   }
 
   async createForm(data: Form): Promise<Form> {
@@ -64,6 +64,95 @@ export class FormRepository {
   async deleteForm(id: string): Promise<boolean> {
     const result = await FormModel.findByIdAndDelete(id);
     return !!result;
+  }
+
+  /**
+   * Soft delete a form by setting deletedAt timestamp
+   * @param id - Form ID
+   * @param deletedBy - User ID who deleted the form
+   * @param deletionReason - Reason for deletion
+   * @returns Updated form with deletedAt set
+   */
+  async softDeleteForm(id: string, deletedBy: string, deletionReason: string): Promise<Form | null> {
+    try {
+      const softDeletedForm = await FormModel.findByIdAndUpdate(
+        id,
+        { 
+          deletedAt: new Date(),
+          deletedBy,
+          deletionReason
+        },
+        { new: true, lean: true }
+      );
+      return softDeletedForm;
+    } catch (error) {
+      logger.error({ error }, "Error soft deleting form");
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Restore a soft deleted form
+   * @param id - Form ID
+   * @returns Restored form
+   */
+  async restoreForm(id: string): Promise<Form | null> {
+    try {
+      const restoredForm = await FormModel.findByIdAndUpdate(
+        id,
+        { 
+          deletedAt: null,
+          deletedBy: null,
+          deletionReason: null
+        },
+        { new: true, lean: true }
+      );
+      return restoredForm;
+    } catch (error) {
+      logger.error({ error }, "Error restoring form");
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Get all soft deleted forms with pagination
+   * @param options - Pagination options
+   * @returns Paginated list of soft deleted forms
+   */
+  async findAllDeletedForms(options: { page?: number; limit?: number } = {}): Promise<{
+    forms: Form[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const { page = 1, limit = 10 } = options;
+      const skip = (page - 1) * limit;
+
+      const [forms, total] = await Promise.all([
+        FormModel.find({ deletedAt: { $ne: null } })
+          .populate("caseId consultationId formTemplateId deletedBy")
+          .sort({ deletedAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        FormModel.countDocuments({ deletedAt: { $ne: null } }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        forms,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      logger.error({ error }, "Error finding deleted forms");
+      return Promise.reject(error);
+    }
   }
 
   /**

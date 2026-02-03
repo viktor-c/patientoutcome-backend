@@ -107,6 +107,64 @@ class FormController {
     const serviceResponse = await formService.deleteForm(formId);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  /**
+   * Soft delete a form
+   * @route POST /form/:formId/soft-delete
+   * @access Doctor role or higher
+   * @param {Request} req - Express request with formId in params and deletionReason in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with soft deleted form
+   * @description Soft deletes a form by setting deletedAt timestamp and recording deletion reason
+   */
+  public softDeleteForm: RequestHandler = async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const { deletionReason } = req.body;
+    
+    if (!deletionReason || typeof deletionReason !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Deletion reason is required",
+      });
+    }
+
+    const userContext = this.getUserContext(req);
+    const serviceResponse = await formService.softDeleteForm(formId, deletionReason, userContext);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Restore a soft deleted form
+   * @route POST /form/:formId/restore
+   * @access Doctor role or higher
+   * @param {Request} req - Express request with formId in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with restored form
+   * @description Restores a soft deleted form by clearing deletedAt timestamp
+   */
+  public restoreForm: RequestHandler = async (req: Request, res: Response) => {
+    const { formId } = req.params;
+    const userContext = this.getUserContext(req);
+    const serviceResponse = await formService.restoreForm(formId, userContext);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Get all soft deleted forms with pagination
+   * @route GET /form/deleted
+   * @access Doctor role or higher
+   * @param {Request} req - Express request with optional page and limit query params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with paginated deleted forms
+   * @description Retrieves all soft deleted forms for admin review and restoration
+   */
+  public getDeletedForms: RequestHandler = async (req: Request, res: Response) => {
+    const page = req.query.page ? Number.parseInt(req.query.page as string, 10) : 1;
+    const limit = req.query.limit ? Number.parseInt(req.query.limit as string, 10) : 10;
+    
+    const serviceResponse = await formService.getDeletedForms({ page, limit });
+    return handleServiceResponse(serviceResponse, res);
+  };
 }
 
 export const formController = new FormController();

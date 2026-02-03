@@ -32,6 +32,11 @@ export const aclConfig = {
   "consultation:update": { atLeastAuthenticationLevel: "mfa" },
   "consultation:delete": { atLeastAuthenticationLevel: "study-nurse" },
 
+  // Form routes
+  "form:soft-delete": { atLeastAuthenticationLevel: "doctor" },
+  "form:restore": { atLeastAuthenticationLevel: "doctor" },
+  "form:get-deleted": { atLeastAuthenticationLevel: "doctor" },
+
   // Example: Patient routes
   "patient:get": { roles: ["authenticated"] },
   "patient:create": { roles: ["authenticated"] },

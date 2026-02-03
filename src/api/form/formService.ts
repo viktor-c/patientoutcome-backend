@@ -358,6 +358,115 @@ export class FormService {
       );
     }
   }
+
+  /**
+   * Soft delete a form by setting deletedAt timestamp
+   * @param id - Form ID
+   * @param deletionReason - Reason for deletion
+   * @param userContext - User context for activity logging
+   * @returns Updated form with deletedAt set
+   */
+  async softDeleteForm(
+    id: string, 
+    deletionReason: string,
+    userContext?: UserContext
+  ): Promise<ServiceResponse<Form | null>> {
+    try {
+      const form = await formRepository.getFormById(id);
+      if (!form) {
+        return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      const deletedBy = userContext?.userId || "";
+      const softDeletedForm = await formRepository.softDeleteForm(id, deletedBy, deletionReason);
+      
+      if (!softDeletedForm) {
+        return ServiceResponse.failure("Failed to soft delete form", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+
+      // Log the soft delete activity
+      if (userContext) {
+        activityLogService.log({
+          username: userContext.username || "Unknown",
+          action: `Soft deleted form: ${id}`,
+          type: "warning",
+          details: `Form ID: ${id}, Template: ${form.formTemplateId}, Reason: ${deletionReason}`,
+        });
+      }
+
+      return ServiceResponse.success("Form soft deleted successfully", softDeletedForm);
+    } catch (error) {
+      logger.error({ error }, "Error in softDeleteForm service");
+      return ServiceResponse.failure(
+        "An error occurred while soft deleting the form.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Restore a soft deleted form
+   * @param id - Form ID
+   * @param userContext - User context for activity logging
+   * @returns Restored form
+   */
+  async restoreForm(
+    id: string,
+    userContext?: UserContext
+  ): Promise<ServiceResponse<Form | null>> {
+    try {
+      const restoredForm = await formRepository.restoreForm(id);
+      
+      if (!restoredForm) {
+        return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Log the restore activity
+      if (userContext) {
+        activityLogService.log({
+          username: userContext.username || "Unknown",
+          action: `Restored form: ${id}`,
+          type: "info",
+          details: `Form ID: ${id}, Template: ${restoredForm.formTemplateId}`,
+        });
+      }
+
+      return ServiceResponse.success("Form restored successfully", restoredForm);
+    } catch (error) {
+      logger.error({ error }, "Error in restoreForm service");
+      return ServiceResponse.failure(
+        "An error occurred while restoring the form.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get all soft deleted forms with pagination
+   * @param options - Pagination options
+   * @returns Paginated list of soft deleted forms
+   */
+  async getDeletedForms(options: { page?: number; limit?: number } = {}): Promise<ServiceResponse<{
+    forms: Form[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } | null>> {
+    try {
+      const result = await formRepository.findAllDeletedForms(options);
+      return ServiceResponse.success("Deleted forms retrieved successfully", result);
+    } catch (error) {
+      logger.error({ error }, "Error in getDeletedForms service");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving deleted forms.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 
 export const formService = new FormService();

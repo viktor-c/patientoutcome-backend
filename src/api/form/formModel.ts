@@ -39,6 +39,10 @@ export const Form = FormTemplate.extend({
   formStartTime: z.date().optional(),
   formEndTime: z.date().optional(),
   completionTimeSeconds: z.number().positive().optional(),
+  // Soft delete fields
+  deletedAt: z.date().optional().nullable(),
+  deletedBy: zId("User").optional().nullable(),
+  deletionReason: z.string().optional().nullable(),
 }).strict();
 
 // Infer TypeScript type from Zod schema

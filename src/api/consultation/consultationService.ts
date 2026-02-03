@@ -248,16 +248,22 @@ export class ConsultationService {
           return ServiceResponse.failure("Failed to update consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
         }
         try {
-          // if there are excluded forms, delete them from the database
+          // if there are excluded forms, soft delete them from the database
           if (excludedFormsById.length > 0) {
-            const deletePromises = excludedFormsById.map((formId) => formRepository.deleteForm(formId.toString()));
+            const deletePromises = excludedFormsById.map((formId) => 
+              formRepository.softDeleteForm(
+                formId.toString(), 
+                "system", // deletedBy - system action when removing from consultation
+                "Form removed from consultation"
+              )
+            );
             await Promise.all(deletePromises);
           }
         } catch (ex) {
-          const errorMessage = `Error deleting excluded forms: ${(ex as Error).message}`;
+          const errorMessage = `Error soft deleting excluded forms: ${(ex as Error).message}`;
           logger.error(errorMessage);
           return ServiceResponse.failure(
-            "An error occurred while deleting excluded forms.",
+            "An error occurred while soft deleting excluded forms.",
             null,
             StatusCodes.INTERNAL_SERVER_ERROR,
           );
@@ -274,10 +280,16 @@ export class ConsultationService {
         originalConsultation.proms.length > 0
       ) {
         // if data.proms is empty, it means that the user wants to remove all forms from the consultation
-        // so we need to delete all forms from the consultation
+        // so we need to soft delete all forms from the consultation
         const excludedFormsById = originalConsultation.proms.map((formId) => formId);
-        // delete the excluded forms from the database, but only consultation was successfully updated
-        const deletePromises = excludedFormsById.map((formId) => formRepository.deleteForm(formId.toString()));
+        // soft delete the excluded forms from the database, but only after consultation was successfully updated
+        const deletePromises = excludedFormsById.map((formId) => 
+          formRepository.softDeleteForm(
+            formId.toString(), 
+            "system", // deletedBy - system action when removing from consultation
+            "All forms removed from consultation"
+          )
+        );
         await Promise.all(deletePromises);
         // data.proms already empty, so we can just update the consultation
       }
@@ -357,6 +369,31 @@ export class ConsultationService {
    */
   async deleteConsultation(consultationId: string): Promise<ServiceResponse<null>> {
     try {
+      // First, get the consultation to find associated forms
+      const consultation = await this.consultationRepository.getConsultationById(consultationId);
+      if (!consultation) {
+        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Soft delete all associated forms before deleting the consultation
+      if (consultation.proms && consultation.proms.length > 0) {
+        try {
+          const softDeletePromises = consultation.proms.map((formId) => 
+            formRepository.softDeleteForm(
+              formId.toString(), 
+              "system", // deletedBy - system action when consultation is deleted
+              "Consultation was deleted"
+            )
+          );
+          await Promise.all(softDeletePromises);
+          logger.info(`Soft deleted ${consultation.proms.length} forms associated with consultation ${consultationId}`);
+        } catch (formError) {
+          logger.error({ error: formError }, "Error soft deleting forms during consultation deletion");
+          // Continue with consultation deletion even if form soft-delete fails
+        }
+      }
+
+      // Delete the consultation
       const deleted = await this.consultationRepository.deleteConsultation(consultationId);
       if (!deleted) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);

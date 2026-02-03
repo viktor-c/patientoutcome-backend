@@ -8,6 +8,7 @@
 
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ServiceResponseSchema, ValidationErrorsSchema } from "@/common/models/serviceResponse";
+import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
@@ -99,6 +100,55 @@ formRegistry.registerPath({
     },
   ]),
 });
+
+// Schema for getting deleted forms with pagination
+const getDeletedFormsSchema = z.object({
+  query: z.object({
+    page: z.string().optional(),
+    limit: z.string().optional(),
+  }),
+});
+
+// Register path for getting all deleted forms
+formRegistry.registerPath({
+  method: "get",
+  path: "/form/deleted",
+  tags: ["form"],
+  operationId: "getDeletedForms",
+  description: "Get all soft deleted forms with pagination (requires doctor role or higher)",
+  summary: "Get all soft deleted forms",
+  request: {
+    query: z.object({
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        forms: z.array(Form),
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      }),
+      description: "Deleted forms retrieved successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while retrieving deleted forms.",
+      statusCode: 500,
+    },
+  ]),
+});
+
+router.get(
+  "/form/deleted",
+  AclMiddleware("form:get-deleted"),
+  validateRequest(getDeletedFormsSchema),
+  formController.getDeletedForms
+);
 
 router.get("/form/:formId", formController.getFormById);
 
@@ -254,5 +304,107 @@ formRegistry.registerPath({
 });
 
 router.delete("/form/:formId", validateRequest(formIdSchema), formController.deleteForm);
+
+// Schema for soft delete request
+const softDeleteFormSchema = z.object({
+  params: z.object({
+    formId: commonValidations.id,
+  }),
+  body: z.object({
+    deletionReason: z.string().min(1, "Deletion reason is required"),
+  }),
+});
+
+// Register path for soft deleting a form
+formRegistry.registerPath({
+  method: "post",
+  path: "/form/{formId}/soft-delete",
+  tags: ["form"],
+  operationId: "softDeleteForm",
+  description: "Soft delete a form (requires doctor role or higher)",
+  summary: "Soft delete a form",
+  request: {
+    params: z.object({
+      formId: commonValidations.id,
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            deletionReason: z.string().min(1, "Deletion reason is required"),
+          }),
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: Form,
+      description: "Form soft deleted successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Form not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Deletion reason is required",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while soft deleting the form.",
+      statusCode: 500,
+    },
+  ]),
+});
+
+router.post(
+  "/form/:formId/soft-delete",
+  AclMiddleware("form:soft-delete"),
+  validateRequest(softDeleteFormSchema),
+  formController.softDeleteForm
+);
+
+// Register path for restoring a soft deleted form
+formRegistry.registerPath({
+  method: "post",
+  path: "/form/{formId}/restore",
+  tags: ["form"],
+  operationId: "restoreForm",
+  description: "Restore a soft deleted form (requires doctor role or higher)",
+  summary: "Restore a soft deleted form",
+  request: {
+    params: z.object({
+      formId: commonValidations.id,
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: Form,
+      description: "Form restored successfully",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Form not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "An error occurred while restoring the form.",
+      statusCode: 500,
+    },
+  ]),
+});
+
+router.post(
+  "/form/:formId/restore",
+  AclMiddleware("form:restore"),
+  validateRequest(formIdSchema),
+  formController.restoreForm
+);
 
 export { router as formRouter };
