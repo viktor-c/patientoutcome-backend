@@ -162,6 +162,60 @@
           }
         }
       }
+    },
+    "permissions": {
+      "category": "security",
+      "priority": 3,
+      "fields": {
+        "MIN_ROLE_FOR_FORM_ARCHIVE": {
+          "value": "doctor",
+          "type": "string",
+          "required": true,
+          "validation": {
+            "enum": ["admin", "doctor", "study-nurse", "patient"]
+          },
+          "description": {
+            "en": "Minimum role required to archive/soft-delete forms",
+            "de": "Mindestrolle zum Archivieren/Soft-Löschen von Formularen"
+          },
+          "helpText": {
+            "en": "Users with this role or higher can archive forms in consultations. Options: patient, study-nurse, doctor, admin",
+            "de": "Benutzer mit dieser oder einer höheren Rolle können Formulare in Konsultationen archivieren. Optionen: patient, study-nurse, doctor, admin"
+          }
+        },
+        "MIN_ROLE_FOR_CONSULTATION_DELETE": {
+          "value": "study-nurse",
+          "type": "string",
+          "required": true,
+          "validation": {
+            "enum": ["admin", "doctor", "study-nurse", "patient"]
+          },
+          "description": {
+            "en": "Minimum role required to delete consultations",
+            "de": "Mindestrolle zum Löschen von Konsultationen"
+          },
+          "helpText": {
+            "en": "Users with this role or higher can delete consultations. Options: patient, study-nurse, doctor, admin",
+            "de": "Benutzer mit dieser oder einer höheren Rolle können Konsultationen löschen. Optionen: patient, study-nurse, doctor, admin"
+          }
+        },
+        "MIN_ROLE_FOR_USER_DELETE": {
+          "value": "admin",
+          "type": "string",
+          "required": true,
+          "validation": {
+            "enum": ["admin", "doctor", "study-nurse", "patient"]
+          },
+          "description": {
+            "en": "Minimum role required to delete users",
+            "de": "Mindestrolle zum Löschen von Benutzern"
+          },
+          "helpText": {
+            "en": "Users with this role or higher can delete other users. Options: patient, study-nurse, doctor, admin",
+            "de": "Benutzer mit dieser oder einer höheren Rolle können andere Benutzer löschen. Optionen: patient, study-nurse, doctor, admin"
+          }
+        }
+      }
     }
   }
 }

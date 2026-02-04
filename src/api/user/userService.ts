@@ -5,6 +5,7 @@ import { logger } from "@/common/utils/logger";
 import { comparePasswords, hashPassword } from "@/utils/hashUtil";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
+import { permissionsService } from "@/api/permissions/permissionsService";
 
 /**
  * Service class for User operations
@@ -281,14 +282,22 @@ export class UserService {
       //@ts-ignore-next-line
       await user.save(); // Save the last login time
 
-      // Create UserNoPassword object with all fields including roles
+      // Get dynamic permissions based on role and settings
+      const userRole = user.roles[0] || "authenticated"; // Use first role or fallback
+      const permissions = await permissionsService.getUserPermissions(userRole);
+
+      // Create UserNoPassword object with all fields including roles and dynamic permissions
       const userWithoutPassword: UserNoPassword = {
         _id: user._id,
         username: user.username,
         name: user.name,
         department: user.department,
         roles: user.roles, // Ensure roles are included
-        permissions: user.permissions,
+        permissions: [
+          ...(permissions.canArchiveForms ? ["form:archive"] : []),
+          ...(permissions.canDeleteConsultations ? ["consultation:delete"] : []),
+          ...(permissions.canDeleteUsers ? ["user:delete"] : []),
+        ],
         email: user.email,
         lastLogin: user.lastLogin,
         belongsToCenter: user.belongsToCenter,
