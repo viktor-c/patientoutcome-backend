@@ -53,12 +53,17 @@ const LoginSchema = z.object({
 });
 
 const LoginResponseSchema = z.object({
-  sessionId: z.string(),
+  _id: z.string().optional(),
   username: z.string(),
-  department: z.string(),
-  belongsToCenter: z.array(z.string()),
-  email: z.string().email().optional(),
+  name: z.string(),
+  department: z.array(z.string()),
   roles: z.array(z.string()),
+  permissions: z.array(z.string()).optional(),
+  email: z.string().email().optional(),
+  lastLogin: z.string().datetime().optional(),
+  belongsToCenter: z.string().optional(),
+  daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
+  consultationId: z.string().optional().nullable(),
   postopWeek: z.number().int().min(1).optional(),
 });
 
