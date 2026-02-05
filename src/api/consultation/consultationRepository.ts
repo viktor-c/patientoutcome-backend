@@ -26,7 +26,7 @@ export class ConsultationRepository {
     return consultationModel
       .findById(consultationId)
       .populate([
-        { path: "proms" },
+        { path: "proms", match: { deletedAt: null } },
         { path: "visitedBy" },
         { path: "patientCaseId", populate: { path: "patient" } },
         { path: "kioskId" },
@@ -47,7 +47,7 @@ export class ConsultationRepository {
     return consultationModel
       .find({ dateAndTime: { $gte: from, $lt: to } })
       .populate([
-        { path: "proms" },
+        { path: "proms", match: { deletedAt: null } },
         { path: "visitedBy" },
         { path: "patientCaseId", populate: { path: "patient" } },
         { path: "kioskId" },
@@ -66,7 +66,7 @@ export class ConsultationRepository {
     return consultationModel
       .findById(formAccessCode)
       .populate([
-        { path: "proms" },
+        { path: "proms", match: { deletedAt: null } },
         { path: "visitedBy" },
         { path: "patientCaseId", populate: { path: "patient" } },
         { path: "kioskId" },
@@ -128,7 +128,7 @@ export class ConsultationRepository {
     const cons = await consultationModel
       .find({ patientCaseId: caseId })
       .populate([
-        { path: "proms" },
+        { path: "proms", match: { deletedAt: null } },
         { path: "visitedBy" },
         { path: "patientCaseId", populate: { path: "patient" } },
         { path: "kioskId" },
