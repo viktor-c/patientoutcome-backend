@@ -295,6 +295,7 @@ export class FormService {
       }
 
       // Calculate completion time if not provided but start and end times are available
+      // If there's already a completion time, add the new time to it (patient reviewing answers)
       if (
         !updateData.completionTimeSeconds &&
         existingForm.formStartTime &&
@@ -302,7 +303,18 @@ export class FormService {
       ) {
         const endTime = updateData.formEndTime || existingForm.formEndTime!;
         const diffMs = endTime.getTime() - existingForm.formStartTime.getTime();
-        updateData.completionTimeSeconds = Math.round(diffMs / 1000);
+        const newTimeSeconds = Math.round(diffMs / 1000);
+        
+        // If there's already a completion time recorded, add to it instead of replacing
+        if (existingForm.completionTimeSeconds) {
+          updateData.completionTimeSeconds = existingForm.completionTimeSeconds + newTimeSeconds;
+          logger.debug(
+            { existingTime: existingForm.completionTimeSeconds, newTime: newTimeSeconds, total: updateData.completionTimeSeconds },
+            "Adding new completion time to existing time"
+          );
+        } else {
+          updateData.completionTimeSeconds = newTimeSeconds;
+        }
       }
 
       // Store the scoring data provided by the frontend (do not calculate here)
