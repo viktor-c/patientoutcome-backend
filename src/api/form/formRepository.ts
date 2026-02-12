@@ -200,7 +200,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
       // VAS Form 1
       const vasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
@@ -220,7 +219,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
         formData: vasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[3].translations,
       });
 
       // AOFAS Form 1
@@ -243,7 +241,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
       // forms for the second consultation
@@ -266,7 +263,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
         formData: vasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[3].translations,
       });
       // EFAS Form 2
       const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData as CustomFormData;
@@ -287,7 +283,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[0].translations,
       });
 
       // AOFAS Form 2
@@ -310,7 +305,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[1].translations,
       });
 
       const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData as CustomFormData;
@@ -331,7 +325,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
       // This is the moxfq Form
@@ -350,7 +343,6 @@ export class FormRepository {
         formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
         formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[2].translations,
       });
 
       logger.info("Mock forms populated with template data successfully");

@@ -10,21 +10,41 @@
         "i18n": "efas.title",
         "type": "object",
         "properties": {
-          "q1": { "type": "number" },
-          "q2": { "type": "number" },
-          "q3": { "type": "number" },
-          "q4": { "type": "number" },
-          "q5": { "type": "number" },
-          "q6": { "type": "number" }
+          "q1": {
+            "type": "number"
+          },
+          "q2": {
+            "type": "number"
+          },
+          "q3": {
+            "type": "number"
+          },
+          "q4": {
+            "type": "number"
+          },
+          "q5": {
+            "type": "number"
+          },
+          "q6": {
+            "type": "number"
+          }
         }
       },
       "sportfragebogen": {
         "type": "object",
         "properties": {
-          "s1": { "type": "number" },
-          "s2": { "type": "number" },
-          "s3": { "type": "number" },
-          "s4": { "type": "number" }
+          "s1": {
+            "type": "number"
+          },
+          "s2": {
+            "type": "number"
+          },
+          "s3": {
+            "type": "number"
+          },
+          "s4": {
+            "type": "number"
+          }
         }
       }
     }
@@ -43,32 +63,50 @@
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q1",
-                "options": { "slider": true, "enableFilterErrorsBeforeTouch": true }
+                "options": {
+                  "slider": true,
+                  "enableFilterErrorsBeforeTouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q2",
-                "options": { "format": "inlineradio", "enableFilterErrorsBeforeTouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enableFilterErrorsBeforeTouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q3",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q4",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q5",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/standardfragebogen/properties/q6",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               }
             ]
           }
@@ -85,22 +123,34 @@
               {
                 "type": "Control",
                 "scope": "#/properties/sportfragebogen/properties/s1",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/sportfragebogen/properties/s2",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/sportfragebogen/properties/s3",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               },
               {
                 "type": "Control",
                 "scope": "#/properties/sportfragebogen/properties/s4",
-                "options": { "format": "inlineradio", "enablefiltererrorsbeforetouch": true }
+                "options": {
+                  "format": "inlineradio",
+                  "enablefiltererrorsbeforetouch": true
+                }
               }
             ]
           }
@@ -109,118 +159,19 @@
     ]
   },
   "formData": {
-    "standardfragebogen": { "q1": null, "q2": null, "q3": null, "q4": null, "q5": null, "q6": null },
-    "sportfragebogen": { "s1": null, "s2": null, "s3": null, "s4": null }
-  },
-  "translations": {
-    "de": {
-      "form.header": "# EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score\n## Einleitung\nAuf der folgenden Seite finden Sie 6 Fragen zur Ihren Problemen am Fuß und/oder Sprunggelenk.\n\nBitte beantworten Sie alle Fragen so, dass Sie Ihre Situation ___innerhalb der letzten Woche___ am passendsten beschreiben. Jede Frage hat 5 Antwortmöglichkeiten, d.h. eine 5-Punkte-Skala mit einer Beschreibung der Antworten bzw. Endpunkte.\n\nFalls eine Frage für Sie nicht zutrifft, kreuzen Sie bitte \"n.z.\" an und beantworten die Frage nicht.\n\n## Sportfragen\nIm zweiten Teil des Fragenbogens geht es um Sport.\n\nBitte beantworten Sie diese Fragen nur wenn Sie regelmäßig Sport treiben.\n\nBei Fragen, die für Ihre sportliche Betätigung nicht zutreffen, kreuzen Sie bitte n.z. an und beantworten die Frage nicht.",
-      "form.footer": "## Sie haben den EFAS Fragebogen ausgefüllt\n## Vielen Dank für Ihre Teilnahme!",
-      "efas.title": "EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score",
-      "efas.title.label": "EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score",
-      "efas.title.description": "EFAS Fragebogen zur Beurteilung von Fuß- und Sprunggelenksproblemen.",
-      "efas.instructions.title": "Anleitung",
-      "efas.instructions.description": "Bitte beantworten Sie die folgenden Fragen zum Zustand Ihres Fußes und/oder Sprunggelenks und wählen Sie die passendste Antwort aus.",
-      "efas.notApplicable": "nicht zutreffend",
-      "immer": "immer",
-      "nie": "nie",
-      "extreme Veränderung": "extreme Veränderung",
-      "keine Veränderung": "keine Veränderung",
-      "sportfragebogen.title": "Sportfragen",
-      "standardfragebogen.title": "Standardfragen",
-      "standardfragebogen.q1.label": "Haben Sie in Ruhe Schmerzen im Fuß / Sprunggelenk ?",
-      "standardfragebogen.q1.description": "0 immer -> 4 nie",
-      "standardfragebogen.q1.tickLabelLow": "immer",
-      "standardfragebogen.q1.tickLabelHigh": "nie",
-      "standardfragebogen.q1.error.custom": "Bitte beantworten Sie die Frage",
-      "standardfragebogen.q2.label": "Wie weit können Sie gehen bis Sie Schmerzen am Fuß / Sprunggelenk bekommen?",
-      "standardfragebogen.q2.description": "0 Gehen unmöglich -> 4 Keine Einschränkungen",
-      "standardfragebogen.q2.tickLabelLow": "unmöglich",
-      "standardfragebogen.q2.tickLabelHigh": "keine Einschränkungen",
-      "standardfragebogen.q3.label": "Wie stark hat sich Ihr Gang (d.h. die Art wie Sie gehen) wegen Problemen am Fuß / Sprunggelenk verändert?",
-      "standardfragebogen.q3.description": "0 Extreme Veränderung -> 4 Keine Veränderung",
-      "standardfragebogen.q3.tickLabelLow": "extreme Veränderung",
-      "standardfragebogen.q3.tickLabelHigh": "keine Veränderung",
-      "standardfragebogen.q4.label": "Haben Sie Schwierigkeiten beim Gehen auf unebenem Untergrund?",
-      "standardfragebogen.q4.description": "0 immer -> 4 nie",
-      "standardfragebogen.q4.tickLabelLow": "immer",
-      "standardfragebogen.q4.tickLabelHigh": "nie",
-      "standardfragebogen.q5.label": "Haben Sie Schmerzen im Fuß / Sprunggelenk beim Gehen?",
-      "standardfragebogen.q5.description": "0 immer -> 4 nie",
-      "standardfragebogen.q5.tickLabelLow": "immer",
-      "standardfragebogen.q5.tickLabelHigh": "nie",
-      "standardfragebogen.q6.label": "Wie oft haben Sie Schmerzen im Fuß / Sprunggelenk während körperlicher Aktivität?",
-      "standardfragebogen.q6.description": "0 immer -> 4 nie",
-      "standardfragebogen.q6.tickLabelLow": "immer",
-      "standardfragebogen.q6.tickLabelHigh": "nie",
-      "sportfragebogen.s1.label": "Können Sie rennen/schnell laufen?",
-      "sportfragebogen.s1.description": "0 unmöglich -> 4 Keine Einschränkungen",
-      "sportfragebogen.s1.tickLabelLow": "unmöglich",
-      "sportfragebogen.s1.tickLabelHigh": "keine Einschränkungen",
-      "sportfragebogen.s2.label": "Können Sie joggen/langsam laufen?",
-      "sportfragebogen.s2.description": "0 unmöglich -> 4 Keine Einschränkungen",
-      "sportfragebogen.s2.tickLabelLow": "unmöglich",
-      "sportfragebogen.s2.tickLabelHigh": "keine Einschränkungen",
-      "sportfragebogen.s3.label": "Haben Sie Probleme bei der Landung nach einem Sprung?",
-      "sportfragebogen.s3.description": "0 unmöglich -> 4 Keine Einschränkungen",
-      "sportfragebogen.s3.tickLabelLow": "unmöglich",
-      "sportfragebogen.s3.tickLabelHigh": "keine Einschränkungen",
-      "sportfragebogen.s4.label": "Können Sie Ihren Sport mit Ihrer üblichen Technik ausüben?",
-      "sportfragebogen.s4.description": "0 unmöglich -> 4 Keine Einschränkungen",
-      "sportfragebogen.s4.tickLabelLow": "unmöglich",
-      "sportfragebogen.s4.tickLabelHigh": "keine Einschränkungen"
+    "standardfragebogen": {
+      "q1": null,
+      "q2": null,
+      "q3": null,
+      "q4": null,
+      "q5": null,
+      "q6": null
     },
-    "en": {
-      "form.header": "# EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score\n## Introduction\nOn the following page you will find 6 questions about your problems with your foot and/or ankle.\n\nPlease answer all questions so that you describe your situation ___within the last week___ most appropriately. Each question has 5 answer options, i.e. a 5-point scale with a description of the answers or endpoints.\n\nIf a question does not apply to you, please check \"n.a.\" and do not answer the question.\n\n## Sports Questions\nThe second part of the questionnaire is about sports.\n\nPlease only answer these questions if you exercise regularly.\n\nFor questions that do not apply to your sporting activity, please check n.a. and do not answer the question.",
-      "form.footer": "## You have completed the EFAS questionnaire\n## Thank you for your participation!",
-      "efas.title.label": "EUROPEAN FOOT AND ANKLE SOCIETY - EFAS Score",
-      "efas.title.description": "EFAS questionnaire to assess foot and ankle problems.",
-      "efas.instructions.title": "Instructions",
-      "efas.instructions.description": "Please answer the following questions about the condition of your foot and/or ankle and select the most appropriate answer.",
-      "efas.notApplicable": "not applicable",
-      "immer": "always",
-      "nie": "never",
-      "extreme Veränderung": "extreme change",
-      "keine Veränderung": "no change",
-      "sportfragebogen.title": "Sport questions",
-      "standardfragebogen.title": "Standard questions",
-      "standardfragebogen.q1.label": "Do you have pain at rest in the foot/ankle?",
-      "standardfragebogen.q1.description": "0 always -> 4 never",
-      "standardfragebogen.q1.tickLabelLow": "always",
-      "standardfragebogen.q1.tickLabelHigh": "never",
-      "standardfragebogen.q2.label": "How far can you walk before you get pain in the foot/ankle?",
-      "standardfragebogen.q2.description": "0 walking impossible -> 4 no limitations",
-      "standardfragebogen.q2.tickLabelLow": "impossible",
-      "standardfragebogen.q2.tickLabelHigh": "no limitations",
-      "standardfragebogen.q3.label": "How much has your gait changed because of foot/ankle problems?",
-      "standardfragebogen.q3.description": "0 extreme change -> 4 no change",
-      "standardfragebogen.q3.tickLabelLow": "extreme change",
-      "standardfragebogen.q3.tickLabelHigh": "no change",
-      "standardfragebogen.q4.label": "Do you have difficulty walking on uneven surfaces?",
-      "standardfragebogen.q4.description": "0 always -> 4 never",
-      "standardfragebogen.q4.tickLabelLow": "always",
-      "standardfragebogen.q4.tickLabelHigh": "never",
-      "standardfragebogen.q5.label": "Do you have pain in the foot/ankle while walking?",
-      "standardfragebogen.q5.description": "0 always -> 4 never",
-      "standardfragebogen.q5.tickLabelLow": "always",
-      "standardfragebogen.q5.tickLabelHigh": "never",
-      "standardfragebogen.q6.label": "How often do you have pain during physical activity?",
-      "sportfragebogen.s1.label": "Can you run/fast run?",
-      "sportfragebogen.s1.description": "0 impossible -> 4 no limitations",
-      "sportfragebogen.s1.tickLabelLow": "impossible",
-      "sportfragebogen.s1.tickLabelHigh": "no limitations",
-      "sportfragebogen.s2.label": "Can you jog/slow run?",
-      "sportfragebogen.s2.description": "0 impossible -> 4 no limitations",
-      "sportfragebogen.s2.tickLabelLow": "impossible",
-      "sportfragebogen.s2.tickLabelHigh": "no limitations",
-      "sportfragebogen.s3.label": "Do you have problems on landing after a jump?",
-      "sportfragebogen.s3.description": "0 impossible -> 4 no limitations",
-      "sportfragebogen.s3.tickLabelLow": "impossible",
-      "sportfragebogen.s3.tickLabelHigh": "no limitations",
-      "sportfragebogen.s4.label": "Can you perform your sport with your usual technique?",
-      "sportfragebogen.s4.description": "0 impossible -> 4 no limitations",
-      "sportfragebogen.s4.tickLabelLow": "impossible",
-      "sportfragebogen.s4.tickLabelHigh": "no limitations"
+    "sportfragebogen": {
+      "s1": null,
+      "s2": null,
+      "s3": null,
+      "s4": null
     }
   }
 }
