@@ -68,9 +68,7 @@ describe("FormTemplate API", () => {
     // Pick one shortlist item and verify it doesn't include full schema/data
     const item = response.body.responseObject.find((x: any) => x._id === mockIds[0]);
     expect(item).toBeDefined();
-    expect(item.formSchema).toBe(undefined);
     expect(item.formData).toBe(undefined);
-    expect(item.formSchemaUI).toBe(undefined);
   });
 
   it("should update a form template", async () => {
@@ -92,8 +90,6 @@ describe("FormTemplate API", () => {
     const formTemplate = {
       title: "Test Form 4",
       description: "A test form to be deleted",
-      formSchema: { foo: "bar" },
-      formSchemaUI: { foo: "bar" },
       formData: { foo: "bar" },
     };
 
@@ -113,12 +109,6 @@ describe("FormTemplate API", () => {
       expect(resp.status).toBe(200);
       const templates = resp.body.responseObject as any[];
       moxfqTemplate = templates.find((t: any) => t?.title?.includes("Manchester-Oxford"));
-      if (!moxfqTemplate) {
-        moxfqTemplate = templates.find((t: any) => t.formSchema?.properties?.moxfq);
-      }
-      if (!moxfqTemplate) {
-        throw new Error("MOXFQ template not found in seeded templates");
-      }
     });
 
     it("should load MOXFQ template from JSON integration", () => {
@@ -126,83 +116,12 @@ describe("FormTemplate API", () => {
       expect(moxfqTemplate.title).toBeDefined();
       // After update test runs, the MOXFQ template should have this title
       expect(moxfqTemplate.title).toContain("Manchester-Oxford");
-      expect(moxfqTemplate.formSchema.properties.moxfq).toBeDefined();
       expect(moxfqTemplate._id).toBeDefined();
     });
 
     it("should have complete MOXFQ structure", () => {
-      expect(moxfqTemplate.formSchema).toBeDefined();
-      expect(moxfqTemplate.formSchemaUI).toBeDefined();
       expect(moxfqTemplate.formData).toBeDefined();
       // Note: translations removed from database - now stored in plugin code
-    });
-
-    it("should have 16 questions in MOXFQ schema", () => {
-      expect(moxfqTemplate.formSchema.properties.moxfq.properties).toBeDefined();
-      const questions = Object.keys(moxfqTemplate.formSchema.properties.moxfq.properties);
-      expect(questions).toHaveLength(16);
-
-      // Verify all expected question keys exist
-      const expectedQuestions = Array.from({ length: 16 }, (_, i) => `q${i + 1}`);
-      expectedQuestions.forEach((question) => {
-        expect(questions).toContain(question);
-      });
-    });
-
-    it("should have German and English translations", () => {
-      // Note: translations removed from database - now stored in plugin code
-      // This test is kept for backward compatibility, but they're not in the database anymore
-      expect(moxfqTemplate.formSchema).toBeDefined();
-    });
-
-    it("should apply German translations to all question titles", () => {
-      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
-      //BUG disabled title check, because the frontend renders directly from i18n keys
-      // const questionsWithTitles = Object.keys(questions).filter((key) => questions[key].title);
-
-      // expect(questionsWithTitles).toHaveLength(16);
-
-      // Verify questions have titles defined (actual titles are in English in schema, translations are separate)
-      // expect(questions.q1.title).toBeDefined();
-      // expect(questions.q15.title).toBeDefined();
-      // expect(questions.q16.title).toBeDefined();
-
-      // Note: German translations are now in plugin code, not in database
-      expect(questions.q15).toBeDefined();
-      expect(questions.q16).toBeDefined();
-    });
-
-    it("should have German enumNames in translations for all questions", () => {
-      // Note: translations removed from database - now stored in plugin code
-      // Verify questions structure exists and has enums
-      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
-      
-      // Check that likert scale questions have enum values
-      expect(questions.q1.enum).toBeDefined();
-      expect(questions.q1.enum).toHaveLength(5);
-      
-      // Check pain severity scale (for q15)
-      expect(questions.q15.enum).toBeDefined();
-      
-      // Check night pain scale (for q16)
-      expect(questions.q16.enum).toBeDefined();
-    });
-
-    it("should have valid question schema structure", () => {
-      const questions = moxfqTemplate.formSchema.properties.moxfq.properties;
-
-      Object.keys(questions).forEach((questionKey) => {
-        const question = questions[questionKey];
-
-        // Each question should have required properties
-        // expect(question.title).toBeDefined();
-        expect(question.type).toBe("integer");
-        // Questions have enum values (0-4) instead of enumNames
-        expect(question.enum).toBeDefined();
-        expect(question.enum).toHaveLength(5);
-        // i18n key for translations
-        expect(question.i18n).toBeDefined();
-      });
     });
 
     it("should access MOXFQ template via API endpoint", async () => {
@@ -210,7 +129,6 @@ describe("FormTemplate API", () => {
 
       expect(response.status).toBe(200);
       // Note: translations field removed from database
-      expect(response.body.responseObject.formSchema).toBeDefined();
     });
 
     it("should include MOXFQ in template list", async () => {
@@ -220,7 +138,7 @@ describe("FormTemplate API", () => {
       const templates = response.body.responseObject;
       // Find MOXFQ template by title (set by update test) or schema structure
       const moxfqInList = templates.find(
-        (t: any) => t.title?.includes("Manchester-Oxford") || t.formSchema?.properties?.moxfq,
+        (t: any) => t.title?.includes("Manchester-Oxford"),
       );
 
       expect(moxfqInList).toBeDefined();
@@ -230,8 +148,6 @@ describe("FormTemplate API", () => {
     it("should have German markdown content in translations", () => {
       // Note: Markdown content moved to plugin code (translations removed from database)
       // This test verifies the template structure is complete
-      expect(moxfqTemplate.formSchema).toBeDefined();
-      expect(moxfqTemplate.formSchemaUI).toBeDefined();
       expect(moxfqTemplate.formData).toBeDefined();
     });
   });

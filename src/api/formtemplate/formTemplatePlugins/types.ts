@@ -42,10 +42,7 @@ export interface FormTemplateJson {
   _id?: string | { toString(): string };
   title: string;
   description: string;
-  formSchema: Record<string, unknown>;
-  formSchemaUI?: Record<string, unknown>;
   formData?: CustomFormData | Record<string, unknown>;
-  translations?: Record<string, string> | Record<string, unknown>;
 }
 
 /**

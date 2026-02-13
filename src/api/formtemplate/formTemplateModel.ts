@@ -19,17 +19,35 @@ export const QuestionnaireSchema = z.record(z.string(), z.union([z.number(), z.s
 // Define the CustomFormData schema
 export const CustomFormDataSchema = z.record(z.string(), QuestionnaireSchema);
 
+
+/**
+ * Represents form data with questions grouped by sections
+ */
+export const FormQuestionsSchema = z.record(z.string(), z.record(z.string(), z.union([z.string(), z.number()]).nullable()));
+
+/**
+ * Represents form data with questions grouped by sections.
+ * Each section maps question keys to answers (string | number | null).
+ */
+export interface FormQuestions {
+  [sectionKey: string]: { [questionKey: string]: string | number | null };
+}
+
+export const FormData = z
+  .object({
+    rawData: FormQuestionsSchema,
+    scoring: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()]).nullable()),
+    isComplete: z.boolean(),
+    completedAt: z.string().nullable().optional(),
+  }).strict();
+
 // Define the FormTemplate schema
 export const FormTemplate = z
   .object({
     _id: zId().optional(),
     title: z.string(),
     description: z.string(),
-    formSchema: z.object({}).passthrough(),
-    formSchemaUI: z.object({}).passthrough(),
-    // formData: CustomFormDataSchema //this does not work when validating mongoose model. But zod validates.
-    formData: z.object({}).passthrough(),
-    // translations removed - now stored in plugin code instead of database
+    formData: FormData,
   })
   .strict();
 
