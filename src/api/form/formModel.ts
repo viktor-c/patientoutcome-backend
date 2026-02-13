@@ -30,7 +30,6 @@ export const Form = FormTemplate.extend({
   caseId: zId("PatientCase"),
   consultationId: zId("Consultation"),
   formTemplateId: zId("FormTemplate"),
-  scoring: ScoringDataSchema.optional(),
   createdAt: z.date().optional(),
   formFillStatus: z.enum(["draft", "incomplete", "completed"]).default("draft"),
   updatedAt: z.date().optional(),

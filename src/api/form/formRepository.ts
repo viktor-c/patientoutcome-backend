@@ -45,7 +45,11 @@ export class FormRepository {
       caseId,
       consultationId,
       formTemplateId: formTemplateId,
-      scoring: undefined,
+      formData: {
+        isComplete: false,
+        rawData: {},
+        scoring: {}
+      },
       createdAt: new Date(),
       completedAt: null,
       ...deepCopy,
@@ -77,7 +81,7 @@ export class FormRepository {
     try {
       const softDeletedForm = await FormModel.findByIdAndUpdate(
         id,
-        { 
+        {
           deletedAt: new Date(),
           deletedBy,
           deletionReason
@@ -100,7 +104,7 @@ export class FormRepository {
     try {
       const restoredForm = await FormModel.findByIdAndUpdate(
         id,
-        { 
+        {
           deletedAt: null,
           deletedBy: null,
           deletionReason: null
@@ -197,8 +201,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
       });
       // VAS Form 1
@@ -216,8 +218,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
         formData: vasFormData1 || {}, // Store raw form data (not ScoringData)
       });
 
@@ -238,8 +238,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData1 || {}, // Store raw form data (not ScoringData)
       });
 
@@ -260,8 +258,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
         formData: vasFormData2 || {}, // Store raw form data (not ScoringData)
       });
       // EFAS Form 2
@@ -280,8 +276,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
         formData: efasFormData2 || {}, // Store raw form data (not ScoringData)
       });
 
@@ -302,8 +296,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
         formData: aofasFormData2 || {}, // Store raw form data (not ScoringData)
       });
 
@@ -322,8 +314,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
       });
 
@@ -340,8 +330,6 @@ export class FormRepository {
         formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
         formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
       });
 

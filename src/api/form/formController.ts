@@ -120,7 +120,7 @@ class FormController {
   public softDeleteForm: RequestHandler = async (req: Request, res: Response) => {
     const { formId } = req.params;
     const { deletionReason } = req.body;
-    
+
     if (!deletionReason || typeof deletionReason !== "string") {
       return res.status(400).json({
         success: false,
@@ -161,7 +161,7 @@ class FormController {
   public getDeletedForms: RequestHandler = async (req: Request, res: Response) => {
     const page = req.query.page ? Number.parseInt(req.query.page as string, 10) : 1;
     const limit = req.query.limit ? Number.parseInt(req.query.limit as string, 10) : 10;
-    
+
     const serviceResponse = await formService.getDeletedForms({ page, limit });
     return handleServiceResponse(serviceResponse, res);
   };

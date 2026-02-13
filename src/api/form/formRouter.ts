@@ -47,12 +47,16 @@ const createFormSchema = z.object({
 // Schema for the update body content only (used in OpenAPI docs)
 const updateFormBodySchema = z
   .object({
+    code: z.string().optional(),
+    // only contains raw form data
     formData: z.object({}).passthrough().optional(),
     completionTimeSeconds: z.number().positive().optional(),
     formStartTime: z.coerce.date().optional(),
     formEndTime: z.coerce.date().optional(),
     formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
+    // includes calculated total score and subscale scores
     scoring: z.object({}).passthrough().optional(), // Accept ScoringData structure
+    // optional access code for verification
   })
   .passthrough();
 
@@ -226,7 +230,7 @@ formRegistry.registerPath({
   description: "Update a form answers by its id",
   summary: "Update a form answers by its id",
   request: {
-    params: z.object({ formId: commonValidations.id }),
+    params: updateFormSchema.shape.params,
     body: {
       content: {
         "application/json": { schema: updateFormBodySchema },

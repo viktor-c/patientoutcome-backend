@@ -139,9 +139,28 @@ export class FormService {
     }
   }
 
+  /**
+   * Update form data, completion status, and scoring
+   * 
+   * FRONTEND DATA STRUCTURE (FormSubmissionData):
+   * Frontend sends an updateFormRequest with:
+   * - formData: Raw form answers (maps to frontend's FormSubmissionData.rawData)
+   * - scoring: Calculated scoring data (maps to FormSubmissionData.scoring)
+   * - formFillStatus: Completion status (maps to FormSubmissionData.isComplete)
+   * - completedAt: Timestamp when completed (maps to FormSubmissionData.completedAt)
+   * 
+   * BACKEND STORAGE:
+   * - formData: Stored as Form.formData (the raw answers)
+   * - scoring: Stored as Form.scoring (the calculated scores)
+   * - formFillStatus: Stored as Form.formFillStatus (draft/incomplete/completed)
+   * - completedAt: Stored as Form.completedAt (timestamp)
+   * 
+   * The backend respects what the frontend sends and does not recalculate scores.
+   * All scoring logic resides in the frontend plugins.
+   */
   async updateForm(
     formId: string,
-    updatedForm: Partial<Form>,
+    updatedForm: Partial<Form> & { code?: string },
     userContext?: UserContext,
   ): Promise<ServiceResponse<Form | null>> {
     try {
@@ -161,24 +180,63 @@ export class FormService {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
 
+      // AUTHORIZATION: Verify access code if provided
+      // This prevents unauthorized users from randomly updating forms
+      if (updatedForm.code) {
+        try {
+          const codeModule = await import("@/api/code/codeRepository.js");
+          const codeRepository = new codeModule.CodeRepository();
+
+          // Find the code and verify it's activated
+          const codeDoc = await codeRepository.findByCode(updatedForm.code);
+          if (!codeDoc || !codeDoc.consultationId) {
+            return ServiceResponse.failure(
+              "Invalid or inactive access code",
+              null,
+              StatusCodes.FORBIDDEN,
+            );
+          }
+
+          // Verify the code's consultation matches this form's consultation
+          const codeConsultationId = typeof codeDoc.consultationId === 'string'
+            ? codeDoc.consultationId
+            : codeDoc.consultationId.toString();
+          const formConsultationId = typeof existingForm.consultationId === 'string'
+            ? existingForm.consultationId
+            : existingForm.consultationId?._id.toString();
+
+          if (codeConsultationId !== formConsultationId) {
+            return ServiceResponse.failure(
+              "Access code does not grant permission to edit this form",
+              null,
+              StatusCodes.FORBIDDEN,
+            );
+          }
+
+          logger.debug(
+            { code: updatedForm.code, formId, consultationId: formConsultationId },
+            "✅ Access code verified successfully"
+          );
+        } catch (error) {
+          logger.error({ error, code: updatedForm.code }, "Error verifying access code");
+          return ServiceResponse.failure(
+            "Failed to verify access code",
+            null,
+            StatusCodes.INTERNAL_SERVER_ERROR,
+          );
+        }
+      }
+
       // Extract formData from the updatedForm if it exists
+      // Frontend sends FormSubmissionData structure with:
+      // - formData: the raw form answers (rawData)
+      // - scoring: calculated scoring data
+      // - formFillStatus: completion status
+      // - completedAt: timestamp when completed
       // Handle the case where the client sends { body: { formData: {...} } } or just { formData: {...} }
       let formData: any;
 
-      if (updatedForm.formData) {
-        // Check if formData has a 'body' wrapper (incorrect structure from old API client)
-        if (typeof updatedForm.formData === "object" && "body" in updatedForm.formData) {
-          const nested = (updatedForm.formData as any).body;
-          // If body.formData exists, use that, otherwise use body directly
-          formData = nested?.formData || nested;
-          console.log("⚠️  WARNING: Detected nested body structure in formData");
-        } else {
-          formData = updatedForm.formData;
-        }
-      } else {
-        // Fallback to using updatedForm directly (for backward compatibility)
-        formData = updatedForm;
-      }
+      formData = updatedForm.formData ? updatedForm.formData : undefined;
 
       console.log("=== BACKEND SERVICE: After extraction ===");
       console.log("formData extracted:", JSON.stringify(formData, null, 2));
@@ -202,39 +260,38 @@ export class FormService {
         updateData.formEndTime = updatedForm.formEndTime;
       }
 
-      // === SCORE CALCULATION POLICY ===
-      // The backend does NOT calculate or normalize any form scores (e.g., MOXFQ normalization).
-      // All score calculations must be performed on the frontend and passed as updatedForm.score.
-      // The backend only stores the provided score value.
-      // ===============================
-      // Check if the fields in the formData are completely filled (for fill status only)
-      const incompleteFields = [];
-      if (formData && typeof formData === "object") {
-        const validationResult = CustomFormDataSchema.safeParse(formData);
-        logger.debug({ isValid: validationResult.success }, "formService.ts Form validation");
-        for (const [sectionName, answerValues] of Object.entries(formData)) {
-          if (typeof answerValues === "object" && answerValues !== null) {
-            for (const [question, answer] of Object.entries(answerValues)) {
-              if (answer === null || answer === undefined || answer === "") {
-                incompleteFields.push(`${sectionName}.${question}`);
-              }
-            }
-          }
-        }
+      // Handle completedAt from frontend (if provided)
+      if (updatedForm.completedAt !== undefined) {
+        updateData.completedAt = updatedForm.completedAt;
       }
 
-      if (incompleteFields.length > 0) {
-        logger.debug({ incompleteFields }, "formService.ts Form validation failed");
-        updateData.formFillStatus = "incomplete";
+      // === SCORE CALCULATION POLICY ===
+      // The backend does NOT calculate or normalize any form scores (e.g., MOXFQ normalization).
+      // All score calculations must be performed on the frontend and passed as updatedForm.scoring.
+      // The backend only stores the provided score value.
+      // ===============================
+
+      // Handle formFillStatus: trust frontend to determine completion status
+      // Backend no longer validates form data for completion - forms can be complex
+      // and only the frontend form plugins know how to properly validate them
+      if (updatedForm.formFillStatus !== undefined) {
+        updateData.formFillStatus = updatedForm.formFillStatus;
         updateData.updatedAt = new Date();
-      } else {
-        logger.debug("formService.ts Form validation passed, all fields are complete.");
-        updateData.formFillStatus = "completed";
-        updateData.updatedAt = new Date();
-        updateData.completedAt = new Date();
-        if (!existingForm.formEndTime) {
+
+        // Set completedAt if status is completed and not already set
+        if (updatedForm.formFillStatus === "completed" && !updateData.completedAt) {
+          updateData.completedAt = new Date();
+        }
+
+        // Set formEndTime if completed and not already set
+        if (updatedForm.formFillStatus === "completed" && !existingForm.formEndTime && !updateData.formEndTime) {
           updateData.formEndTime = new Date();
         }
+
+        logger.debug({ formFillStatus: updateData.formFillStatus }, "Using formFillStatus from frontend");
+      } else {
+        // If no formFillStatus provided, just update the timestamp
+        updateData.updatedAt = new Date();
       }
 
       // Calculate relative creation date for kiosk users based on postopWeek
@@ -283,16 +340,7 @@ export class FormService {
 
       // Update the form data
       // Only use the properly extracted formData, ignore any direct questionnaire properties on updatedForm
-      if (formData && typeof formData === "object" && Object.keys(formData).length > 0) {
-        // Ensure we're not including the malformed 'body' wrapper
-        if ("body" in formData) {
-          console.log("⚠️  WARNING: Removing body wrapper from formData before saving");
-          const { body, ...cleanFormData } = formData;
-          updateData.formData = Object.keys(cleanFormData).length > 0 ? cleanFormData : body?.formData || body;
-        } else {
-          updateData.formData = formData;
-        }
-      }
+      updateData.formData = formData ? formData : existingForm.formData;
 
       // Calculate completion time if not provided but start and end times are available
       if (
@@ -367,7 +415,7 @@ export class FormService {
    * @returns Updated form with deletedAt set
    */
   async softDeleteForm(
-    id: string, 
+    id: string,
     deletionReason: string,
     userContext?: UserContext
   ): Promise<ServiceResponse<Form | null>> {
@@ -379,7 +427,7 @@ export class FormService {
 
       const deletedBy = userContext?.userId || "";
       const softDeletedForm = await formRepository.softDeleteForm(id, deletedBy, deletionReason);
-      
+
       if (!softDeletedForm) {
         return ServiceResponse.failure("Failed to soft delete form", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
@@ -417,7 +465,7 @@ export class FormService {
   ): Promise<ServiceResponse<Form | null>> {
     try {
       const restoredForm = await formRepository.restoreForm(id);
-      
+
       if (!restoredForm) {
         return ServiceResponse.failure("Form not found", null, StatusCodes.NOT_FOUND);
       }
