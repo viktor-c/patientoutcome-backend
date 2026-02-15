@@ -1,5 +1,5 @@
-import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
+import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
 import * as moxfqJsonForm from "./MOXFQ_JsonForm_Export.json";
 
 /**
@@ -35,18 +35,18 @@ function calculateMoxfqScore(data: CustomFormData): ScoringData {
     if (validAnswers.length === 0) return null;
 
     const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
-    const maxPossibleScore = questionKeys.length * 4;
+    const maxScore = questionKeys.length * 4;
     const completionRate = validAnswers.length / questionKeys.length;
 
-    // Convert to 0-100 scale: (rawScore / maxPossibleScore) * 100
-    const normalizedScore = (rawScore / maxPossibleScore) * 100;
+    // Convert to 0-100 scale: (rawScore / maxScore) * 100
+    const normalizedScore = (rawScore / maxScore) * 100;
 
     return {
       name: subscaleName,
       description: subscaleDescription,
       rawScore,
       normalizedScore: Math.round(normalizedScore * 100) / 100,
-      maxPossibleScore,
+      maxScore,
       answeredQuestions: validAnswers.length,
       totalQuestions: questionKeys.length,
       completionPercentage: Math.round(completionRate * 100),
@@ -72,13 +72,13 @@ function calculateMoxfqScore(data: CustomFormData): ScoringData {
   const totalScore = calculateSubscaleScore(allQuestions, "Total", "Measures overall health status.");
 
   return {
-    rawData: data,
+    rawFormData: data,
     subscales: {
       walkingStanding: walkingStandingScore,
       pain: painScore,
       socialInteraction: socialInteractionScore,
     },
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -86,7 +86,7 @@ function calculateMoxfqScore(data: CustomFormData): ScoringData {
  * Generate mock MOXFQ form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((moxfqJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
+  return ((moxfqJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
@@ -97,7 +97,7 @@ export const moxfqPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e85",
   name: "Manchester-Oxford Foot Questionnaire",
   description: "A standardized questionnaire to assess foot and ankle pain and its impact on daily activities",
-  formTemplate: moxfqJsonForm as unknown as FormTemplateModelType,
+  formTemplate: moxfqJsonForm as unknown as FormTemplateJson,
   calculateScore: calculateMoxfqScore,
   generateMockData,
 };

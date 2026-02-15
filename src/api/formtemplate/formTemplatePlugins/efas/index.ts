@@ -1,5 +1,5 @@
-import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
+import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
 import * as efasJsonForm from "./EFAS_JsonForm_Export.json";
 
 /**
@@ -32,16 +32,16 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
 
     if (validAnswers.length > 0) {
       const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
-      const maxPossibleScore = questionKeys.length * 5; // EFAS uses 0-5 scale
+      const maxScore = questionKeys.length * 5; // EFAS uses 0-5 scale
       const completionRate = validAnswers.length / questionKeys.length;
-      const normalizedScore = (rawScore / maxPossibleScore) * 100;
+      const normalizedScore = (rawScore / maxScore) * 100;
 
       subscaleScores[sectionKey] = {
         name: sectionKey === "standardfragebogen" ? "Standard Questions" : "Sport Questions",
         description: sectionKey === "standardfragebogen" ? "Daily activity questions" : "Sports-specific questions",
         rawScore,
         normalizedScore: Math.round(normalizedScore * 100) / 100,
-        maxPossibleScore,
+        maxScore,
         answeredQuestions: validAnswers.length,
         totalQuestions: questionKeys.length,
         completionPercentage: Math.round(completionRate * 100),
@@ -52,9 +52,9 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
       subscaleScores[sectionKey] = {
         name: sectionKey === "standardfragebogen" ? "Standard Questions" : "Sport Questions",
         description: sectionKey === "standardfragebogen" ? "Daily activity questions" : "Sports-specific questions",
-        rawScore: null,
-        normalizedScore: null,
-        maxPossibleScore: questionKeys.length * 4,
+        rawScore: 0,
+        normalizedScore: 0,
+        maxScore: questionKeys.length * 4,
         answeredQuestions: 0,
         totalQuestions: questionKeys.length,
         completionPercentage: 0,
@@ -83,16 +83,16 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
   let totalScore: SubscaleScore | null = null;
   if (allValidAnswers.length > 0) {
     const rawScore = allValidAnswers.reduce((sum, value) => sum + value, 0);
-    const maxPossibleScore = allQuestionsList.length * 5;
+    const maxScore = allQuestionsList.length * 5;
     const completionRate = allValidAnswers.length / allQuestionsList.length;
-    const normalizedScore = (rawScore / maxPossibleScore) * 100;
+    const normalizedScore = (rawScore / maxScore) * 100;
 
     totalScore = {
       name: "EFAS Total",
       description: "European Foot and Ankle Society Score",
       rawScore,
       normalizedScore: Math.round(normalizedScore * 100) / 100,
-      maxPossibleScore,
+      maxScore,
       answeredQuestions: allValidAnswers.length,
       totalQuestions: allQuestionsList.length,
       completionPercentage: Math.round(completionRate * 100),
@@ -101,9 +101,9 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
   }
 
   return {
-    rawData: data,
+    rawFormData: data,
     subscales: subscaleScores,
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -111,7 +111,7 @@ function calculateEfasScore(data: CustomFormData): ScoringData {
  * Generate mock EFAS form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((efasJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
+  return ((efasJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
@@ -122,7 +122,7 @@ export const efasPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e83",
   name: "EFAS Score",
   description: "European Foot and Ankle Society patient-reported outcome measure",
-  formTemplate: efasJsonForm as unknown as FormTemplateModelType,
+  formTemplate: efasJsonForm as unknown as FormTemplateJson,
   calculateScore: calculateEfasScore,
   generateMockData,
 };

@@ -1,5 +1,5 @@
-import type { CustomFormData, FormTemplate as FormTemplateModelType, Questionnaire } from "@/api/formtemplate/formTemplateModel";
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import type { CustomFormData, Questionnaire } from "@/api/formtemplate/formTemplateModel";
+import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
 import * as vasJsonForm from "./VAS_JsonForm_Export.json";
 
 /**
@@ -16,9 +16,9 @@ function calculateVAS(data: CustomFormData): ScoringData {
   const totalScore: SubscaleScore = {
     name: "VAS Total",
     description: "Visual Analog Scale",
-    rawScore: rawScore ?? null,
-    normalizedScore: rawScore ?? null, // VAS is already 0-10 scale
-    maxPossibleScore: 10,
+    rawScore: rawScore ?? 0,
+    normalizedScore: rawScore ?? 0, // VAS is already 0-10 scale
+    maxScore: 10,
     answeredQuestions: rawScore !== null ? 1 : 0,
     totalQuestions: 1,
     completionPercentage: rawScore !== null ? 100 : 0,
@@ -26,9 +26,9 @@ function calculateVAS(data: CustomFormData): ScoringData {
   };
 
   return {
-    rawData: data,
+    rawFormData: data,
     subscales: { vas: totalScore },
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -36,7 +36,7 @@ function calculateVAS(data: CustomFormData): ScoringData {
  * Generate mock VAS form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((vasJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
+  return ((vasJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
@@ -47,7 +47,7 @@ export const vasPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e86",
   name: "Visual Analog Scale",
   description: "A simple 0-10 scale for pain assessment",
-  formTemplate: vasJsonForm as unknown as FormTemplateModelType,
+  formTemplate: vasJsonForm as unknown as FormTemplateJson,
   calculateScore: calculateVAS,
   generateMockData,
 };

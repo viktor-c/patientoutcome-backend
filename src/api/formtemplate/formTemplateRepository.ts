@@ -49,10 +49,15 @@ export class FormTemplateRepository {
     }
   }
 
-  // Include form templates from plugins
-  private _mockFormTemplateData: FormTemplate[] = allFormPlugins.map((plugin) => (
-    plugin.formTemplate as unknown as FormTemplate
-  ));
+  // Include form templates from plugins - extract only metadata
+  private _mockFormTemplateData: FormTemplate[] = allFormPlugins.map((plugin) => {
+    const template = plugin.formTemplate as any;
+    return {
+      _id: template._id,
+      title: template.title,
+      description: template.description,
+    } as FormTemplate;
+  });
 
   private getMockFormTemplateData(allowInProduction: boolean = false): FormTemplate[] {
     if (env.NODE_ENV === "production" && !allowInProduction) {

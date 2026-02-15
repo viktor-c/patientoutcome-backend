@@ -1,5 +1,5 @@
-import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
+import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
 import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
 
 /**
@@ -23,35 +23,35 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
   if (questionKeys.length === 0) {
     // No questions at all
     return {
-      rawData: data,
+      rawFormData: data,
       subscales: {},
-      total: null,
+      totalScore: null,
     };
   }
 
   if (validAnswers.length === 0) {
     // Questions exist, but no valid answers
     return {
-      rawData: data,
+      rawFormData: data,
       subscales: {
         "aofas-forefoot": {
           name: "AOFAS Forefoot",
           description: "American Orthopedic Foot & Ankle Society Forefoot Score",
-          rawScore: null,
-          normalizedScore: null,
-          maxPossibleScore: 100,
+          rawScore: 0,
+          normalizedScore: 0,
+          maxScore: 100,
           answeredQuestions: 0,
           totalQuestions: questionKeys.length,
           completionPercentage: 0,
           isComplete: false,
         },
       },
-      total: {
+      totalScore: {
         name: "AOFAS Total",
         description: "American Orthopedic Foot & Ankle Society Score",
-        rawScore: null,
-        normalizedScore: null,
-        maxPossibleScore: 100,
+        rawScore: 0,
+        normalizedScore: 0,
+        maxScore: 100,
         answeredQuestions: 0,
         totalQuestions: questionKeys.length,
         completionPercentage: 0,
@@ -64,16 +64,16 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   // AOFAS max score is 100 (based on clinical standard)
   // Each question has different max values, but total is always 100
-  const maxPossibleScore = 100;
+  const maxScore = 100;
   const completionRate = validAnswers.length / questionKeys.length;
-  const normalizedScore = (rawScore / maxPossibleScore) * 100;
+  const normalizedScore = (rawScore / maxScore) * 100;
 
   const totalScore: SubscaleScore = {
     name: "AOFAS Total",
     description: "American Orthopedic Foot & Ankle Society Score",
     rawScore,
     normalizedScore: Math.round(normalizedScore * 100) / 100,
-    maxPossibleScore,
+    maxScore,
     answeredQuestions: validAnswers.length,
     totalQuestions: questionKeys.length,
     completionPercentage: Math.round(completionRate * 100),
@@ -81,9 +81,9 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
   };
 
   return {
-    rawData: data,
+    rawFormData: data,
     subscales: { "aofas-forefoot": totalScore }, // aofas does not have subscales, but the frontend expects at least one, so put the whole score
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -91,7 +91,7 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
  * Generate mock AOFAS form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((aofasJsonForm as unknown as FormTemplateModelType).formData as CustomFormData) || {};
+  return ((aofasJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
@@ -102,7 +102,7 @@ export const aofasPlugin: FormTemplatePlugin = {
   templateId: "67b4e612d0feb4ad99ae2e84",
   name: "AOFAS Forefoot Score",
   description: "American Orthopedic Foot & Ankle Society clinical rating system for forefoot",
-  formTemplate: aofasJsonForm as unknown as FormTemplateModelType,
+  formTemplate: aofasJsonForm as unknown as FormTemplateJson,
   calculateScore: calculateAofasScore,
   generateMockData,
 };

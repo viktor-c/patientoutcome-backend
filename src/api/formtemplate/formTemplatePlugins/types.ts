@@ -6,43 +6,41 @@
  * all the necessary functions and data for that form.
  */
 
+import type { 
+  PatientFormData, 
+  FormQuestions,
+  SubscaleScore as ModelSubscaleScore,
+  CustomFormData 
+} from "@/api/formtemplate/formTemplateModel";
+
 /**
  * Represents a subscale score within a form
+ * Re-export from model for backward compatibility
  */
-export interface SubscaleScore {
-  name: string;
-  description?: string | null;
-  rawScore: number | null;
-  normalizedScore: number | null;
-  maxPossibleScore: number;
-  answeredQuestions: number;
-  totalQuestions: number;
-  completionPercentage: number;
-  isComplete: boolean;
-}
+export type SubscaleScore = ModelSubscaleScore;
 
 /**
  * Complete scoring data structure for a form
+ * This is the structure used by plugins and stored in patientFormData
  */
-import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
-
 export interface ScoringData {
-  rawData: CustomFormData | Record<string, unknown>;
-  subscales: {
+  rawFormData: FormQuestions;
+  subscales?: {
     [key: string]: SubscaleScore | null;
   };
-  total: SubscaleScore | null;
+  totalScore?: SubscaleScore | null;
 }
 
 /**
- * Form template JSON structure
- * This should match the structure exported from your form builder
+ * Form template JSON structure for plugins
+ * This is the structure plugins export - includes sample data for testing
+ * Note: This differs from the database FormTemplate model which only stores metadata
  */
 export interface FormTemplateJson {
   _id?: string | { toString(): string };
   title: string;
   description: string;
-  formData?: CustomFormData | Record<string, unknown>;
+  formData?: CustomFormData | Record<string, unknown>; // Sample data for plugin rendering
 }
 
 /**
@@ -50,6 +48,9 @@ export interface FormTemplateJson {
  * 
  * Every form template plugin must implement this interface to be compatible
  * with the patient outcome management system.
+ * 
+ * Note: Plugins export FormTemplateJson (with sample formData), but the database
+ * FormTemplate model only stores metadata (_id, title, description).
  */
 export interface FormTemplatePlugin {
   /**
@@ -69,14 +70,14 @@ export interface FormTemplatePlugin {
 
   /**
    * The complete JSON form template definition
-   * This includes schema, UI schema, and all configuration
+   * This includes metadata and sample formData for plugin rendering
    */
   formTemplate: FormTemplateJson;
 
   /**
    * Calculate the score for this form based on submitted data
    * 
-   * @param formData - The raw form data submitted by the user
+   * @param formData - The raw form data submitted by the user (legacy CustomFormData format)
    * @returns ScoringData structure with calculated scores
    */
   calculateScore: (formData: CustomFormData) => ScoringData;
@@ -84,7 +85,7 @@ export interface FormTemplatePlugin {
   /**
    * Generate mock/sample form data for testing purposes
    * 
-   * @returns Sample form data that can be used for testing
+   * @returns Sample form data in legacy CustomFormData format
    */
   generateMockData?: () => CustomFormData;
 

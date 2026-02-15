@@ -17,6 +17,7 @@ import { type NextFunction, type Request, type Response, Router } from "express"
 import { z } from "zod";
 import { formController } from "./formController";
 import { Form } from "./formModel";
+import { PatientFormDataSchema } from "@/api/formtemplate/formTemplateModel";
 
 const router = Router();
 export const formRegistry = new OpenAPIRegistry();
@@ -36,7 +37,7 @@ const formIdSchema = z.object({
 
 // Schema for the body content only (used in OpenAPI docs)
 const createFormBodySchema = z.object({
-  formData: z.object({}).passthrough(),
+  patientFormData: PatientFormDataSchema.nullable().optional(),
 });
 
 // Full validation schema (used in validateRequest middleware)
@@ -48,15 +49,12 @@ const createFormSchema = z.object({
 const updateFormBodySchema = z
   .object({
     code: z.string().optional(),
-    // only contains raw form data
-    formData: z.object({}).passthrough().optional(),
+    // PatientFormData structure
+    patientFormData: PatientFormDataSchema.nullable().optional(),
+    // Form timing fields
     completionTimeSeconds: z.number().positive().optional(),
     formStartTime: z.coerce.date().optional(),
     formEndTime: z.coerce.date().optional(),
-    formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
-    // includes calculated total score and subscale scores
-    scoring: z.object({}).passthrough().optional(), // Accept ScoringData structure
-    // optional access code for verification
   })
   .passthrough();
 
@@ -131,7 +129,7 @@ formRegistry.registerPath({
     {
       schema: z.object({
         forms: z.array(Form),
-        total: z.number(),
+        totalScore: z.number(),
         page: z.number(),
         limit: z.number(),
         totalPages: z.number(),

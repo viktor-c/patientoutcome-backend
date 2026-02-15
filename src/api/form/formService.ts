@@ -227,21 +227,22 @@ export class FormService {
         }
       }
 
-      // Extract formData from the updatedForm if it exists
-      // Frontend sends FormSubmissionData structure with:
-      // - formData: the raw form answers (rawData)
-      // - scoring: calculated scoring data
-      // - formFillStatus: completion status
+      // Extract patientFormData from the updatedForm if it exists
+      // Frontend sends PatientFormData structure with:
+      // - rawFormData: the raw form answers (sections->questions)
+      // - subscales: subscale scores
+      // - totalScore: total score
+      // - fillStatus: completion status ("draft" | "incomplete" | "complete")
       // - completedAt: timestamp when completed
-      // Handle the case where the client sends { body: { formData: {...} } } or just { formData: {...} }
-      let formData: any;
+      // - beginFill: timestamp when form filling began
+      let patientFormData: any;
 
-      formData = updatedForm.formData ? updatedForm.formData : undefined;
+      patientFormData = updatedForm.patientFormData ? updatedForm.patientFormData : undefined;
 
       console.log("=== BACKEND SERVICE: After extraction ===");
-      console.log("formData extracted:", JSON.stringify(formData, null, 2));
-      console.log("formData type:", typeof formData);
-      console.log("formData keys:", formData && typeof formData === "object" ? Object.keys(formData) : "N/A");
+      console.log("patientFormData extracted:", JSON.stringify(patientFormData, null, 2));
+      console.log("patientFormData type:", typeof patientFormData);
+      console.log("patientFormData keys:", patientFormData && typeof patientFormData === "object" ? Object.keys(patientFormData) : "N/A");
       console.log("=========================================");
 
       // Prepare update data
@@ -260,37 +261,25 @@ export class FormService {
         updateData.formEndTime = updatedForm.formEndTime;
       }
 
-      // Handle completedAt from frontend (if provided)
-      if (updatedForm.completedAt !== undefined) {
-        updateData.completedAt = updatedForm.completedAt;
-      }
-
       // === SCORE CALCULATION POLICY ===
       // The backend does NOT calculate or normalize any form scores (e.g., MOXFQ normalization).
-      // All score calculations must be performed on the frontend and passed as updatedForm.scoring.
+      // All score calculations must be performed on the frontend and passed in patientFormData.
       // The backend only stores the provided score value.
       // ===============================
 
-      // Handle formFillStatus: trust frontend to determine completion status
-      // Backend no longer validates form data for completion - forms can be complex
-      // and only the frontend form plugins know how to properly validate them
-      if (updatedForm.formFillStatus !== undefined) {
-        updateData.formFillStatus = updatedForm.formFillStatus;
+      // Handle patientFormData: this includes fillStatus, completedAt, and all form data
+      if (patientFormData) {
+        updateData.patientFormData = patientFormData;
         updateData.updatedAt = new Date();
 
-        // Set completedAt if status is completed and not already set
-        if (updatedForm.formFillStatus === "completed" && !updateData.completedAt) {
-          updateData.completedAt = new Date();
-        }
-
         // Set formEndTime if completed and not already set
-        if (updatedForm.formFillStatus === "completed" && !existingForm.formEndTime && !updateData.formEndTime) {
+        if (patientFormData.fillStatus === "complete" && !existingForm.formEndTime && !updateData.formEndTime) {
           updateData.formEndTime = new Date();
         }
 
-        logger.debug({ formFillStatus: updateData.formFillStatus }, "Using formFillStatus from frontend");
+        logger.debug({ fillStatus: patientFormData.fillStatus }, "Using fillStatus from frontend");
       } else {
-        // If no formFillStatus provided, just update the timestamp
+        // If no patientFormData provided, just update the timestamp
         updateData.updatedAt = new Date();
       }
 
@@ -315,10 +304,11 @@ export class FormService {
               // This is done only if the form doesn't already have a createdAt
               //BUGFIX: Always update createdAt to reflect postopWeek date
               updateData.createdAt = relativeDate;
-              // Also update the updatedAt and completedAt to match the relative date for consistency
+              // Also update the updatedAt to match the relative date for consistency
               updateData.updatedAt = relativeDate;
-              if (updateData.completedAt) {
-                updateData.completedAt = relativeDate;
+              // Update completedAt in patientFormData if it exists
+              if (updateData.patientFormData && updateData.patientFormData.completedAt) {
+                updateData.patientFormData.completedAt = relativeDate;
               }
 
               logger.info(
@@ -338,9 +328,12 @@ export class FormService {
         }
       }
 
-      // Update the form data
-      // Only use the properly extracted formData, ignore any direct questionnaire properties on updatedForm
-      updateData.formData = formData ? formData : existingForm.formData;
+      // Update the form data - patientFormData is handled above
+      // If no new patientFormData provided, keep existing data
+      if (!updateData.patientFormData && existingForm.patientFormData) {
+        // Keep existing patientFormData if no update provided
+        // This ensures we don't accidentally clear the data
+      }
 
       // Calculate completion time if not provided but start and end times are available
       if (
@@ -353,30 +346,26 @@ export class FormService {
         updateData.completionTimeSeconds = Math.round(diffMs / 1000);
       }
 
-      // Store the scoring data provided by the frontend (do not calculate here)
-      // The frontend is responsible for all scoring calculations, including MOXFQ normalization
-      if (updatedForm.scoring && typeof updatedForm.scoring === "object") {
-        updateData.scoring = updatedForm.scoring;
-      }
-      // If no scoring is provided, do not set/update the scoring field
-      // This ensures backend never overwrites frontend-calculated scores
+      // Scoring data is now part of patientFormData (subscales and totalScore)
+      // The frontend is responsible for all scoring calculations
+      // The backend only stores the provided score values within patientFormData
 
       // console.log("=== BACKEND SERVICE: Final updateData ===");
       // console.log("updateData:", JSON.stringify(updateData, null, 2));
-      // console.log("updateData.formData:", JSON.stringify(updateData.formData, null, 2));
-      // console.log("updateData.scoring:", JSON.stringify(updateData.scoring, null, 2));
+      // console.log("updateData.patientFormData:", JSON.stringify(updateData.patientFormData, null, 2));
       // console.log("=========================================");
 
       const response = await formRepository.updateForm(formId, updateData);
 
       // Log form update/submission activity
       if (userContext) {
-        const isCompleted = updateData.formFillStatus === "completed";
+        const fillStatus = updateData.patientFormData?.fillStatus || "draft";
+        const isCompleted = fillStatus === "complete";
         activityLogService.log({
           username: userContext.username || "Unknown",
           action: isCompleted ? "Submitted form" : "Updated form",
           type: isCompleted ? "formSubmit" : "formOpen",
-          details: `Form ID: ${formId}, Status: ${updateData.formFillStatus || "in-progress"}, Template: ${existingForm.formTemplateId}`,
+          details: `Form ID: ${formId}, Status: ${fillStatus}, Template: ${existingForm.formTemplateId}`,
         });
       }
 

@@ -100,22 +100,24 @@ export class StatisticsService {
           if (consultation.proms && Array.isArray(consultation.proms)) {
             for (const promId of consultation.proms) {
               const form = await FormModel.findById(promId)
-                .select("title scoring createdAt completedAt formTemplateId")
+                .select("title patientFormData createdAt formTemplateId")
                 .lean();
 
-              if (form && form.scoring) {
-                const scoringData: ScoringData = form.scoring as ScoringData;
+              if (form && form.patientFormData) {
+                // Extract scoring data from patientFormData
+                const scoringData: ScoringData = {
+                  rawFormData: form.patientFormData.rawFormData,
+                  subscales: form.patientFormData.subscales,
+                  totalScore: form.patientFormData.totalScore,
+                };
 
-                // compute per-prom completion time if available
-                let promCompletedAt: Date | null = null;
+                // Get completion time from patientFormData
+                let promCompletedAt: Date | null = form.patientFormData.completedAt;
                 let promCompletionSeconds: number | null = null;
-                if (form.completedAt) {
-                  promCompletedAt = form.completedAt;
-                  if (form.createdAt && form.completedAt) {
-                    promCompletionSeconds = Math.floor(
-                      (new Date(form.completedAt).getTime() - new Date(form.createdAt).getTime()) / 1000,
-                    );
-                  }
+                if (promCompletedAt && form.patientFormData.beginFill) {
+                  promCompletionSeconds = Math.floor(
+                    (new Date(promCompletedAt).getTime() - new Date(form.patientFormData.beginFill).getTime()) / 1000,
+                  );
                 }
 
                 // Push raw scoring data along with the form title, timing and template id
@@ -134,11 +136,11 @@ export class StatisticsService {
                 }
 
                 // Update consultation-level completion metadata from first completed form
-                if (form.completedAt && !completedAt) {
-                  completedAt = form.completedAt;
-                  if (form.createdAt && form.completedAt) {
+                if (form.patientFormData.completedAt && !completedAt) {
+                  completedAt = form.patientFormData.completedAt;
+                  if (form.patientFormData.beginFill && form.patientFormData.completedAt) {
                     completionTimeSeconds = Math.floor(
-                      (new Date(form.completedAt).getTime() - new Date(form.createdAt).getTime()) / 1000,
+                      (new Date(form.patientFormData.completedAt).getTime() - new Date(form.patientFormData.beginFill).getTime()) / 1000,
                     );
                   }
                 }
@@ -148,15 +150,15 @@ export class StatisticsService {
                   createdAt = form.createdAt;
                 }
               } else {
-                // If form missing or has no scoring, log and push a placeholder entry without referencing form fields
-                logger.warn(`Form with ID ${promId} not found or has no scoring data.`);
+                // If form missing or has no patientFormData, log and push a placeholder entry
+                logger.warn(`Form with ID ${promId} not found or has no patientFormData.`);
                 scoringEntries.push({
-                  title: "Unknown Form",
-                  scoring: { rawData: null, subscales: {}, total: null },
+                  title: form?.title || "Unknown Form",
+                  scoring: { rawFormData: {}, subscales: {}, totalScore: null },
                   createdAt: consultation.dateAndTime,
                   completedAt: null,
                   completionTimeSeconds: null,
-                  formTemplateId: null,
+                  formTemplateId: form?.formTemplateId ? form.formTemplateId.toString() : null,
                 });
               }
             }

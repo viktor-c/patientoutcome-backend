@@ -1,5 +1,5 @@
-import type { CustomFormData, FormTemplate as FormTemplateModelType } from "@/api/formtemplate/formTemplateModel";
-import type { FormTemplatePlugin, ScoringData, SubscaleScore } from "../types";
+import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
+import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
 import * as visaaJsonForm from "./VISA_A_JsonForm_Export.json";
 
 /**
@@ -108,7 +108,7 @@ function calculateVisaaScore(data: CustomFormData): ScoringData {
       description: subscaleDescription,
       rawScore,
       normalizedScore: Math.round(normalizedScore * 100) / 100,
-      maxPossibleScore: maxScore,
+      maxScore: maxScore,
       answeredQuestions: validAnswers.length,
       totalQuestions: questionKeys.length,
       completionPercentage: Math.round(completionRate * 100),
@@ -159,7 +159,7 @@ function calculateVisaaScore(data: CustomFormData): ScoringData {
     description: "Physical activity and sport participation",
     rawScore: activityQuestions.reduce((sum, value) => sum + value, 0),
     normalizedScore: Math.round((activityQuestions.reduce((sum, value) => sum + value, 0) / 40) * 100 * 100) / 100,
-    maxPossibleScore: 40,
+    maxScore: 40,
     answeredQuestions: activityQuestions.length,
     totalQuestions: 2, // q7 + q8 (conditional)
     completionPercentage: Math.round((activityQuestions.length / 2) * 100),
@@ -188,8 +188,8 @@ function calculateVisaaScore(data: CustomFormData): ScoringData {
     rawScore: allValidAnswers.reduce((sum, value) => sum + value, 0),
     normalizedScore: allValidAnswers.length === totalQuestions
       ? allValidAnswers.reduce((sum, value) => sum + value, 0) // Raw score IS the normalized score for VISA-A
-      : null,
-    maxPossibleScore: 100,
+      : 0, // Incomplete, use 0
+    maxScore: 100,
     answeredQuestions: allValidAnswers.length,
     totalQuestions: totalQuestions,
     completionPercentage: Math.round((allValidAnswers.length / totalQuestions) * 100),
@@ -197,14 +197,14 @@ function calculateVisaaScore(data: CustomFormData): ScoringData {
   } : null;
 
   return {
-    rawData: data,
+    rawFormData: data,
     subscales: {
       symptoms: symptomsScore,
       dailyFunction: dailyFunctionScore,
       sportFunction: sportFunctionScore,
       activity: activityScore,
     },
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -234,7 +234,7 @@ export const visaaPlugin: FormTemplatePlugin = {
   templateId: visaaJsonForm._id as string,
   name: "VISA-A Questionnaire",
   description: "Victorian Institute of Sports Assessment - Achilles (VISA-A): Assessment of Achilles tendon pain and functional limitations",
-  formTemplate: visaaJsonForm as unknown as FormTemplateModelType,
+  formTemplate: visaaJsonForm as unknown as FormTemplateJson,
   calculateScore: calculateVisaaScore,
   generateMockData: generateMockVisaaData,
 };

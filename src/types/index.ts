@@ -30,23 +30,18 @@ export interface FrontendForm {
   id?: string; // For OpenAPI compatibility
   title?: string;
   description?: string;
-  markdownHeader?: string;
-  markdownFooter?: string;
-  formSchema?: object;
-  formSchemaUI?: object;
-  formData?: Record<string, any>;
-  translations?: Record<string, Record<string, unknown>>;
   caseId?: string | null;
   consultationId?: string | null;
   formTemplateId?: string | null;
-  scoring?: import("./scoring").ScoringData;
+  patientFormData?: import("./scoring").PatientFormData | null;
   createdAt?: string;
-  formFillStatus?: "draft" | "incomplete" | "completed";
   updatedAt?: string;
-  completedAt?: string;
   formStartTime?: string;
   formEndTime?: string;
   completionTimeSeconds?: number;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
+  deletionReason?: string | null;
 }
 
 export interface FrontendPatient {
