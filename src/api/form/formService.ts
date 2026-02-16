@@ -335,8 +335,23 @@ export class FormService {
         // This ensures we don't accidentally clear the data
       }
 
-      // Calculate completion time if not provided but start and end times are available
+      // Calculate completion time from patientFormData.beginFill and patientFormData.completedAt
       if (
+        !updateData.completionTimeSeconds &&
+        patientFormData?.beginFill &&
+        patientFormData?.completedAt
+      ) {
+        const startTime = new Date(patientFormData.beginFill);
+        const endTime = new Date(patientFormData.completedAt);
+        const diffMs = endTime.getTime() - startTime.getTime();
+        updateData.completionTimeSeconds = Math.round(diffMs / 1000);
+        logger.debug(
+          { beginFill: patientFormData.beginFill, completedAt: patientFormData.completedAt, completionTimeSeconds: updateData.completionTimeSeconds },
+          "Calculated completion time from patientFormData timestamps"
+        );
+      }
+      // Fallback: Calculate completion time if not provided but start and end times are available
+      else if (
         !updateData.completionTimeSeconds &&
         existingForm.formStartTime &&
         (updateData.formEndTime || existingForm.formEndTime)
