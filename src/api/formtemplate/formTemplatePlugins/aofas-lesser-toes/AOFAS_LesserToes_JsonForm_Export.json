@@ -1,0 +1,126 @@
+{
+  "_id": "67b4e612d0feb4ad99ae2e87",
+  "title": "AOFAS Lesser Toes (MTP-IP) Score",
+  "description": "AOFAS clinical rating system for lesser toes (rays 2-5)",
+  "formSchema": {
+    "type": "object",
+    "properties": {
+      "lesserToes": {
+        "type": "object",
+        "properties": {
+          "q1": {
+            "title": "Wie oft haben Sie Schmerzen bzw. wie stark sind die Schmerzen an den Kleinzehen (Zehen 2-5)?",
+            "description": "Schmerz",
+            "type": "number",
+            "i18n": "q1",
+            "enum": [40, 30, 20, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q1.none",
+              "aofas.lesserToes.q1.mild",
+              "aofas.lesserToes.q1.moderate",
+              "aofas.lesserToes.q1.severe"
+            ]
+          },
+          "q2": {
+            "title": "Einschränkung der Aktivität",
+            "description": "Funktion",
+            "type": "number",
+            "i18n": "q2",
+            "enum": [10, 7, 4, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q2.noLimitation",
+              "aofas.lesserToes.q2.noLimitationDaily",
+              "aofas.lesserToes.q2.limitationDaily",
+              "aofas.lesserToes.q2.severeLimitation"
+            ]
+          },
+          "q3": {
+            "title": "Schuhwerk",
+            "description": "Schuhwerk",
+            "type": "number",
+            "i18n": "q3",
+            "enum": [10, 5, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q3.fashionable",
+              "aofas.lesserToes.q3.comfortable",
+              "aofas.lesserToes.q3.modified"
+            ]
+          },
+          "q4": {
+            "title": "Beweglichkeit der Kleinzehengrundgelenke (MTP-Gelenke)",
+            "description": "MTP-Beweglichkeit",
+            "type": "number",
+            "i18n": "q4",
+            "enum": [14, 7, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q4.noRestriction",
+              "aofas.lesserToes.q4.moderate",
+              "aofas.lesserToes.q4.severe"
+            ]
+          },
+          "q5": {
+            "title": "Beweglichkeit der Kleinzehengelenke (IP-Gelenke)",
+            "description": "IP-Beweglichkeit",
+            "type": "number",
+            "i18n": "q5",
+            "enum": [6, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q5.noRestriction",
+              "aofas.lesserToes.q5.restricted"
+            ]
+          },
+          "q6": {
+            "title": "Stabilität der Kleinzehengrundgelenke (MTP-Gelenke)",
+            "description": "MTP-Stabilität",
+            "type": "number",
+            "i18n": "q6",
+            "enum": [5, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q6.stable",
+              "aofas.lesserToes.q6.unstable"
+            ]
+          },
+          "q7": {
+            "title": "Schwielenbildung an den Kleinzehen",
+            "description": "Schwiele",
+            "type": "number",
+            "i18n": "q7",
+            "enum": [5, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q7.none",
+              "aofas.lesserToes.q7.symptomatic"
+            ]
+          },
+          "q8": {
+            "title": "Achsenstellung der Kleinzehen",
+            "description": "Ausrichtung",
+            "type": "number",
+            "i18n": "q8",
+            "enum": [10, 5, 0],
+            "enumLabels": [
+              "aofas.lesserToes.q8.good",
+              "aofas.lesserToes.q8.fair",
+              "aofas.lesserToes.q8.poor"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "formSchemaUI": {
+    "type": "AOFAS_Layout",
+    "scope": "#"
+  },
+  "formData": {
+    "lesserToes": {
+      "q1": null,
+      "q2": null,
+      "q3": null,
+      "q4": null,
+      "q5": null,
+      "q6": null,
+      "q7": null,
+      "q8": null
+    }
+  }
+}

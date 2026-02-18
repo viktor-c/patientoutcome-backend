@@ -1,17 +1,17 @@
 import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
 import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
-import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
+import * as aofasMidfootJsonForm from "./AOFAS_Midfoot_JsonForm_Export.json";
 
 /**
- * Calculate AOFAS score from form data
+ * Calculate AOFAS Midfoot score from form data
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateAofasScore(data: CustomFormData): ScoringData {
-  // AOFAS Forefoot has a single section with 8 questions
-  const sectionKey = Object.keys(data)[0]; // e.g., 'vorfußfragebogen'
+function calculateAofasMidfootScore(data: CustomFormData): ScoringData {
+  // AOFAS Midfoot has a single section with 10 questions
+  const sectionKey = Object.keys(data)[0]; // e.g., 'midfoot'
   const questions = data[sectionKey] || {};
-  const TOTAL_QUESTIONS = 8; // Fixed number of questions in AOFAS Forefoot
+  const TOTAL_QUESTIONS = 10; // Fixed number of questions in AOFAS Midfoot
 
   const questionKeys = Object.keys(questions);
   const validAnswers = questionKeys
@@ -35,9 +35,9 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
     return {
       rawFormData: data,
       subscales: {
-        "aofas-forefoot": {
-          name: "AOFAS Forefoot",
-          description: "American Orthopedic Foot & Ankle Society Forefoot Score",
+        "aofas-midfoot": {
+          name: "AOFAS Midfoot",
+          description: "American Orthopedic Foot & Ankle Society Midfoot Score",
           rawScore: 0,
           normalizedScore: 0,
           maxScore: 100,
@@ -48,8 +48,8 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
         },
       },
       totalScore: {
-        name: "AOFAS Total",
-        description: "American Orthopedic Foot & Ankle Society Score",
+        name: "AOFAS Midfoot Total",
+        description: "American Orthopedic Foot & Ankle Society Midfoot Score",
         rawScore: 0,
         normalizedScore: 0,
         maxScore: 100,
@@ -63,15 +63,14 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
 
-  // AOFAS max score is 100 (based on clinical standard)
-  // Each question has different max values, but total is always 100
+  // AOFAS Midfoot max score is 100 (based on clinical standard)
   const maxScore = 100;
   const completionRate = validAnswers.length / TOTAL_QUESTIONS;
   const normalizedScore = (rawScore / maxScore) * 100;
 
   const totalScore: SubscaleScore = {
-    name: "AOFAS Total",
-    description: "American Orthopedic Foot & Ankle Society Score",
+    name: "AOFAS Midfoot Total",
+    description: "American Orthopedic Foot & Ankle Society Midfoot Score",
     rawScore,
     normalizedScore: Math.round(normalizedScore * 100) / 100,
     maxScore,
@@ -83,27 +82,27 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   return {
     rawFormData: data,
-    subscales: { "aofas-forefoot": totalScore }, // aofas does not have subscales, but the frontend expects at least one, so put the whole score
+    subscales: { "aofas-midfoot": totalScore },
     totalScore: totalScore,
   };
 }
 
 /**
- * Generate mock AOFAS form data for testing
+ * Generate mock AOFAS Midfoot form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((aofasJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
+  return ((aofasMidfootJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
- * AOFAS Form Template Plugin
- * American Orthopedic Foot & Ankle Society Score
+ * AOFAS Midfoot Form Template Plugin
+ * American Orthopedic Foot & Ankle Society Midfoot Score
  */
-export const aofasPlugin: FormTemplatePlugin = {
-  templateId: "67b4e612d0feb4ad99ae2e84",
-  name: "AOFAS Forefoot Score",
-  description: "American Orthopedic Foot & Ankle Society clinical rating system for forefoot",
-  formTemplate: aofasJsonForm as unknown as FormTemplateJson,
-  calculateScore: calculateAofasScore,
+export const aofasMidfootPlugin: FormTemplatePlugin = {
+  templateId: "67b4e612d0feb4ad99ae2e86",
+  name: "AOFAS Midfoot Score",
+  description: "American Orthopedic Foot & Ankle Society clinical rating system for midfoot",
+  formTemplate: aofasMidfootJsonForm as unknown as FormTemplateJson,
+  calculateScore: calculateAofasMidfootScore,
   generateMockData,
 };

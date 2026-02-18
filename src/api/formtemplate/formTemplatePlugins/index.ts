@@ -7,6 +7,9 @@
 
 import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
 import { aofasPlugin } from "./aofas";
+import { aofasHindfootPlugin } from "./aofas-hindfoot";
+import { aofasLesserToesPlugin } from "./aofas-lesser-toes";
+import { aofasMidfootPlugin } from "./aofas-midfoot";
 import { efasPlugin } from "./efas";
 import { moxfqPlugin } from "./moxfq";
 import type { FormTemplatePlugin, ScoringData } from "./types";
@@ -16,7 +19,16 @@ import { visaaPlugin } from "./visa-a";
 /**
  * Export individual plugins
  */
-export { moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin, visaaPlugin };
+export { 
+  moxfqPlugin, 
+  aofasPlugin, 
+  aofasHindfootPlugin, 
+  aofasMidfootPlugin, 
+  aofasLesserToesPlugin, 
+  efasPlugin, 
+  vasPlugin, 
+  visaaPlugin 
+};
 
 /**
  * Export types
@@ -26,7 +38,16 @@ export type { FormTemplatePlugin, ScoringData, SubscaleScore, FormTemplateJson }
 /**
  * Array of all registered form template plugins
  */
-export const allFormPlugins: FormTemplatePlugin[] = [moxfqPlugin, aofasPlugin, efasPlugin, vasPlugin, visaaPlugin];
+export const allFormPlugins: FormTemplatePlugin[] = [
+  moxfqPlugin, 
+  aofasPlugin, 
+  aofasHindfootPlugin, 
+  aofasMidfootPlugin, 
+  aofasLesserToesPlugin, 
+  efasPlugin, 
+  vasPlugin, 
+  visaaPlugin
+];
 
 /**
  * Plugin registry map for quick lookup by template ID

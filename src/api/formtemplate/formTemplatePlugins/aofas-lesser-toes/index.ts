@@ -1,17 +1,17 @@
 import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
 import type { FormTemplatePlugin, FormTemplateJson, ScoringData, SubscaleScore } from "../types";
-import * as aofasJsonForm from "./AOFAS_JsonForm_Export.json";
+import * as aofasLesserToesJsonForm from "./AOFAS_LesserToes_JsonForm_Export.json";
 
 /**
- * Calculate AOFAS score from form data
+ * Calculate AOFAS Lesser Toes score from form data
  * @param {Object} data - Form data with question responses (nested by section)
  * @returns {Object} ScoringData structure
  */
-function calculateAofasScore(data: CustomFormData): ScoringData {
-  // AOFAS Forefoot has a single section with 8 questions
-  const sectionKey = Object.keys(data)[0]; // e.g., 'vorfußfragebogen'
+function calculateAofasLesserToesScore(data: CustomFormData): ScoringData {
+  // AOFAS Lesser Toes has a single section with 8 questions
+  const sectionKey = Object.keys(data)[0]; // e.g., 'lesserToes'
   const questions = data[sectionKey] || {};
-  const TOTAL_QUESTIONS = 8; // Fixed number of questions in AOFAS Forefoot
+  const TOTAL_QUESTIONS = 8; // Fixed number of questions in AOFAS Lesser Toes
 
   const questionKeys = Object.keys(questions);
   const validAnswers = questionKeys
@@ -35,9 +35,9 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
     return {
       rawFormData: data,
       subscales: {
-        "aofas-forefoot": {
-          name: "AOFAS Forefoot",
-          description: "American Orthopedic Foot & Ankle Society Forefoot Score",
+        "aofas-lesser-toes": {
+          name: "AOFAS Lesser Toes",
+          description: "American Orthopedic Foot & Ankle Society Lesser Toes (MTP-IP) Score",
           rawScore: 0,
           normalizedScore: 0,
           maxScore: 100,
@@ -48,8 +48,8 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
         },
       },
       totalScore: {
-        name: "AOFAS Total",
-        description: "American Orthopedic Foot & Ankle Society Score",
+        name: "AOFAS Lesser Toes Total",
+        description: "American Orthopedic Foot & Ankle Society Lesser Toes (MTP-IP) Score",
         rawScore: 0,
         normalizedScore: 0,
         maxScore: 100,
@@ -63,15 +63,14 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   const rawScore: number = validAnswers.reduce((sum, value) => sum + value, 0);
 
-  // AOFAS max score is 100 (based on clinical standard)
-  // Each question has different max values, but total is always 100
+  // AOFAS Lesser Toes max score is 100 (based on clinical standard)
   const maxScore = 100;
   const completionRate = validAnswers.length / TOTAL_QUESTIONS;
   const normalizedScore = (rawScore / maxScore) * 100;
 
   const totalScore: SubscaleScore = {
-    name: "AOFAS Total",
-    description: "American Orthopedic Foot & Ankle Society Score",
+    name: "AOFAS Lesser Toes Total",
+    description: "American Orthopedic Foot & Ankle Society Lesser Toes (MTP-IP) Score",
     rawScore,
     normalizedScore: Math.round(normalizedScore * 100) / 100,
     maxScore,
@@ -83,27 +82,27 @@ function calculateAofasScore(data: CustomFormData): ScoringData {
 
   return {
     rawFormData: data,
-    subscales: { "aofas-forefoot": totalScore }, // aofas does not have subscales, but the frontend expects at least one, so put the whole score
+    subscales: { "aofas-lesser-toes": totalScore },
     totalScore: totalScore,
   };
 }
 
 /**
- * Generate mock AOFAS form data for testing
+ * Generate mock AOFAS Lesser Toes form data for testing
  */
 function generateMockData(): CustomFormData {
-  return ((aofasJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
+  return ((aofasLesserToesJsonForm as unknown as FormTemplateJson).formData as CustomFormData) || {};
 }
 
 /**
- * AOFAS Form Template Plugin
- * American Orthopedic Foot & Ankle Society Score
+ * AOFAS Lesser Toes Form Template Plugin
+ * American Orthopedic Foot & Ankle Society Lesser Toes (MTP-IP) Score
  */
-export const aofasPlugin: FormTemplatePlugin = {
-  templateId: "67b4e612d0feb4ad99ae2e84",
-  name: "AOFAS Forefoot Score",
-  description: "American Orthopedic Foot & Ankle Society clinical rating system for forefoot",
-  formTemplate: aofasJsonForm as unknown as FormTemplateJson,
-  calculateScore: calculateAofasScore,
+export const aofasLesserToesPlugin: FormTemplatePlugin = {
+  templateId: "67b4e612d0feb4ad99ae2e87",
+  name: "AOFAS Lesser Toes (MTP-IP) Score",
+  description: "American Orthopedic Foot & Ankle Society clinical rating system for lesser toes (rays 2-5)",
+  formTemplate: aofasLesserToesJsonForm as unknown as FormTemplateJson,
+  calculateScore: calculateAofasLesserToesScore,
   generateMockData,
 };
