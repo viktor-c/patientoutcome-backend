@@ -51,6 +51,8 @@ export class FormTemplateRepository {
   /**
    * Mock form template metadata for testing and development
    * Backend only stores metadata - form structure and scoring logic live in frontend plugins
+   * 
+   * NOTE: Frontend plugins MUST use matching IDs in their metadata.id field
    */
   private _mockFormTemplateData: FormTemplate[] = [
     {
@@ -60,8 +62,8 @@ export class FormTemplateRepository {
     },
     {
       _id: "67b4e612d0feb4ad99ae2e84",
-      title: "AOFAS",
-      description: "American Orthopaedic Foot & Ankle Society Score",
+      title: "AOFAS Forefoot",
+      description: "American Orthopaedic Foot & Ankle Society - Hallux/Forefoot Score",
     },
     {
       _id: "67b4e612d0feb4ad99ae2e85",
@@ -77,6 +79,21 @@ export class FormTemplateRepository {
       _id: "67b4e612d0feb4ad99ae2e87",
       title: "VISA-A",
       description: "Victorian Institute of Sport Assessment - Achilles",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e88",
+      title: "AOFAS Hindfoot",
+      description: "American Orthopaedic Foot & Ankle Society - Ankle-Hindfoot Score",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e89",
+      title: "AOFAS Midfoot",
+      description: "American Orthopaedic Foot & Ankle Society - Midfoot Score",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e8a",
+      title: "AOFAS Lesser Toes",
+      description: "American Orthopaedic Foot & Ankle Society - Lesser Toes (MTP-IP) Score",
     },
   ];
 
