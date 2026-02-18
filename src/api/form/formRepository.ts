@@ -1,7 +1,5 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormTemplateModel, type CustomFormData, type SubscaleScore, type FormQuestions } from "@/api/formtemplate/formTemplateModel";
-import { calculateFormScore, allFormPlugins } from "@/api/formtemplate/formTemplatePlugins";
-import { type ScoringData } from "@/api/formtemplate/formTemplatePlugins/types";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
@@ -180,34 +178,56 @@ export class FormRepository {
   populateMockForms(): void {
     this.mockForms = [];
     try {
-      // Helper function to convert old formData to new PatientFormData structure
-      const convertToPatientFormData = (formData: CustomFormData, scoring: any) => {
+      /**
+       * Mock form data samples for testing and development
+       * These are simple sample data structures - NO scoring logic on backend
+       * Scoring is calculated by frontend plugins only
+       */
+      const mockFormDataSamples: Record<string, CustomFormData> = {
+        // EFAS - Evaluation of Functional Ability Scale
+        "67b4e612d0feb4ad99ae2e83": {
+          section1: { q1: 3, q2: 2, q3: 4, q4: 3, q5: 2 },
+          section2: { q6: 3, q7: 4, q8: 2, q9: 3, q10: 4 },
+        },
+        // AOFAS - American Orthopaedic Foot & Ankle Society Score
+        "67b4e612d0feb4ad99ae2e84": {
+          section1: { q1: 40, q2: 10, q3: 10, q4: 8, q5: 3, q6: 10, q7: 5, q8: 10 },
+        },
+        // MOXFQ - Manchester-Oxford Foot Questionnaire
+        "67b4e612d0feb4ad99ae2e85": {
+          moxfq: {
+            q1: 2, q2: 3, q3: 1, q4: 2, q5: 3,
+            q6: 2, q7: 3, q8: 1, q9: 2, q10: 3,
+            q11: 2, q12: 1, q13: 3, q14: 2, q15: 1, q16: 2,
+          },
+        },
+        // VAS - Visual Analog Scale
+        "67b4e612d0feb4ad99ae2e86": {
+          pain: 7,
+        },
+      };
+
+      // Helper to create PatientFormData without scores (frontend calculates scores)
+      const createMockPatientFormData = (formData: CustomFormData) => {
         return {
           rawFormData: formData,
-          subscales: scoring?.subscales || undefined,
-          totalScore: scoring?.totalScore || undefined,
+          subscales: undefined,
+          totalScore: undefined,
           fillStatus: "draft" as const,
           completedAt: null,
           beginFill: new Date(),
         };
       };
 
-      // Helper function to get plugin form data
-      const getPluginFormData = (templateId: string): CustomFormData => {
-        const plugin = allFormPlugins.find(p => p.templateId === templateId);
-        return (plugin?.formTemplate as any)?.formData || {};
-      };
-
       // EFAS Form 1
-      const efasFormData1 = getPluginFormData("67b4e612d0feb4ad99ae2e83");
-      const efasScoring1 = efasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData1) : undefined;
+      const efasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
-        patientFormData: convertToPatientFormData(efasFormData1, efasScoring1),
+        patientFormData: createMockPatientFormData(efasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
@@ -215,14 +235,13 @@ export class FormRepository {
       });
 
       // VAS Form 1
-      const vasFormData1 = getPluginFormData("67b4e612d0feb4ad99ae2e86");
-      const vasScoring1 = vasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData1) : undefined;
+      const vasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d53",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        patientFormData: convertToPatientFormData(vasFormData1, vasScoring1),
+        patientFormData: createMockPatientFormData(vasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
@@ -230,15 +249,14 @@ export class FormRepository {
       });
 
       // AOFAS Form 1
-      const aofasFormData1 = getPluginFormData("67b4e612d0feb4ad99ae2e84");
-      const aofasScoring1 = aofasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData1) : undefined;
+      const aofasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
-        patientFormData: convertToPatientFormData(aofasFormData1, aofasScoring1),
+        patientFormData: createMockPatientFormData(aofasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
@@ -248,14 +266,13 @@ export class FormRepository {
       // forms for the second consultation
 
       // VAS Form 2
-      const vasFormData2 = getPluginFormData("67b4e612d0feb4ad99ae2e86");
-      const vasScoring2 = vasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData2) : undefined;
+      const vasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d54",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        patientFormData: convertToPatientFormData(vasFormData2, vasScoring2),
+        patientFormData: createMockPatientFormData(vasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
@@ -263,15 +280,14 @@ export class FormRepository {
       });
 
       // EFAS Form 2
-      const efasFormData2 = getPluginFormData("67b4e612d0feb4ad99ae2e83");
-      const efasScoring2 = efasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData2) : undefined;
+      const efasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d55",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
-        patientFormData: convertToPatientFormData(efasFormData2, efasScoring2),
+        patientFormData: createMockPatientFormData(efasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
@@ -279,30 +295,28 @@ export class FormRepository {
       });
 
       // AOFAS Form 2
-      const aofasFormData2 = getPluginFormData("67b4e612d0feb4ad99ae2e84");
-      const aofasScoring2 = aofasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData2) : undefined;
+      const aofasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d56",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
-        patientFormData: convertToPatientFormData(aofasFormData2, aofasScoring2),
+        patientFormData: createMockPatientFormData(aofasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
       });
 
-      const moxfqFormData1 = getPluginFormData("67b4e612d0feb4ad99ae2e85");
-      const moxfqScoring1 = moxfqFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e85", moxfqFormData1) : undefined;
       // MOXFQ Form 1
+      const moxfqFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e85"];
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d57",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        patientFormData: convertToPatientFormData(moxfqFormData1, moxfqScoring1),
+        patientFormData: createMockPatientFormData(moxfqFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,
@@ -315,7 +329,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        patientFormData: convertToPatientFormData(moxfqFormData1, moxfqScoring1),
+        patientFormData: createMockPatientFormData(moxfqFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,

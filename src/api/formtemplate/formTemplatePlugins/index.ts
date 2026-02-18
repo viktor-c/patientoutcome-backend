@@ -1,88 +1,61 @@
 /**
- * Form Template Plugins Registry
+ * Form Template Plugins Registry - DEPRECATED
  *
- * This file exports all available form template plugins and provides
- * a registry for accessing them by template ID.
+ * Backend plugins have been removed to eliminate code duplication.
+ * Form templates, scoring logic, and validation now live exclusively in the frontend.
+ * 
+ * Backend only stores:
+ * - Form template metadata (in database)
+ * - Patient form submissions (raw data + scores calculated by frontend)
+ * 
+ * This file is kept for backward compatibility with existing imports.
  */
 
-import type { CustomFormData } from "@/api/formtemplate/formTemplateModel";
-import { aofasPlugin } from "./aofas";
-import { aofasHindfootPlugin } from "./aofas-hindfoot";
-import { aofasLesserToesPlugin } from "./aofas-lesser-toes";
-import { aofasMidfootPlugin } from "./aofas-midfoot";
-import { efasPlugin } from "./efas";
-import { moxfqPlugin } from "./moxfq";
-import type { FormTemplatePlugin, ScoringData } from "./types";
-import { vasPlugin } from "./vas";
-import { visaaPlugin } from "./visa-a";
-
 /**
- * Export individual plugins
- */
-export { 
-  moxfqPlugin, 
-  aofasPlugin, 
-  aofasHindfootPlugin, 
-  aofasMidfootPlugin, 
-  aofasLesserToesPlugin, 
-  efasPlugin, 
-  vasPlugin, 
-  visaaPlugin 
-};
-
-/**
- * Export types
+ * Export types for backward compatibility
  */
 export type { FormTemplatePlugin, ScoringData, SubscaleScore, FormTemplateJson } from "./types";
 
 /**
- * Array of all registered form template plugins
+ * @deprecated Backend plugins have been removed. Forms are managed entirely by frontend plugins.
  */
-export const allFormPlugins: FormTemplatePlugin[] = [
-  moxfqPlugin, 
-  aofasPlugin, 
-  aofasHindfootPlugin, 
-  aofasMidfootPlugin, 
-  aofasLesserToesPlugin, 
-  efasPlugin, 
-  vasPlugin, 
-  visaaPlugin
-];
+export const allFormPlugins: never[] = [];
 
 /**
- * Plugin registry map for quick lookup by template ID
+ * @deprecated Backend plugins have been removed. Forms are managed entirely by frontend plugins.
  */
-export const pluginRegistry: Map<string, FormTemplatePlugin> = new Map(
-  allFormPlugins.map((plugin) => [plugin.templateId, plugin]),
-);
+export const pluginRegistry: Map<string, never> = new Map();
 
 /**
- * Get a form template plugin by its template ID
- * @param templateId - The unique template ID
- * @returns The matching plugin or undefined if not found
+ * @deprecated Backend plugins have been removed. Use frontend plugins for form operations.
+ * @throws {Error} Always throws - backend plugins no longer exist
  */
-export function getPluginByTemplateId(templateId: string): FormTemplatePlugin | undefined {
-  return pluginRegistry.get(templateId);
+export function getPluginByTemplateId(templateId: string): never {
+  throw new Error(
+    `Backend plugins have been removed. Template ID: ${templateId}. ` +
+    "Form structure and scoring logic now live exclusively in frontend plugins."
+  );
 }
 
 /**
- * Get all registered form template plugins
- * @returns Array of all plugins
+ * @deprecated Backend plugins have been removed. Use frontend plugins for form operations.
+ * @throws {Error} Always throws - backend plugins no longer exist
  */
-export function getAllPlugins(): FormTemplatePlugin[] {
-  return allFormPlugins;
+export function getAllPlugins(): never[] {
+  throw new Error(
+    "Backend plugins have been removed. " +
+    "Form structure and scoring logic now live exclusively in frontend plugins."
+  );
 }
 
 /**
- * Calculate score for a form using the appropriate plugin
- * @param templateId - The template ID to identify which plugin to use
- * @param formData - The form data to calculate score for
- * @returns ScoringData or null if plugin not found
+ * @deprecated Backend plugins have been removed. Use frontend plugins for form operations.
+ * @throws {Error} Always throws - backend scoring no longer exists
  */
-export function calculateFormScore(templateId: string, formData: CustomFormData): ScoringData {
-  const plugin = getPluginByTemplateId(templateId);
-  if (!plugin) {
-    throw new Error(`No plugin found for template ID: ${templateId}`);
-  }
-  return plugin.calculateScore(formData);
+export function calculateFormScore(templateId: string, formData: any): never {
+  throw new Error(
+    `Backend scoring has been removed. Template ID: ${templateId}. ` +
+    "All scoring is calculated by frontend plugins before submission."
+  );
 }
+

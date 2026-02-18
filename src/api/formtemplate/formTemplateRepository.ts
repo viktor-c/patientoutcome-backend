@@ -1,7 +1,6 @@
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
-import { allFormPlugins } from "./formTemplatePlugins";
 
 export class FormTemplateRepository {
   async getAllTemplates(): Promise<FormTemplate[]> {
@@ -49,15 +48,37 @@ export class FormTemplateRepository {
     }
   }
 
-  // Include form templates from plugins - extract only metadata
-  private _mockFormTemplateData: FormTemplate[] = allFormPlugins.map((plugin) => {
-    const template = plugin.formTemplate as any;
-    return {
-      _id: template._id,
-      title: template.title,
-      description: template.description,
-    } as FormTemplate;
-  });
+  /**
+   * Mock form template metadata for testing and development
+   * Backend only stores metadata - form structure and scoring logic live in frontend plugins
+   */
+  private _mockFormTemplateData: FormTemplate[] = [
+    {
+      _id: "67b4e612d0feb4ad99ae2e83",
+      title: "EFAS",
+      description: "Evaluation of Functional Ability Scale",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e84",
+      title: "AOFAS",
+      description: "American Orthopaedic Foot & Ankle Society Score",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e85",
+      title: "MOXFQ",
+      description: "Manchester-Oxford Foot Questionnaire",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e86",
+      title: "VAS",
+      description: "Visual Analog Scale",
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e87",
+      title: "VISA-A",
+      description: "Victorian Institute of Sport Assessment - Achilles",
+    },
+  ];
 
   private getMockFormTemplateData(allowInProduction: boolean = false): FormTemplate[] {
     if (env.NODE_ENV === "production" && !allowInProduction) {
