@@ -1,4 +1,4 @@
-import { FormTemplate, PatientFormDataSchema } from "@/api/formtemplate/formTemplateModel";
+import { FormTemplate, FormAccessLevel, PatientFormDataSchema } from "@/api/formtemplate/formTemplateModel";
 import { CreateNoteSchema, NoteSchema, dateSchema } from "@/api/generalSchemas";
 import { zId, zodSchema } from "@zodyac/zod-mongoose";
 import mongoose from "mongoose";
@@ -14,6 +14,8 @@ export const Form = FormTemplate.extend({
   formTemplateId: zId("FormTemplate"),
   // Patient form data - can be null if not yet filled
   patientFormData: PatientFormDataSchema.nullable(),
+  // Versioning
+  currentVersion: z.number().int().positive().default(1), // Current version number
   // Metadata
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -74,25 +76,81 @@ const PatientFormDataNestedSchema = new mongoose.Schema(
 // Create main Form schema
 const FormSchema = new mongoose.Schema(
   {
-    caseId: FormSchemaGenerated.obj.caseId,
-    consultationId: FormSchemaGenerated.obj.consultationId,
-    formTemplateId: FormSchemaGenerated.obj.formTemplateId,
-    title: FormSchemaGenerated.obj.title,
-    description: FormSchemaGenerated.obj.description,
+    caseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "PatientCase",
+    },
+    consultationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "Consultation",
+    },
+    formTemplateId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "FormTemplate",
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    accessLevel: {
+      type: String,
+      enum: Object.values(FormAccessLevel),
+      default: FormAccessLevel.PATIENT,
+    },
     // patientFormData as nested document
     patientFormData: {
       type: PatientFormDataNestedSchema,
       required: false,
       default: null,
     },
-    createdAt: FormSchemaGenerated.obj.createdAt,
-    updatedAt: FormSchemaGenerated.obj.updatedAt,
-    formStartTime: FormSchemaGenerated.obj.formStartTime,
-    formEndTime: FormSchemaGenerated.obj.formEndTime,
-    completionTimeSeconds: FormSchemaGenerated.obj.completionTimeSeconds,
-    deletedAt: FormSchemaGenerated.obj.deletedAt,
-    deletedBy: FormSchemaGenerated.obj.deletedBy,
-    deletionReason: FormSchemaGenerated.obj.deletionReason,
+    currentVersion: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
+    createdAt: {
+      type: Date,
+      required: false,
+    },
+    updatedAt: {
+      type: Date,
+      required: false,
+    },
+    formStartTime: {
+      type: Date,
+      required: false,
+    },
+    formEndTime: {
+      type: Date,
+      required: false,
+    },
+    completionTimeSeconds: {
+      type: Number,
+      required: false,
+    },
+    deletedAt: {
+      type: Date,
+      required: false,
+      default: null,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+      ref: "User",
+      default: null,
+    },
+    deletionReason: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
   {
     collection: "forms",

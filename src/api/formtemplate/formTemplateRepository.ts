@@ -2,7 +2,7 @@ import { env } from "@/common/utils/envConfig";
 import { logger } from "@/common/utils/logger";
 import mongoose from "mongoose";
 import { DepartmentFormTemplateModel, type DepartmentFormTemplate } from "./departmentFormTemplateModel";
-import { type FormTemplate, FormTemplateModel } from "./formTemplateModel";
+import { FormAccessLevel, type FormTemplate, FormTemplateModel } from "./formTemplateModel";
 
 export interface GetTemplatesOptions {
   ids?: string | string[];
@@ -256,47 +256,60 @@ export class FormTemplateRepository {
    * Backend only stores metadata - form structure and scoring logic live in frontend plugins
    * 
    * NOTE: Frontend plugins MUST use matching IDs in their metadata.id field
+   * 
+   * Access Levels:
+   * - patient: Patient-Reported Outcome Measures (PROMs) - filled by patients
+   * - authenticated: Clinical outcomes - filled by clinicians (doctors/nurses/students)
+   * - inactive: Form exists but cannot be filled
    */
   private _mockFormTemplateData: FormTemplate[] = [
     {
       _id: "67b4e612d0feb4ad99ae2e83",
       title: "EFAS",
       description: "Evaluation of Functional Ability Scale",
+      accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e84",
       title: "AOFAS Forefoot",
       description: "American Orthopaedic Foot & Ankle Society - Hallux/Forefoot Score",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e85",
       title: "MOXFQ",
       description: "Manchester-Oxford Foot Questionnaire",
+      accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e86",
       title: "VAS",
       description: "Visual Analog Scale",
+      accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e87",
       title: "VISA-A",
       description: "Victorian Institute of Sport Assessment - Achilles",
+      accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e88",
       title: "AOFAS Hindfoot",
       description: "American Orthopaedic Foot & Ankle Society - Ankle-Hindfoot Score",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e89",
       title: "AOFAS Midfoot",
       description: "American Orthopaedic Foot & Ankle Society - Midfoot Score",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
     },
     {
       _id: "67b4e612d0feb4ad99ae2e8a",
       title: "AOFAS Lesser Toes",
       description: "American Orthopaedic Foot & Ankle Society - Lesser Toes (MTP-IP) Score",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
     },
   ];
 

@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { CustomFormDataSchema } from "../formtemplate/formTemplateModel";
 import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
+import { formVersionService } from "./formVersionService";
 
 export interface UserContext {
   username?: string;
@@ -369,6 +370,26 @@ export class FormService {
       // console.log("updateData:", JSON.stringify(updateData, null, 2));
       // console.log("updateData.patientFormData:", JSON.stringify(updateData.patientFormData, null, 2));
       // console.log("=========================================");
+
+      // === FORM VERSIONING ===
+      // Create version backup before updating if there's actual data change
+      if (updateData.patientFormData && userContext?.userId) {
+        const changeNotes = updatedForm.code
+          ? "Form updated via patient access code"
+          : "Form updated";
+
+        // Create version backup
+        await formVersionService.createVersionBackup(
+          existingForm,
+          updateData,
+          userContext.userId,
+          changeNotes
+        );
+
+        // Increment version number
+        updateData.currentVersion = (existingForm.currentVersion || 1) + 1;
+      }
+      // =======================
 
       const response = await formRepository.updateForm(formId, updateData);
 

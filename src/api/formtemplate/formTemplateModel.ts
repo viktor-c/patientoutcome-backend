@@ -101,6 +101,13 @@ export interface PatientFormData {
   beginFill: Date | null;
 }
 
+// Access level enum - determines who can fill out the form
+export enum FormAccessLevel {
+  PATIENT = "patient", // Patient-reported outcome measure (PROM)
+  AUTHENTICATED = "authenticated", // Clinician-reported (doctor/nurse/student)
+  INACTIVE = "inactive", // Form exists but cannot be filled out
+}
+
 // Define the FormTemplate schema - simplified to only metadata
 // Supports frontend-provided ObjectIds for consistent cross-system form identification
 export const FormTemplate = z
@@ -108,6 +115,7 @@ export const FormTemplate = z
     _id: z.union([zId(), z.string()]).optional(), // Allow frontend to provide ObjectId as string
     title: z.string().min(1, "Title is required"),
     description: z.string(),
+    accessLevel: z.nativeEnum(FormAccessLevel).default(FormAccessLevel.PATIENT), // Who can fill out this form
   })
   .strict();
 
@@ -139,6 +147,7 @@ export const FormTemplateApiSchema = z.object({
   _id: z.string().optional(),
   title: z.string(),
   description: z.string(),
+  accessLevel: z.nativeEnum(FormAccessLevel),
 });
 
 // ****************************************************
@@ -173,5 +182,6 @@ export const CreateFormTemplateSchema = z.object({
       .optional(),
     title: z.string().min(1, "Title is required"),
     description: z.string(),
+    accessLevel: z.nativeEnum(FormAccessLevel).optional(),
   }).strict(),
 });
