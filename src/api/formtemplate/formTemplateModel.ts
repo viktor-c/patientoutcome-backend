@@ -115,15 +115,36 @@ export const FormTemplate = z
     _id: z.union([zId(), z.string()]).optional(), // Allow frontend to provide ObjectId as string
     title: z.string().min(1, "Title is required"),
     description: z.string(),
-    accessLevel: z.nativeEnum(FormAccessLevel).default(FormAccessLevel.PATIENT), // Who can fill out this form
+    accessLevel: z.nativeEnum(FormAccessLevel), // Who can fill out this form
   })
   .strict();
 
 // infer typescript type from zod schema
 export type FormTemplate = z.infer<typeof FormTemplate>;
 
-// Create Mongoose schema from the FormTemplate schema
-const FormTemplateSchema = zodSchema(FormTemplate.omit({ _id: true }));
+// Create Mongoose schema manually (zodSchema doesn't support nativeEnum)
+const FormTemplateSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    accessLevel: {
+      type: String,
+      enum: Object.values(FormAccessLevel),
+      default: FormAccessLevel.PATIENT,
+      required: true,
+    },
+  },
+  {
+    timestamps: false,
+    collection: "formtemplates",
+  },
+);
 
 export const FormTemplateModel = mongoose.model("FormTemplate", FormTemplateSchema, "formtemplates");
 
@@ -147,7 +168,7 @@ export const FormTemplateApiSchema = z.object({
   _id: z.string().optional(),
   title: z.string(),
   description: z.string(),
-  accessLevel: z.nativeEnum(FormAccessLevel),
+  accessLevel: z.nativeEnum(FormAccessLevel).optional(),
 });
 
 // ****************************************************

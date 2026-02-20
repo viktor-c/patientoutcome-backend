@@ -161,7 +161,11 @@ export class FormService {
    */
   async updateForm(
     formId: string,
-    updatedForm: Partial<Form> & { code?: string },
+    updatedForm: Partial<Form> & { 
+      code?: string; 
+      isRestoration?: boolean;
+      restoredFromVersion?: number;
+    },
     userContext?: UserContext,
   ): Promise<ServiceResponse<Form | null>> {
     try {
@@ -383,7 +387,9 @@ export class FormService {
           existingForm,
           updateData,
           userContext.userId,
-          changeNotes
+          changeNotes,
+          updatedForm.isRestoration || false,
+          updatedForm.restoredFromVersion
         );
 
         // Increment version number

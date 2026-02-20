@@ -32,8 +32,8 @@ export const Form = FormTemplate.extend({
 // Infer TypeScript type from Zod schema
 export type Form = z.infer<typeof Form>;
 
-// Create Mongoose schema from the Form schema, using zodSchema
-const FormSchemaGenerated = zodSchema(Form.omit({ _id: true }));
+// Note: We don't use zodSchema() here because it doesn't support nativeEnum from FormAccessLevel
+// Instead, we manually define the Mongoose schema below
 
 // Define nested patientFormData schema with proper types for all fields
 const PatientFormDataNestedSchema = new mongoose.Schema(

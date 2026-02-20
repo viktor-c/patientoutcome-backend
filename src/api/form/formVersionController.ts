@@ -214,35 +214,16 @@ class FormVersionController {
       const finalNotes = changeNotes || restorationNote;
 
       // Update the form with the old version data
-      // This will trigger the normal versioning flow, creating a new version
+      // This will trigger the normal versioning flow, creating a new version marked as restoration
       const updateResponse = await formService.updateForm(
         formId,
         {
           patientFormData: versionData.rawData,
+          isRestoration: true,
+          restoredFromVersion: version,
         },
         userContext
       );
-
-      // If update succeeded, create a restoration marker in versioning
-      if (updateResponse.success && updateResponse.responseObject) {
-        // The versioning was already handled in updateForm
-        // But we need to update the version record to mark it as a restoration
-        const currentForm = updateResponse.responseObject;
-        const currentVersion = currentForm.currentVersion;
-
-        // Update the version record to flag it as a restoration
-        await formVersionService.createVersionBackup(
-          {
-            ...currentForm,
-            currentVersion: currentVersion! - 1, // Use the version before increment
-          } as any,
-          { patientFormData: versionData.rawData },
-          userContext.userId,
-          finalNotes,
-          true, // Mark as restoration
-          version
-        );
-      }
 
       return handleServiceResponse(updateResponse, res);
     } catch (error) {
