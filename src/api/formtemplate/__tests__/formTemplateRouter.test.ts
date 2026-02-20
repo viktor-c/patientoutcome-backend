@@ -1,12 +1,18 @@
 import { app } from "@/server";
-import request from "supertest";
+import { loginUserAgent, logoutUser } from "@/utils/unitTesting";
+import request, { type SuperAgentTest } from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { FormTemplateModel } from "../formTemplateModel";
 
 describe("FormTemplate API", () => {
+  let adminAgent: SuperAgentTest;
+
   beforeAll(async () => {
     try {
-      const res = await request(app).get("/seed/formTemplate");
+      // Login as admin to get authenticated agent
+      adminAgent = await loginUserAgent("admin");
+      
+      const res = await adminAgent.get("/seed/formTemplate");
       if (res.status !== 200) {
         throw new Error("Failed to seed form templates");
       }
@@ -21,20 +27,20 @@ describe("FormTemplate API", () => {
   });
 
   it("should get all form templates", async () => {
-    const response = await request(app).get("/formtemplate");
+    const response = await adminAgent.get("/formtemplate");
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.responseObject)).toBe(true);
     // If no templates, try seeding again (race condition with other tests)
     if (response.body.responseObject.length === 0) {
-      await request(app).get("/seed/formTemplate");
-      const retryResponse = await request(app).get("/formtemplate");
+      await adminAgent.get("/seed/formTemplate");
+      const retryResponse = await adminAgent.get("/formtemplate");
       expect(retryResponse.status).toBe(200);
       expect(Array.isArray(retryResponse.body.responseObject)).toBe(true);
     }
   });
 
   it("should have unique template ids for all form templates", async () => {
-    const response = await request(app).get("/formtemplate");
+    const response = await adminAgent.get("/formtemplate");
     expect(response.status).toBe(200);
     const templates = response.body.responseObject as any[];
     const ids = templates.map((t) => t._id);
@@ -44,22 +50,22 @@ describe("FormTemplate API", () => {
 
   it("should get a form template by ID", async () => {
     // Retrieve templates from the API and use a real _id returned by the database
-    const listResp = await request(app).get("/formtemplate");
+    const listResp = await adminAgent.get("/formtemplate");
     expect(listResp.status).toBe(200);
     const list = listResp.body.responseObject;
     expect(Array.isArray(list)).toBe(true);
     const id = list[0]._id;
-    const response = await request(app).get(`/formtemplate/id/${id}`);
+    const response = await adminAgent.get(`/formtemplate/id/${id}`);
     expect(response.status).toBe(200);
     expect(response.body.responseObject._id).toBe(id);
   });
 
   it("should get a form template short list", async () => {
-    const response = await request(app).get("/formtemplate/shortlist");
+    const response = await adminAgent.get("/formtemplate/shortlist");
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.responseObject)).toBe(true);
     // Ensure returned shortlist contains all template ids returned by the full list endpoint
-    const fullListResp = await request(app).get("/formtemplate");
+    const fullListResp = await adminAgent.get("/formtemplate");
     expect(fullListResp.status).toBe(200);
     const mockIds = fullListResp.body.responseObject.map((t: any) => t._id);
     const shortlistIds = response.body.responseObject.map((t: any) => t._id);
@@ -73,7 +79,7 @@ describe("FormTemplate API", () => {
 
   it("should update a form template", async () => {
     // Fetch an existing template via the API to get a valid _id
-    const listResp = await request(app).get("/formtemplate");
+    const listResp = await adminAgent.get("/formtemplate");
     expect(listResp.status).toBe(200);
     const templates = listResp.body.responseObject;
     const formTemplateId = templates[0]._id;
@@ -81,7 +87,7 @@ describe("FormTemplate API", () => {
     const newFormTemplate = JSON.parse(JSON.stringify(sourceTemplate));
     newFormTemplate.title = "Manchester-Oxford Foot Questionnaire";
 
-    const response = await request(app).put(`/formtemplate/${formTemplateId}`).send({ title: newFormTemplate.title });
+    const response = await adminAgent.put(`/formtemplate/${formTemplateId}`).send({ title: newFormTemplate.title });
     expect(response.status).toBe(200);
     expect(response.body.responseObject.title).toBe(newFormTemplate.title);
   });
@@ -90,13 +96,13 @@ describe("FormTemplate API", () => {
     const formTemplate = {
       title: "Test Form 4",
       description: "A test form to be deleted",
-      formData: { foo: "bar" },
+      // Note: formData no longer stored in database - handled by frontend plugins
     };
 
-    const response1 = await request(app).post("/formtemplate").send(formTemplate);
+    const response1 = await adminAgent.post("/formtemplate").send(formTemplate);
     expect(response1.status).toBe(201);
 
-    const response = await request(app).delete(`/formtemplate/${response1.body.responseObject._id}`);
+    const response = await adminAgent.delete(`/formtemplate/${response1.body.responseObject._id}`);
     expect(response.status).toBe(204);
   });
 
@@ -105,7 +111,7 @@ describe("FormTemplate API", () => {
 
     beforeAll(async () => {
       // Fetch templates from the API and find MOXFQ by title or schema
-      const resp = await request(app).get("/formtemplate");
+      const resp = await adminAgent.get("/formtemplate");
       expect(resp.status).toBe(200);
       const templates = resp.body.responseObject as any[];
       moxfqTemplate = templates.find((t: any) => t?.title?.includes("Manchester-Oxford"));
@@ -120,19 +126,21 @@ describe("FormTemplate API", () => {
     });
 
     it("should have complete MOXFQ structure", () => {
-      expect(moxfqTemplate.formData).toBeDefined();
-      // Note: translations removed from database - now stored in plugin code
+      // Note: formData and translations removed from database - now stored in frontend plugin code
+      // Templates now only store metadata (title, description)
+      expect(moxfqTemplate.title).toBeDefined();
+      expect(moxfqTemplate.description).toBeDefined();
     });
 
     it("should access MOXFQ template via API endpoint", async () => {
-      const response = await request(app).get(`/formtemplate/id/${moxfqTemplate._id}`);
+      const response = await adminAgent.get(`/formtemplate/id/${moxfqTemplate._id}`);
 
       expect(response.status).toBe(200);
       // Note: translations field removed from database
     });
 
     it("should include MOXFQ in template list", async () => {
-      const response = await request(app).get("/formtemplate");
+      const response = await adminAgent.get("/formtemplate");
 
       expect(response.status).toBe(200);
       const templates = response.body.responseObject;
@@ -148,7 +156,8 @@ describe("FormTemplate API", () => {
     it("should have German markdown content in translations", () => {
       // Note: Markdown content moved to plugin code (translations removed from database)
       // This test verifies the template structure is complete
-      expect(moxfqTemplate.formData).toBeDefined();
+      expect(moxfqTemplate.title).toBeDefined();
+      expect(moxfqTemplate.description).toBeDefined();
     });
   });
 });

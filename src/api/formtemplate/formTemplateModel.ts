@@ -102,10 +102,11 @@ export interface PatientFormData {
 }
 
 // Define the FormTemplate schema - simplified to only metadata
+// Supports frontend-provided ObjectIds for consistent cross-system form identification
 export const FormTemplate = z
   .object({
-    _id: zId().optional(),
-    title: z.string(),
+    _id: z.union([zId(), z.string()]).optional(), // Allow frontend to provide ObjectId as string
+    title: z.string().min(1, "Title is required"),
     description: z.string(),
   })
   .strict();
@@ -133,6 +134,13 @@ export const FormTemplateListSchema = z.array(
 // Response validation
 export const FormTemplateArray = z.array(FormTemplate);
 
+// API response schema (for OpenAPI generation) - converts zId to string
+export const FormTemplateApiSchema = z.object({
+  _id: z.string().optional(),
+  title: z.string(),
+  description: z.string(),
+});
+
 // ****************************************************
 // Input validation
 
@@ -143,7 +151,27 @@ export const GetFormTemplateSchema = z.object({
   }),
 });
 
+// Input validation for GET /formtemplate (with query params)
+// Note: This schema validates req.query directly (not wrapped in { query: ... })
+export const GetFormTemplatesQuerySchema = z.object({
+  id: z.union([z.string(), z.array(z.string())]).optional(), // Single ID or array of IDs
+  ids: z.array(z.string()).optional(), // Alternative: array of IDs
+  departmentId: z.string().optional(), // Filter by department
+});
+
 // input validation for POST /formtemplate
+// Allows frontend to provide _id as string (will be converted to ObjectId)
 export const CreateFormTemplateSchema = z.object({
-  body: FormTemplate,
+  body: z.object({
+    _id: z
+      .string()
+      .refine((val) => {
+        // Use MongoDB's isValidObjectId to validate format
+        const mongoose = require("mongoose");
+        return mongoose.isValidObjectId(val);
+      }, "Invalid ObjectId format")
+      .optional(),
+    title: z.string().min(1, "Title is required"),
+    description: z.string(),
+  }).strict(),
 });
