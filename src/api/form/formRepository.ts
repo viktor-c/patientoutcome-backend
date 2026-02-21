@@ -1,14 +1,15 @@
 import { type Form, FormModel } from "@/api/form/formModel";
-import { FormTemplate, FormTemplateModel, type CustomFormData, type SubscaleScore, type FormQuestions } from "@/api/formtemplate/formTemplateModel";
+import { FormTemplate, FormAccessLevel, FormTemplateModel, type CustomFormData, type SubscaleScore, type FormQuestions } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
+import { ScoringData } from "@/types/scoring";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
-    return FormModel.find({ deletedAt: null }).lean();
+    return FormModel.find({ deletedAt: null }).lean() as Promise<Form[]>;
   }
 
   async getFormByPatientCaseConsultationFormId(
@@ -17,17 +18,17 @@ export class FormRepository {
     consultationId: string,
     formId: string,
   ): Promise<Form | null> {
-    return FormModel.findOne({ patientId, caseId, consultationId, _id: formId }).lean();
+    return FormModel.findOne({ patientId, caseId, consultationId, _id: formId }).lean() as Promise<Form | null>;
   }
 
   async getFormById(id: string): Promise<Form | null> {
     // populate caseId, consultationId, formTemplateId
-    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean();
+    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean() as Promise<Form | null>;
   }
 
   async createForm(data: Form): Promise<Form> {
     const newForm = new FormModel(data);
-    return newForm.save();
+    return newForm.save() as Promise<Form>;
   }
   async createFormByTemplateId(caseId: string, consultationId: string, formTemplateId: string): Promise<Form | null> {
     // first get the formtemplate by id
@@ -49,7 +50,7 @@ export class FormRepository {
       ...deepCopy,
     });
     await newForm.save();
-    return Promise.resolve(newForm);
+    return Promise.resolve(newForm) as Promise<Form>;
   }
 
   async updateForm(id: string, data: Partial<Form>): Promise<Form | null> {
@@ -81,7 +82,7 @@ export class FormRepository {
           deletionReason
         },
         { new: true, lean: true }
-      );
+      ) as Form;
       return softDeletedForm;
     } catch (error) {
       logger.error({ error }, "Error soft deleting form");
@@ -105,7 +106,7 @@ export class FormRepository {
         },
         { new: true, lean: true }
       );
-      return restoredForm;
+      return restoredForm as Form;
     } catch (error) {
       logger.error({ error }, "Error restoring form");
       return Promise.reject(error);
@@ -134,7 +135,7 @@ export class FormRepository {
           .sort({ deletedAt: -1 })
           .skip(skip)
           .limit(limit)
-          .lean(),
+          .lean() as Promise<Form[]>,
         FormModel.countDocuments({ deletedAt: { $ne: null } }),
       ]);
 
@@ -203,7 +204,7 @@ export class FormRepository {
         },
         // VAS - Visual Analog Scale
         "67b4e612d0feb4ad99ae2e86": {
-          pain: 7,
+          pain: { q1: 7 },
         },
       };
 
@@ -232,6 +233,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // VAS Form 1
@@ -246,6 +249,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // AOFAS Form 1
@@ -261,6 +266,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // forms for the second consultation
@@ -277,6 +284,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // EFAS Form 2
@@ -292,6 +301,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // AOFAS Form 2
@@ -307,6 +318,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // MOXFQ Form 1
@@ -321,6 +334,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // MOXFQ Form 2
@@ -334,6 +349,8 @@ export class FormRepository {
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       logger.info("Mock forms populated with template data successfully");

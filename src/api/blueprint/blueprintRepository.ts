@@ -274,7 +274,7 @@ export class BlueprintRepository {
         externalId: "",
         diagnosis: ["Hallux valgus", "Hammerzehen"],
         diagnosisICD10: ["M20.1", "M20.7"],
-        therapy: "String describing the therapeutic intervention or procedure name",
+        therapy: "Minimal invasive Chevron und Akin Osteotomy mit einfacher Schraubenosteosynthese",
         OPSCodes: ["5-788.5a", "5-789.0"], //Array of OPS codes relevant to the surgery
         side: [],
         surgeryDate: "",
