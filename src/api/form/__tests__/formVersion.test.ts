@@ -3,16 +3,17 @@ import { loginUserAgent, logoutUser } from "@/utils/unitTesting";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request, { type SuperAgentTest } from "supertest";
+import type TestAgent from "supertest/lib/agent";
 import { beforeAll, describe, expect, it } from "vitest";
 import { FormModel } from "../formModel";
 import { formRepository } from "../formRepository";
 import { FormVersionModel } from "../formVersionModel";
 
 describe("Form Versioning API", () => {
-  let adminAgent: SuperAgentTest;
-  let doctorAgent: SuperAgentTest;
-  let studentAgent: SuperAgentTest;
-  let testFormId: string;
+  let adminAgent: TestAgent;
+  let doctorAgent: TestAgent;
+  let studentAgent: TestAgent;
+  let testFormId: string | undefined;
 
   beforeAll(async () => {
     try {
@@ -28,7 +29,7 @@ describe("Form Versioning API", () => {
       }
 
       // Use the first mock form for testing
-      testFormId = formRepository.mockForms[0]._id;
+      testFormId = formRepository.mockForms[0]._id?.toString();
     } catch (error) {
       if (error instanceof Error) {
         console.error(`Setup form version test has failed: ${error.message}`);

@@ -24,7 +24,7 @@ export const allFormPlugins: never[] = [];
 /**
  * @deprecated Backend plugins have been removed. Forms are managed entirely by frontend plugins.
  */
-export const pluginRegistry: Map<string, never> = new Map();
+export const pluginRegistry: Map<string, never> = new Map() as Map<string, never>;
 
 /**
  * @deprecated Backend plugins have been removed. Use frontend plugins for form operations.

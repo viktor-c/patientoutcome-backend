@@ -82,7 +82,11 @@ const PatientFormDataNestedSchema = new mongoose.Schema(
 // Create main FormVersion schema
 const FormVersionSchema = new mongoose.Schema(
   {
-    formId: FormVersionSchemaGenerated.obj.formId,
+    formId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "Form",
+    } as const,
     version: {
       type: Number,
       required: true,
@@ -96,7 +100,11 @@ const FormVersionSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
-    changedBy: FormVersionSchemaGenerated.obj.changedBy,
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    } as const,
     changedAt: {
       type: Date,
       required: true,
