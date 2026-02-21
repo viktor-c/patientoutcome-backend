@@ -85,9 +85,7 @@ describe("PatientCase API", () => {
       _id: "677da5efcb4569ad1c655190",
       patient: "6771d9d410ede2552b7bba41",
       MainDiagnosis: ["M24.1", "M71.0"],
-      StudyDiagnosis: ["Hallux valgus"],
       MainDiagnosisICD10: ["M20.5"],
-      StudyDiagnosisICD10: ["M20.1"],
       surgeries: [],
       supervisors: ["676336bea497301f6eff8c91"],
       notes: [

@@ -62,9 +62,7 @@ export interface FrontendPatientCase {
   updatedAt?: string;
   patient: string | null; // ObjectId reference as string
   mainDiagnosis?: string[];
-  studyDiagnosis?: string[];
   mainDiagnosisICD10?: string[];
-  studyDiagnosisICD10?: string[];
   otherDiagnosis?: string[];
   otherDiagnosisICD10?: string[];
   surgeries: string[]; // ObjectId references as strings
