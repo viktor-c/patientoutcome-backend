@@ -229,7 +229,7 @@ export class BlueprintRepository {
         surgeries: ["68c08903290365a33d085fcc"],
         supervisors: "Array of User ObjectId references for case supervisors",
         notes: [],
-        medicalHistory: "String containing patient's medical history",
+        medicalHistory: "Vorerkrankungen sollen hier eingetragen werden",
         // array of ids for consultation blueprints
         consultations: ["68c08903290365a33d085fcb", "68c08903290365a33d085fcf"],
       },

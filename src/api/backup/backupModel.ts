@@ -119,6 +119,11 @@ export const BackupHistorySchema = z.object({
   completedAt: z.date().optional().nullable(),
   status: z.enum(["running", "completed", "failed"]),
   error: z.string().optional().nullable(),
+
+  // Restore metadata
+  wasRestored: z.boolean().default(false),
+  lastRestoredAt: z.date().optional().nullable(),
+  lastRestoredBy: zId("User").optional().nullable(),
   
   // Department filter (for future use)
   departmentId: zId("UserDepartment").optional().nullable(),

@@ -57,7 +57,7 @@ export class FormRepository {
     const updated = await FormModel.findByIdAndUpdate(id, data, { new: true }).populate(
       "caseId consultationId formTemplateId",
     );
-    return updated ? updated.toObject() : null;
+    return updated ? (updated.toObject() as Form) : null;
   }
 
   async deleteForm(id: string): Promise<boolean> {

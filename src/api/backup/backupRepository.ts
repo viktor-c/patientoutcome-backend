@@ -18,6 +18,15 @@ import { logger } from "@/common/utils/logger";
  * Handles CRUD operations for backup jobs, credentials, and history
  */
 export class BackupRepository {
+  private normalizeBackupHistory(history: any): BackupHistory {
+    return {
+      ...history,
+      wasRestored: history?.wasRestored ?? false,
+      lastRestoredAt: history?.lastRestoredAt ?? null,
+      lastRestoredBy: history?.lastRestoredBy ?? null,
+    } as BackupHistory;
+  }
+
   // ============================================
   // Backup Jobs
   // ============================================
@@ -163,7 +172,7 @@ export class BackupRepository {
     limit = 100
   ): Promise<BackupHistory[]> {
     const history = await backupHistoryModel.find(filter).sort({ startedAt: -1 }).limit(limit).lean();
-    return history as unknown as BackupHistory[];
+    return history.map((entry) => this.normalizeBackupHistory(entry));
   }
 
   /**
@@ -171,7 +180,10 @@ export class BackupRepository {
    */
   async findBackupHistoryById(historyId: string): Promise<BackupHistory | null> {
     const history = await backupHistoryModel.findById(historyId).lean();
-    return history as BackupHistory | null;
+    if (!history) {
+      return null;
+    }
+    return this.normalizeBackupHistory(history);
   }
 
   /**
@@ -182,7 +194,21 @@ export class BackupRepository {
     updates: Partial<BackupHistory>
   ): Promise<BackupHistory | null> {
     const history = await backupHistoryModel.findByIdAndUpdate(historyId, updates, { new: true }).lean();
-    return history as BackupHistory | null;
+    if (!history) {
+      return null;
+    }
+    return this.normalizeBackupHistory(history);
+  }
+
+  /**
+   * Mark backup as restored
+   */
+  async markBackupAsRestored(backupId: string, restoredBy?: string): Promise<void> {
+    await backupHistoryModel.findByIdAndUpdate(backupId, {
+      wasRestored: true,
+      lastRestoredAt: new Date(),
+      lastRestoredBy: restoredBy || null,
+    });
   }
 
   /**

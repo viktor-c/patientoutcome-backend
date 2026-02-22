@@ -22,11 +22,8 @@ export const FormVersion = z.object({
   formId: zId("Form"), // Reference to the current form
   version: z.number().int().positive(), // Incremental version number (1, 2, 3, ...)
   
-  // Form data at this version
+  // Snapshot data for this version (single payload to avoid duplication)
   rawData: PatientFormDataSchema,
-  
-  // Previous data (for easy diffing)
-  previousRawData: PatientFormDataSchema.nullable().optional(),
   
   // Change metadata
   changedBy: zId("User"), // User who made the change
@@ -95,11 +92,6 @@ const FormVersionSchema = new mongoose.Schema(
       type: PatientFormDataNestedSchema,
       required: true,
     },
-    previousRawData: {
-      type: PatientFormDataNestedSchema,
-      required: false,
-      default: null,
-    },
     changedBy: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -150,13 +142,12 @@ export const FormVersionApiSchema = z.object({
   changeNotes: z.string(),
   isRestoration: z.boolean(),
   restoredFromVersion: z.number().nullable().optional(),
-  // Note: rawData and previousRawData excluded from list view for performance
+  // Note: rawData excluded from list view for performance
 });
 
 // Response schema for single version with full data
 export const FormVersionDetailApiSchema = FormVersionApiSchema.extend({
   rawData: PatientFormDataSchema,
-  previousRawData: PatientFormDataSchema.nullable().optional(),
 });
 
 // Input validation for creating version restore

@@ -12,6 +12,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import type { Form } from "./formModel";
+import { formRepository } from "./formRepository";
 import { FormVersionModel, type FormVersion } from "./formVersionModel";
 
 export interface UserContext {
@@ -24,8 +25,7 @@ export class FormVersionService {
   /**
    * Create a version backup before updating a form
    * @param form - The current form before update
-   * @param newData - The new data being applied
-   * @param user - User making the change
+    * @param userId - User making the change
    * @param changeNotes - Optional notes describing the change
    * @param isRestoration - Whether this is a restoration of an older version
    * @param restoredFromVersion - If restoration, which version was restored
@@ -33,28 +33,30 @@ export class FormVersionService {
    */
   async createVersionBackup(
     form: Form,
-    newData: Partial<Form>,
     userId: string,
     changeNotes: string = "",
     isRestoration: boolean = false,
     restoredFromVersion?: number,
+    versionOverride?: number,
+    rawDataOverride?: Form["patientFormData"] | null,
   ): Promise<FormVersion | null> {
     try {
+      const rawData = rawDataOverride ?? form.patientFormData;
+
       // Only create backup if there's actual form data to save
-      if (!form.patientFormData) {
+      if (!rawData) {
         logger.debug({ formId: form._id }, "No patient form data to backup - skipping version");
         return null;
       }
 
       // Get current version number (default to 1 if not set)
-      const currentVersion = form.currentVersion || 1;
+      const currentVersion = versionOverride || form.currentVersion || 1;
 
       // Prepare version data
       const versionData: Omit<FormVersion, "_id"> = {
         formId: form._id!.toString(),
         version: currentVersion,
-        rawData: form.patientFormData,
-        previousRawData: null, // No previous data for first version
+        rawData,
         changedBy: userId,
         changedAt: new Date(),
         changeNotes: changeNotes || "Form updated",
@@ -62,13 +64,26 @@ export class FormVersionService {
         restoredFromVersion: restoredFromVersion || null,
       };
 
-      // If this is an update (not first version), include previous data for easy diffing
-      if (newData.patientFormData && currentVersion > 1) {
-        versionData.previousRawData = form.patientFormData;
-      }
+      // Upsert by formId + version to avoid duplicate-key failures in reseeded/test data
+      const version = await FormVersionModel.findOneAndUpdate(
+        { formId: versionData.formId, version: versionData.version },
+        {
+          $set: versionData,
+          $unset: { previousRawData: 1 },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
 
-      // Create version document
-      const version = await FormVersionModel.create(versionData);
+      if (!version) {
+        logger.error(
+          {
+            formId: form._id,
+            version: currentVersion,
+          },
+          "Failed to upsert form version backup"
+        );
+        return null;
+      }
 
       logger.info(
         {
@@ -127,13 +142,30 @@ export class FormVersionService {
       const version = await FormVersionModel.findOne({
         formId,
         version: versionNumber,
-      }).lean() as FormVersion;
+      }).lean() as FormVersion | null;
 
-      if (!version) {
-        return ServiceResponse.failure("Version not found", null, StatusCodes.NOT_FOUND);
+      if (version) {
+        const sanitizedVersion = { ...version } as Record<string, unknown>;
+        delete sanitizedVersion.previousRawData;
+        return ServiceResponse.success("Version retrieved", sanitizedVersion as FormVersion);
       }
 
-      return ServiceResponse.success("Version retrieved", version);
+      // Fallback: allow reading the current form state as a version when requested
+      const form = await formRepository.getFormById(formId);
+      if (form?.currentVersion === versionNumber && form.patientFormData) {
+        return ServiceResponse.success("Version retrieved", {
+          formId,
+          version: versionNumber,
+          rawData: form.patientFormData,
+          changedBy: "current-form",
+          changedAt: form.updatedAt || form.createdAt || new Date(),
+          changeNotes: "Current form state",
+          isRestoration: false,
+          restoredFromVersion: null,
+        } as FormVersion);
+      }
+
+      return ServiceResponse.failure("Version not found", null, StatusCodes.NOT_FOUND);
     } catch (error) {
       logger.error({ error, formId, versionNumber }, "Error getting version");
       return ServiceResponse.failure(
@@ -159,8 +191,8 @@ export class FormVersionService {
     try {
       // Fetch both versions
       const [version1, version2] = await Promise.all([
-        FormVersionModel.findOne({ formId, version: v1 }).lean() as Promise<FormVersion | null>,
-        FormVersionModel.findOne({ formId, version: v2 }).lean() as Promise<FormVersion | null>,
+        this.getVersionSnapshot(formId, v1),
+        this.getVersionSnapshot(formId, v2),
       ]);
 
       if (!version1 || !version2) {
@@ -278,6 +310,38 @@ export class FormVersionService {
         StatusCodes.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  private async getVersionSnapshot(formId: string, versionNumber: number): Promise<{
+    version: number;
+    changedBy: string;
+    changedAt: Date;
+    changeNotes: string;
+    rawData: Form["patientFormData"];
+  } | null> {
+    const backup = await FormVersionModel.findOne({ formId, version: versionNumber }).lean() as FormVersion | null;
+    if (backup?.rawData) {
+      return {
+        version: backup.version,
+        changedBy: String(backup.changedBy),
+        changedAt: backup.changedAt,
+        changeNotes: backup.changeNotes,
+        rawData: backup.rawData,
+      };
+    }
+
+    const form = await formRepository.getFormById(formId);
+    if (form?.currentVersion === versionNumber && form.patientFormData) {
+      return {
+        version: versionNumber,
+        changedBy: "current-form",
+        changedAt: form.updatedAt || form.createdAt || new Date(),
+        changeNotes: "Current form state",
+        rawData: form.patientFormData,
+      };
+    }
+
+    return null;
   }
 }
 

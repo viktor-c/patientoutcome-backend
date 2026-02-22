@@ -1,14 +1,16 @@
 import { app } from "@/server";
 import { loginUserAgent, logoutUser } from "@/utils/unitTesting";
-import request, { type SuperAgentTest } from "supertest";
+import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { FormTemplateModel } from "../formTemplateModel";
 
 describe("FormTemplate API", () => {
-  let adminAgent: SuperAgentTest;
+  let adminAgent: Awaited<ReturnType<typeof loginUserAgent>>;
 
   beforeAll(async () => {
     try {
+      await request(app).get("/seed/users");
+
       // Login as admin to get authenticated agent
       adminAgent = await loginUserAgent("admin");
       

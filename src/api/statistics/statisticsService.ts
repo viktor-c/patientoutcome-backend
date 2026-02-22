@@ -112,7 +112,7 @@ export class StatisticsService {
                 };
 
                 // Get completion time from patientFormData
-                let promCompletedAt: Date | null = form.patientFormData.completedAt;
+                let promCompletedAt: Date | null = form.patientFormData.completedAt ?? null;
                 let promCompletionSeconds: number | null = null;
                 if (promCompletedAt && form.patientFormData.beginFill) {
                   promCompletionSeconds = Math.floor(

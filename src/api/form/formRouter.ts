@@ -469,7 +469,6 @@ formRegistry.registerPath({
         formId: z.string(),
         version: z.number(),
         rawData: PatientFormDataSchema,
-        previousRawData: PatientFormDataSchema.nullable().optional(),
         changedBy: z.string(),
         changedAt: z.string(),
         changeNotes: z.string(),

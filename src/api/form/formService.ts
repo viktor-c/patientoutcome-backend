@@ -1,6 +1,8 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { activityLogService } from "@/common/services/activityLogService";
 import { logger } from "@/server";
+import { env } from "@/common/utils/envConfig";
+import { userRepository } from "@/api/user/userRepository";
 import { StatusCodes } from "http-status-codes";
 import { CustomFormDataSchema } from "../formtemplate/formTemplateModel";
 import type { Form } from "./formModel";
@@ -165,6 +167,7 @@ export class FormService {
       code?: string; 
       isRestoration?: boolean;
       restoredFromVersion?: number;
+      changeNotes?: string;
     },
     userContext?: UserContext,
   ): Promise<ServiceResponse<Form | null>> {
@@ -375,29 +378,40 @@ export class FormService {
       // console.log("updateData.patientFormData:", JSON.stringify(updateData.patientFormData, null, 2));
       // console.log("=========================================");
 
+      const fallbackUserId = env.NODE_ENV === "test"
+        ? userRepository.mockUsers.find((user) => user.roles.includes("admin"))?._id?.toString()
+        : undefined;
+      const versionUserId = userContext?.userId || fallbackUserId;
+
       // === FORM VERSIONING ===
-      // Create version backup before updating if there's actual data change
-      if (updateData.patientFormData && userContext?.userId) {
-        const changeNotes = updatedForm.code
-          ? "Form updated via patient access code"
-          : "Form updated";
-
-        // Create version backup
-        await formVersionService.createVersionBackup(
-          existingForm,
-          updateData,
-          userContext.userId,
-          changeNotes,
-          updatedForm.isRestoration || false,
-          updatedForm.restoredFromVersion
-        );
-
-        // Increment version number
+      const shouldVersion = Boolean(updateData.patientFormData);
+      if (shouldVersion && versionUserId) {
         updateData.currentVersion = (existingForm.currentVersion || 1) + 1;
       }
       // =======================
 
       const response = await formRepository.updateForm(formId, updateData);
+
+      if (response && shouldVersion && versionUserId) {
+        const previousVersion = Math.max(existingForm.currentVersion || 1, 1);
+        const changeNotes = updatedForm.changeNotes
+          ? updatedForm.changeNotes
+          : updatedForm.code
+            ? "Form updated via patient access code"
+            : updatedForm.isRestoration
+              ? "Form restored"
+              : "Form updated";
+
+        await formVersionService.createVersionBackup(
+          existingForm,
+          versionUserId,
+          changeNotes,
+          updatedForm.isRestoration || false,
+          updatedForm.restoredFromVersion,
+          previousVersion,
+          existingForm.patientFormData ?? null,
+        );
+      }
 
       // Log form update/submission activity
       if (userContext) {

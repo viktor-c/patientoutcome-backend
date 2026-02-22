@@ -243,6 +243,26 @@ export class PatientCaseRepository {
     }
   }
 
+  async findCasesByDiagnosis(diagnosis: string): Promise<PatientCase[]> {
+    try {
+      return await PatientCaseModel.find({
+        $or: [{ mainDiagnosis: diagnosis }, { otherDiagnosis: diagnosis }],
+      });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  async findCasesByDiagnosisICD10(diagnosisICD10: string): Promise<PatientCase[]> {
+    try {
+      return await PatientCaseModel.find({
+        $or: [{ mainDiagnosisICD10: diagnosisICD10 }, { otherDiagnosisICD10: diagnosisICD10 }],
+      });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
   async findSupervisorsByCaseId(caseId: string): Promise<User[]> {
     try {
       return PatientCaseModel.findById(caseId).select("supervisors").populate(["supervisors"]) as unknown as Promise<

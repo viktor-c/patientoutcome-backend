@@ -5,6 +5,10 @@ import { createReadStream, createWriteStream, promises as fs } from "node:fs";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { extract as tarExtract } from "tar";
+import mongoose from "mongoose";
+
+// Use EJSON from mongoose's own bundled bson to avoid version-mismatch errors
+const { EJSON } = mongoose.mongo.BSON;
 
 import type { BackupCredential, BackupJob, CollectionMetadata } from "@/api/backup/backupModel";
 import { BackupRepository } from "@/api/backup/backupRepository";
@@ -173,6 +177,9 @@ export class BackupService {
         status: "completed",
         startedAt,
         completedAt: new Date(),
+        wasRestored: false,
+        lastRestoredAt: null,
+        lastRestoredBy: null,
         createdBy: userId,
         departmentId: job.departmentId,
       });
@@ -208,11 +215,11 @@ export class BackupService {
     await fs.mkdir(tempDataDir, { recursive: true });
 
     try {
-      // Export each collection to JSON
+      // Export each collection to JSON (use EJSON to preserve BSON types like ObjectId, Date)
       for (const collectionName of collections) {
         const data = await this.repository.exportCollectionData(collectionName);
         const jsonPath = path.join(tempDataDir, `${collectionName}.json`);
-        await fs.writeFile(jsonPath, JSON.stringify(data, null, 2));
+        await fs.writeFile(jsonPath, EJSON.stringify(data, undefined, 2, { relaxed: false }));
       }
 
       // Create metadata file
@@ -397,7 +404,8 @@ export class BackupService {
         try {
           const jsonPath = path.join(extractDir, `${collectionName}.json`);
           const jsonContent = await fs.readFile(jsonPath, "utf-8");
-          const documents = JSON.parse(jsonContent);
+          // Use EJSON to deserialize BSON types (ObjectId, Date, etc.) correctly
+          const documents = EJSON.parse(jsonContent) as any[];
 
           const stats = await this.repository.importCollectionData(collectionName, documents, mode);
           result.collections.push(collectionName);
@@ -423,6 +431,10 @@ export class BackupService {
         },
         result.errors.length > 0 ? result.errors.join("; ") : undefined
       );
+
+      if (result.collections.length > 0) {
+        await this.repository.markBackupAsRestored(history._id!.toString(), userId);
+      }
 
       // Clean up
       await fs.unlink(tempFilePath).catch(() => {});

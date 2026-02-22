@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Form } from "./formModel";
+import { FormAccessLevel } from "@/api/formtemplate/formTemplateModel";
 
 describe("Form Model Timing Fields", () => {
   it("should validate form model with timing fields", () => {
@@ -10,6 +11,7 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
+      accessLevel: FormAccessLevel.PATIENT,
       patientFormData: {
         rawFormData: {},
         fillStatus: "complete" as const,
@@ -42,6 +44,7 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
+      accessLevel: FormAccessLevel.PATIENT,
       patientFormData: null,
       // Timing fields are optional
     };
@@ -64,6 +67,7 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
+      accessLevel: FormAccessLevel.PATIENT,
       patientFormData: null,
       completionTimeSeconds: -120, // Invalid negative value
     };

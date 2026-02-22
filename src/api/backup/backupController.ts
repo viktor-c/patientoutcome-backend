@@ -351,6 +351,9 @@ class BackupController {
         status: "completed",
         startedAt: new Date(metadata.createdAt),
         completedAt: new Date(metadata.createdAt),
+        wasRestored: false,
+        lastRestoredAt: null,
+        lastRestoredBy: null,
         createdBy: req.session?.userId,
       });
 
