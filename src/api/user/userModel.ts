@@ -3,6 +3,7 @@ import mongoose, { model, Mongoose } from "mongoose";
 import { z } from "zod";
 
 import { commonValidations } from "@/common/utils/commonValidation";
+import type { Role } from "@/common/middleware/aclConfig";
 
 // Define the UserNoPassword schema
 export const UserNoPasswordSchema = z.object({
@@ -31,9 +32,9 @@ export const UserSchema = UserNoPasswordSchema.extend({
   registerCode: z.string().min(8).optional(),
 });
 
-// Infer TypeScript type from the schema
-export type User = z.infer<typeof UserSchema>;
-export type UserNoPassword = z.infer<typeof UserNoPasswordSchema>;
+// Infer TypeScript types from the schemas, narrowing `roles` to the Role union
+export type User = Omit<z.infer<typeof UserSchema>, "roles"> & { roles: Role[] };
+export type UserNoPassword = Omit<z.infer<typeof UserNoPasswordSchema>, "roles"> & { roles: Role[] };
 
 // API Response schemas (for OpenAPI generation) - use plain strings instead of zId
 export const UserNoPasswordApiSchema = z.object({

@@ -15,6 +15,8 @@ import { formVersionService } from "./formVersionService";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 
+import type { Role } from "@/common/middleware/aclConfig";
+
 class FormVersionController {
   /**
    * Get user context from request session
@@ -30,7 +32,7 @@ class FormVersionController {
   /**
    * Check if user has admin or doctor role
    */
-  private hasVersionAccessRights(roles: string[]): boolean {
+  private hasVersionAccessRights(roles: Role[]): boolean {
     return roles.includes("admin") || roles.includes("doctor");
   }
 

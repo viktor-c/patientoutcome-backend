@@ -6,11 +6,24 @@
 // users can have following roles
 // developer, admin, project-manager, study-nurse, doctor, mfa, student, authenticated, anonymous
 
-export interface userAuthenticationLevelsType {
-  [role: string]: number;
-}
+/** All roles recognised by the ACL system, in order of decreasing privilege. */
+export const ROLES = [
+  "developer",
+  "admin",
+  "project-manager",
+  "study-nurse",
+  "doctor",
+  "mfa",
+  "kiosk",
+  "student",
+  "authenticated",
+  "anonymous",
+] as const;
 
-export const userAuthenticationLevels: userAuthenticationLevelsType = {
+/** Union type of all valid role strings. */
+export type Role = (typeof ROLES)[number];
+
+export const userAuthenticationLevels: Record<Role, number> = {
   developer: 1000, // Developer level
   admin: 800, // Admin level
   "project-manager": 500, // Project manager level

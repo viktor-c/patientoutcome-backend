@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { userAuthenticationLevels } from "./aclConfig";
+import { type Role, userAuthenticationLevels } from "./aclConfig";
 
 // Type for a user object with roles/permissions (customize as needed)
 // export interface ACLUser {
@@ -19,9 +19,9 @@ export function acl({
   permissions = [],
   atLeastAuthenticationLevel = "authenticated",
 }: {
-  roles?: string[];
+  roles?: Role[];
   permissions?: string[];
-  atLeastAuthenticationLevel?: string;
+  atLeastAuthenticationLevel?: Role;
 }) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.session;

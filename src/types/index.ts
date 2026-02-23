@@ -3,6 +3,8 @@
  * This is the single source of truth for type definitions across the application
  */
 
+import type { Role } from "@/common/middleware/aclConfig";
+
 // Re-export Zod-inferred types from backend models
 export type { Patient } from "../api/patient/patientModel";
 export type { PatientCase, CreatePatientCase } from "../api/case/patientCaseModel";
@@ -111,7 +113,7 @@ export interface FrontendUser {
   email: string;
   department?: string;
   belongsToCenter?: string[];
-  roles: string[];
+  roles: Role[];
   daysBeforeConsultations?: number;
   createdAt?: string;
   updatedAt?: string;

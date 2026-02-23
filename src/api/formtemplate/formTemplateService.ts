@@ -10,6 +10,7 @@ import {
 } from "./formTemplateModel";
 import { type DepartmentFormTemplate } from "./departmentFormTemplateModel";
 import { FormTemplateRepository } from "./formTemplateRepository";
+import type { Role } from "@/common/middleware/aclConfig";
 
 // Infer the query type from the schema
 type GetFormTemplatesQuery = z.infer<typeof GetFormTemplatesQuerySchema>;
@@ -19,7 +20,7 @@ type GetFormTemplatesQuery = z.infer<typeof GetFormTemplatesQuerySchema>;
  */
 export interface UserContext {
   userId: string;
-  roles: string[];
+  roles: Role[];
   departments: string[];
 }
 

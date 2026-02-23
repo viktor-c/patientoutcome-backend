@@ -14,11 +14,12 @@ import { StatusCodes } from "http-status-codes";
 import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
 import { FormVersionModel, type FormVersion } from "./formVersionModel";
+import type { Role } from "@/common/middleware/aclConfig";
 
 export interface UserContext {
   userId: string;
   username?: string;
-  roles: string[];
+  roles: Role[];
 }
 
 export class FormVersionService {

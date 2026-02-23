@@ -1,7 +1,7 @@
 import { logger } from "@/common/utils/logger";
 import type { NextFunction, Request, Response } from "express";
 import { acl } from "./acl";
-import { aclConfig } from "./aclConfig";
+import { type Role, aclConfig } from "./aclConfig";
 
 // Utility to generate a route key from request (customize as needed)
 function getRouteKey(req: Request): string {
@@ -38,7 +38,7 @@ export function AclMiddleware(routeKey = "") {
       return next();
     }
     const aclRule = (
-      aclConfig as Record<string, { roles?: string[]; permissions?: string[]; atLeastAuthenticationLevel?: string }>
+      aclConfig as Record<string, { roles?: Role[]; permissions?: string[]; atLeastAuthenticationLevel?: Role }>
     )[usedRouteKey];
     if (!aclRule) {
       logger.debug({ usedRouteKey }, "AclMiddleware: No ACL rule found for route key");

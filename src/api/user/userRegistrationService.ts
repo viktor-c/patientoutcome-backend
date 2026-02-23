@@ -7,6 +7,7 @@ import { type CreateUser, type User, type UserNoPassword, userModel } from "./us
 import { UserRegistrationRepository } from "./userRegistrationRepository";
 import type { UserRegistrationInput } from "./userRegistrationSchemas";
 import { userService } from "./userService";
+import type { Role } from "@/common/middleware/aclConfig";
 
 export interface BatchCreateCodesRequest {
   roles: {
@@ -114,7 +115,7 @@ export class UserRegistrationService {
           const codes = await this.userRegistrationRepository.createMultipleCodes(
             roleConfig.count,
             {
-              roles: [roleConfig.role],
+              roles: [roleConfig.role as Role],
               permissions: [],
               userDepartment: request.department,
               userBelongsToCenter: request.belongsToCenter,

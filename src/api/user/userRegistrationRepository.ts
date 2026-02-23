@@ -2,6 +2,7 @@ import { logger } from "@/common/utils/logger";
 import { faker } from "@faker-js/faker";
 import { addDays } from "date-fns";
 import { type RegistrationCode, RegistrationCodeModel } from "./registrationCodeModel";
+import type { Role } from "@/common/middleware/aclConfig";
 
 /**
  * UserRegistrationRepository handles operations related to user registration codes.
@@ -141,7 +142,7 @@ export class UserRegistrationRepository {
   async createMultipleCodes(
     count: number,
     roleInfo: {
-      roles: string[];
+      roles: Role[];
       permissions?: string[];
       userDepartment: string[];
       userBelongsToCenter?: string;

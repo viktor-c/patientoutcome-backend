@@ -9,10 +9,12 @@ import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
 import { formVersionService } from "./formVersionService";
 
+import type { Role } from "@/common/middleware/aclConfig";
+
 export interface UserContext {
   username?: string;
   userId?: string;
-  roles?: string[];
+  roles?: Role[];
 }
 
 /**

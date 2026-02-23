@@ -6,6 +6,7 @@ import { comparePasswords, hashPassword } from "@/utils/hashUtil";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
 import { permissionsService } from "@/api/permissions/permissionsService";
+import type { Role } from "@/common/middleware/aclConfig";
 
 /**
  * Service class for User operations
@@ -43,7 +44,7 @@ export class UserService {
   // Retrieves users filtered by department and role based on current user's permissions
   async findAllFiltered(
     currentUserId: string,
-    currentUserRoles: string[],
+    currentUserRoles: Role[],
     roleFilter?: string,
   ): Promise<ServiceResponse<UserNoPassword[] | null>> {
     try {
