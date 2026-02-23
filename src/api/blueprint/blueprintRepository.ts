@@ -222,16 +222,14 @@ export class BlueprintRepository {
         externalId: "",
         patient: "",
         mainDiagnosis: ["Hallux valgus bei Spreizfuß", "Metatarsus primus varus"],
-        studyDiagnosis: ["Hallux valgus"],
         mainDiagnosisICD10: ["M20.1", "Q66.8"],
-        studyDiagnosisICD10: ["M20.1"],
         otherDiagnosis: ["Schlafapnoe", "Hypertonie"],
         otherDiagnosisICD10: ["G47.3", "I10"],
         // this field holds id to surgery blueprints
         surgeries: ["68c08903290365a33d085fcc"],
         supervisors: "Array of User ObjectId references for case supervisors",
         notes: [],
-        medicalHistory: "String containing patient's medical history",
+        medicalHistory: "Vorerkrankungen sollen hier eingetragen werden",
         // array of ids for consultation blueprints
         consultations: ["68c08903290365a33d085fcb", "68c08903290365a33d085fcf"],
       },
@@ -276,7 +274,7 @@ export class BlueprintRepository {
         externalId: "",
         diagnosis: ["Hallux valgus", "Hammerzehen"],
         diagnosisICD10: ["M20.1", "M20.7"],
-        therapy: "String describing the therapeutic intervention or procedure name",
+        therapy: "Minimal invasive Chevron und Akin Osteotomy mit einfacher Schraubenosteosynthese",
         OPSCodes: ["5-788.5a", "5-789.0"], //Array of OPS codes relevant to the surgery
         side: [],
         surgeryDate: "",
@@ -481,9 +479,7 @@ export const blueprintRepository = new BlueprintRepository();
         },
         diagnosis_structure: {
           mainDiagnosis: "Array of primary diagnoses: ['Hallux valgus']",
-          studyDiagnosis: "Array of study-specific diagnoses for research",
-          mainDiagnosisICD10: "Array of ICD-10 codes: ['M20.1']",
-          studyDiagnosisICD10: "Array of study-specific ICD-10 codes",
+        mainDiagnosisICD10: "Array of ICD-10 codes: ['M20.1']",
           otherDiagnosis: "Array of secondary diagnoses (e.g., metatarsalgia)",
           otherDiagnosisICD10: "Array of secondary ICD-10 codes",
         },

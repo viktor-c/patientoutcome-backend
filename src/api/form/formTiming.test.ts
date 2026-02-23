@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Form } from "./formModel";
+import { FormAccessLevel } from "@/api/formtemplate/formTemplateModel";
 
 describe("Form Model Timing Fields", () => {
   it("should validate form model with timing fields", () => {
@@ -10,13 +11,15 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
-      formData: {},
-      formSchema: {},
-      formSchemaUI: {},
-      formFillStatus: "completed" as const,
+      accessLevel: FormAccessLevel.PATIENT,
+      patientFormData: {
+        rawFormData: {},
+        fillStatus: "complete" as const,
+        completedAt: new Date("2023-01-01T10:02:00Z"),
+        beginFill: new Date("2023-01-01T10:00:00Z"),
+      },
       createdAt: new Date("2023-01-01T10:00:00Z"),
       updatedAt: new Date("2023-01-01T10:02:00Z"),
-      completedAt: new Date("2023-01-01T10:02:00Z"),
       // New timing fields
       formStartTime: new Date("2023-01-01T10:00:00Z"),
       formEndTime: new Date("2023-01-01T10:02:00Z"),
@@ -41,10 +44,8 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
-      formData: {},
-      formSchema: {},
-      formSchemaUI: {},
-      formFillStatus: "draft" as const,
+      accessLevel: FormAccessLevel.PATIENT,
+      patientFormData: null,
       // Timing fields are optional
     };
 
@@ -66,10 +67,8 @@ describe("Form Model Timing Fields", () => {
       formTemplateId: "507f1f77bcf86cd799439014",
       title: "Test Form",
       description: "Test Description",
-      formData: {},
-      formSchema: {},
-      formSchemaUI: {},
-      formFillStatus: "completed" as const,
+      accessLevel: FormAccessLevel.PATIENT,
+      patientFormData: null,
       completionTimeSeconds: -120, // Invalid negative value
     };
 

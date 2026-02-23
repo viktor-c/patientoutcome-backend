@@ -121,6 +121,25 @@ seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
 });
 
 /**
+ * seed database with department-formtemplate mappings
+ * @route GET /seed/department-formtemplate-mappings
+ */
+seedRouter.get("/department-formtemplate-mappings", async (_req: Request, res: Response) => {
+  try {
+    await formTemplateRepository.seedDepartmentMappings();
+    const serviceResponse = ServiceResponse.success("Department-formtemplate mappings seeded successfully", null);
+    return handleServiceResponse(serviceResponse, res);
+  } catch (error) {
+    const serviceResponse = ServiceResponse.failure(
+      "Failed to seed department-formtemplate mappings",
+      null,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  }
+});
+
+/**
  * seed database with mock data for forms
  * @route GET /seed/form
  */
@@ -311,6 +330,7 @@ seedRouter.get("/reset-all", async (_req: Request, res: Response) => {
   await run("patientCase", () => patientCaseRepository.createMockPatientCaseData());
   await run("consultation", () => consultationRepository.createMockData());
   await run("formTemplate", () => formTemplateRepository.createMockDataFormTemplate());
+  await run("departmentFormTemplateMappings", () => formTemplateRepository.seedDepartmentMappings());
   await run("form", () => formRepository.createFormMockData());
   await run("users", () => userRepository.createMockUserData(true)); // Force reset users
   await run("clinicalStudy", () => clinicalStudyRepository.createMockDataClinicalStudies());

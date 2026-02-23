@@ -235,9 +235,19 @@ export class PatientCaseRepository {
     }
   }
 
+  async findCasesBySupervisor(supervisorId: string): Promise<PatientCase[]> {
+    try {
+      return await PatientCaseModel.find({ supervisors: supervisorId });
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
   async findCasesByDiagnosis(diagnosis: string): Promise<PatientCase[]> {
     try {
-      return await PatientCaseModel.find({ StudyDiagnosis: diagnosis });
+      return await PatientCaseModel.find({
+        $or: [{ mainDiagnosis: diagnosis }, { otherDiagnosis: diagnosis }],
+      });
     } catch (error) {
       return Promise.reject(error);
     }
@@ -245,15 +255,9 @@ export class PatientCaseRepository {
 
   async findCasesByDiagnosisICD10(diagnosisICD10: string): Promise<PatientCase[]> {
     try {
-      return await PatientCaseModel.find({ StudyDiagnosisICD10: diagnosisICD10 });
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
-  async findCasesBySupervisor(supervisorId: string): Promise<PatientCase[]> {
-    try {
-      return await PatientCaseModel.find({ supervisors: supervisorId });
+      return await PatientCaseModel.find({
+        $or: [{ mainDiagnosisICD10: diagnosisICD10 }, { otherDiagnosisICD10: diagnosisICD10 }],
+      });
     } catch (error) {
       return Promise.reject(error);
     }
@@ -366,9 +370,7 @@ export class PatientCaseRepository {
       createdAt: faker.date.past().toISOString(),
       patient: "6771d9d410ede2552b7bba40",
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      studyDiagnosis: ["Hallux valgus"],
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      studyDiagnosisICD10: ["M20.1"],
       __v: 0,
       // Surgeries are now references to Surgery documents
       surgeries: ["677da5d8cb4569ad1c655260"],
@@ -389,9 +391,7 @@ export class PatientCaseRepository {
       externalId: "68512",
       createdAt: faker.date.past().toISOString(),
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      studyDiagnosis: ["Hallux valgus"],
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
-      studyDiagnosisICD10: ["M20.1"],
       __v: 0,
       // Surgeries are now references to Surgery documents
       surgeries: ["677da5d8cb4569ad1c655261"],

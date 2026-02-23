@@ -22,22 +22,38 @@ export interface SubscaleScore {
   name: string;
   description?: string | null;
   rawScore: number;
-  normalizedScore: number;
-  maxPossibleScore: number;
-  answeredQuestions: number;
-  totalQuestions: number;
-  completionPercentage: number;
+  normalizedScore?: number;
+  maxScore?: number;
+  minScore?: number;
+  answeredQuestions?: number;
+  totalQuestions?: number;
+  completionPercentage?: number;
   isComplete: boolean;
 }
 
 /**
  * Main scoring data structure used for all forms
- * This structure allows forms to have multiple subscales and a total score
+ * This is a subset of PatientFormData focused on scoring information
  */
 export interface ScoringData {
-  rawData: FormQuestions | null;
-  subscales: {
+  rawFormData: FormQuestions;
+  subscales?: {
     [key: string]: SubscaleScore | null;
   };
-  total: SubscaleScore | null;
+  totalScore?: SubscaleScore | null;
+}
+
+/**
+ * Patient form data structure
+ * This is what gets stored in the PatientForm.patientFormData field
+ */
+export interface PatientFormData {
+  rawFormData: FormQuestions;
+  subscales?: {
+    [key: string]: SubscaleScore | null;
+  };
+  totalScore?: SubscaleScore | null;
+  fillStatus: "draft" | "incomplete" | "complete";
+  completedAt: Date | null;
+  beginFill: Date | null;
 }

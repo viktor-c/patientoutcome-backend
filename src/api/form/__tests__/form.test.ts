@@ -1,10 +1,8 @@
-import { CustomFormDataSchema } from "@/api/formtemplate/formTemplateModel";
 import { app } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
-import { z } from "zod";
 import { type Form, FormModel } from "../formModel";
 import { formRepository } from "../formRepository";
 
@@ -65,17 +63,23 @@ describe("Form API", () => {
   it("should update a form", async () => {
     const form = formRepository.mockForms[0];
 
-    const newFormData = {
-      standardfragebogen: { q1: 3, q2: 4, q3: 2, q4: 1, q5: null, q6: null },
-      sportfragebogen: { s1: null, s2: null, s3: null, s4: null },
+    const newPatientFormData = {
+      rawFormData: {
+        standardfragebogen: { q1: 3, q2: 4, q3: 2, q4: 1, q5: null, q6: null },
+        sportfragebogen: { s1: null, s2: null, s3: null, s4: null },
+      },
+      subscales: {},
+      totalScore: null,
+      fillStatus: "incomplete" as const,
+      completedAt: null,
+      beginFill: new Date(),
     };
-    expect(CustomFormDataSchema.parse(newFormData)).toBeTruthy();
-    // scoring is calculated from the form data, not directly updated
-    const updateData = { formData: newFormData };
+    
+    const updateData = { patientFormData: newPatientFormData };
     const res = await request(app).put(`/form/${form._id}`).send(updateData);
     expect(res.status).toBe(200);
-    // The response should have formData updated
-    expect(res.body.responseObject).toHaveProperty("formData");
-    expect(res.body.responseObject.formData).toEqual(newFormData);
+    // The response should have patientFormData updated
+    expect(res.body.responseObject).toHaveProperty("patientFormData");
+    expect(res.body.responseObject.patientFormData.rawFormData).toEqual(newPatientFormData.rawFormData);
   });
 });

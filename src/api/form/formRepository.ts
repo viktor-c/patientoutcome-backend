@@ -1,16 +1,15 @@
 import { type Form, FormModel } from "@/api/form/formModel";
-import { FormTemplate, FormTemplateModel, type CustomFormData } from "@/api/formtemplate/formTemplateModel";
-import { calculateFormScore } from "@/api/formtemplate/formTemplatePlugins";
-import { type ScoringData } from "@/api/formtemplate/formTemplatePlugins/types";
+import { FormTemplate, FormAccessLevel, FormTemplateModel, type CustomFormData, type SubscaleScore, type FormQuestions } from "@/api/formtemplate/formTemplateModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
+import { ScoringData } from "@/types/scoring";
 import { faker } from "@faker-js/faker";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
 export class FormRepository {
   async getAllForms(): Promise<Form[]> {
-    return FormModel.find({ deletedAt: null }).lean();
+    return FormModel.find({ deletedAt: null }).lean() as Promise<Form[]>;
   }
 
   async getFormByPatientCaseConsultationFormId(
@@ -19,17 +18,17 @@ export class FormRepository {
     consultationId: string,
     formId: string,
   ): Promise<Form | null> {
-    return FormModel.findOne({ patientId, caseId, consultationId, _id: formId }).lean();
+    return FormModel.findOne({ patientId, caseId, consultationId, _id: formId }).lean() as Promise<Form | null>;
   }
 
   async getFormById(id: string): Promise<Form | null> {
     // populate caseId, consultationId, formTemplateId
-    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean();
+    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean() as Promise<Form | null>;
   }
 
   async createForm(data: Form): Promise<Form> {
     const newForm = new FormModel(data);
-    return newForm.save();
+    return newForm.save() as Promise<Form>;
   }
   async createFormByTemplateId(caseId: string, consultationId: string, formTemplateId: string): Promise<Form | null> {
     // first get the formtemplate by id
@@ -45,20 +44,20 @@ export class FormRepository {
       caseId,
       consultationId,
       formTemplateId: formTemplateId,
-      scoring: undefined,
+      // Initialize with null - frontend will create empty PatientFormData structure
+      patientFormData: null,
       createdAt: new Date(),
-      completedAt: null,
       ...deepCopy,
     });
     await newForm.save();
-    return Promise.resolve(newForm);
+    return Promise.resolve(newForm) as Promise<Form>;
   }
 
   async updateForm(id: string, data: Partial<Form>): Promise<Form | null> {
     const updated = await FormModel.findByIdAndUpdate(id, data, { new: true }).populate(
       "caseId consultationId formTemplateId",
     );
-    return updated ? updated.toObject() : null;
+    return updated ? (updated.toObject() as Form) : null;
   }
 
   async deleteForm(id: string): Promise<boolean> {
@@ -77,13 +76,13 @@ export class FormRepository {
     try {
       const softDeletedForm = await FormModel.findByIdAndUpdate(
         id,
-        { 
+        {
           deletedAt: new Date(),
           deletedBy,
           deletionReason
         },
         { new: true, lean: true }
-      );
+      ) as Form;
       return softDeletedForm;
     } catch (error) {
       logger.error({ error }, "Error soft deleting form");
@@ -100,14 +99,14 @@ export class FormRepository {
     try {
       const restoredForm = await FormModel.findByIdAndUpdate(
         id,
-        { 
+        {
           deletedAt: null,
           deletedBy: null,
           deletionReason: null
         },
         { new: true, lean: true }
       );
-      return restoredForm;
+      return restoredForm as Form;
     } catch (error) {
       logger.error({ error }, "Error restoring form");
       return Promise.reject(error);
@@ -136,7 +135,7 @@ export class FormRepository {
           .sort({ deletedAt: -1 })
           .skip(skip)
           .limit(limit)
-          .lean(),
+          .lean() as Promise<Form[]>,
         FormModel.countDocuments({ deletedAt: { $ne: null } }),
       ]);
 
@@ -180,177 +179,178 @@ export class FormRepository {
   populateMockForms(): void {
     this.mockForms = [];
     try {
+      /**
+       * Mock form data samples for testing and development
+       * These are simple sample data structures - NO scoring logic on backend
+       * Scoring is calculated by frontend plugins only
+       */
+      const mockFormDataSamples: Record<string, CustomFormData> = {
+        // EFAS - Evaluation of Functional Ability Scale
+        "67b4e612d0feb4ad99ae2e83": {
+          section1: { q1: 3, q2: 2, q3: 4, q4: 3, q5: 2 },
+          section2: { q6: 3, q7: 4, q8: 2, q9: 3, q10: 4 },
+        },
+        // AOFAS - American Orthopaedic Foot & Ankle Society Score
+        "67b4e612d0feb4ad99ae2e84": {
+          section1: { q1: 40, q2: 10, q3: 10, q4: 8, q5: 3, q6: 10, q7: 5, q8: 10 },
+        },
+        // MOXFQ - Manchester-Oxford Foot Questionnaire
+        "67b4e612d0feb4ad99ae2e85": {
+          moxfq: {
+            q1: 2, q2: 3, q3: 1, q4: 2, q5: 3,
+            q6: 2, q7: 3, q8: 1, q9: 2, q10: 3,
+            q11: 2, q12: 1, q13: 3, q14: 2, q15: 1, q16: 2,
+          },
+        },
+        // VAS - Visual Analog Scale
+        "67b4e612d0feb4ad99ae2e86": {
+          pain: { q1: 7 },
+        },
+      };
+
+      // Helper to create PatientFormData without scores (frontend calculates scores)
+      const createMockPatientFormData = (formData: CustomFormData) => {
+        return {
+          rawFormData: formData,
+          subscales: undefined,
+          totalScore: undefined,
+          fillStatus: "draft" as const,
+          completedAt: null,
+          beginFill: new Date(),
+        };
+      };
+
       // EFAS Form 1
-      const efasFormData1 = formTemplateRepository.mockFormTemplateData[0].formData as CustomFormData;
-      const efasScoring1 = efasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData1) : undefined;
+      const efasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d51",
-        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
-        scoring: efasScoring1,
+        patientFormData: createMockPatientFormData(efasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
-        formData: efasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[0].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
+
       // VAS Form 1
-      const vasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
-      const vasScoring1 = vasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData1) : undefined;
+      const vasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d53",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        scoring: vasScoring1,
+        patientFormData: createMockPatientFormData(vasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
-        formData: vasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[3].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // AOFAS Form 1
-      const aofasFormData1 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
-      const aofasScoring1 = aofasFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData1) : undefined;
+      const aofasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d54",
-        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
-        scoring: aofasScoring1,
+        patientFormData: createMockPatientFormData(aofasFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
-        formData: aofasFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[1].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // forms for the second consultation
 
       // VAS Form 2
-      const vasFormData2 = formTemplateRepository.mockFormTemplateData[3].formData as CustomFormData;
-      const vasScoring2 = vasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e86", vasFormData2) : undefined;
+      const vasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d54",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        scoring: vasScoring2,
+        patientFormData: createMockPatientFormData(vasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[3].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[3].formSchemaUI,
-        formData: vasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[3].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
+
       // EFAS Form 2
-      const efasFormData2 = formTemplateRepository.mockFormTemplateData[0].formData as CustomFormData;
-      const efasScoring2 = efasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e83", efasFormData2) : undefined;
+      const efasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d55",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
-        scoring: efasScoring2,
+        patientFormData: createMockPatientFormData(efasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[0].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[0].formSchemaUI,
-        formData: efasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[0].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       // AOFAS Form 2
-      const aofasFormData2 = formTemplateRepository.mockFormTemplateData[1].formData as CustomFormData;
-      const aofasScoring2 = aofasFormData2 ? calculateFormScore("67b4e612d0feb4ad99ae2e84", aofasFormData2) : undefined;
+      const aofasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
         _id: "6832337395b15e2d7e223d56",
-        // patientId: "6771d9d410ede2552b7bba40",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
-        scoring: aofasScoring2,
+        patientFormData: createMockPatientFormData(aofasFormData2),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[1].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[1].formSchemaUI,
-        formData: aofasFormData2 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[1].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
-      const moxfqFormData1 = formTemplateRepository.mockFormTemplateData[2].formData as CustomFormData;
-      const moxfqScoring1 = moxfqFormData1 ? calculateFormScore("67b4e612d0feb4ad99ae2e85", moxfqFormData1) : undefined;
-      // This is the moxfq Form
+      // MOXFQ Form 1
+      const moxfqFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e85"];
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d57",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        scoring: moxfqScoring1,
+        patientFormData: createMockPatientFormData(moxfqFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
-        formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[2].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
-      // This is the moxfq Form
+      // MOXFQ Form 2
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d58",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        scoring: moxfqScoring1,
+        patientFormData: createMockPatientFormData(moxfqFormData1),
         createdAt: new Date(),
         updatedAt: undefined,
-        completedAt: undefined,
-        formFillStatus: "draft",
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
-        formSchema: formTemplateRepository.mockFormTemplateData[2].formSchema,
-        formSchemaUI: formTemplateRepository.mockFormTemplateData[2].formSchemaUI,
-        formData: moxfqFormData1 || {}, // Store raw form data (not ScoringData)
-        translations: formTemplateRepository.mockFormTemplateData[2].translations,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0
       });
 
       logger.info("Mock forms populated with template data successfully");
@@ -419,18 +419,18 @@ function calculateMoxfqScore(data: CustomFormData | Record<string, unknown>): Sc
     if (validAnswers.length === 0) return null;
 
     const rawScore = validAnswers.reduce((sum, value) => sum + value, 0);
-    const maxPossibleScore = questionKeys.length * 4;
+    const maxScore = questionKeys.length * 4;
     const completionRate = validAnswers.length / questionKeys.length;
 
-    // Convert to 0-100 scale: (rawScore / maxPossibleScore) * 100
-    const normalizedScore = (rawScore / maxPossibleScore) * 100;
+    // Convert to 0-100 scale: (rawScore / maxScore) * 100
+    const normalizedScore = (rawScore / maxScore) * 100;
 
     return {
       name: subscaleName,
       description: subscaleDescription,
       rawScore,
       normalizedScore: Math.round(normalizedScore * 100) / 100,
-      maxPossibleScore,
+      maxScore,
       answeredQuestions: validAnswers.length,
       totalQuestions: questionKeys.length,
       completionPercentage: Math.round(completionRate * 100),
@@ -456,13 +456,13 @@ function calculateMoxfqScore(data: CustomFormData | Record<string, unknown>): Sc
   const totalScore = calculateSubscaleScore(allQuestions, "Total", "Measures overall health status.");
 
   return {
-    rawData: data,
+    rawFormData: data as FormQuestions,
     subscales: {
       walkingStanding: walkingStandingScore,
       pain: painScore,
       socialInteraction: socialInteractionScore,
     },
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -487,23 +487,23 @@ function calculateAofasScore(data: CustomFormData | Record<string, unknown>): Sc
   if (questionKeys.length === 0) {
     // No questions at all
     return {
-      rawData: data,
+      rawFormData: data as FormQuestions,
       subscales: {},
-      total: null,
+      totalScore: null,
     };
   }
 
   if (validAnswers.length === 0) {
     // Questions exist, but no valid answers
     return {
-      rawData: data,
+      rawFormData: data as FormQuestions,
       subscales: {},
-      total: {
+      totalScore: {
         name: "AOFAS Total",
         description: "American Orthopedic Foot & Ankle Society Score",
-        rawScore: null,
-        normalizedScore: null,
-        maxPossibleScore: 100,
+        rawScore: 0,
+        normalizedScore: 0,
+        maxScore: 100,
         answeredQuestions: 0,
         totalQuestions: questionKeys.length,
         completionPercentage: 0,
@@ -516,16 +516,16 @@ function calculateAofasScore(data: CustomFormData | Record<string, unknown>): Sc
 
   // AOFAS max score is 100 (based on clinical standard)
   // Each question has different max values, but total is always 100
-  const maxPossibleScore = 100;
+  const maxScore = 100;
   const completionRate = validAnswers.length / questionKeys.length;
-  const normalizedScore = (rawScore / maxPossibleScore) * 100;
+  const normalizedScore = (rawScore / maxScore) * 100;
 
   const totalScore = {
     name: "AOFAS Total",
     description: "American Orthopedic Foot & Ankle Society Score",
     rawScore,
     normalizedScore: Math.round(normalizedScore * 100) / 100,
-    maxPossibleScore,
+    maxScore,
     answeredQuestions: validAnswers.length,
     totalQuestions: questionKeys.length,
     completionPercentage: Math.round(completionRate * 100),
@@ -533,9 +533,9 @@ function calculateAofasScore(data: CustomFormData | Record<string, unknown>): Sc
   };
 
   return {
-    rawData: data,
+    rawFormData: data as FormQuestions,
     subscales: {}, // AOFAS doesn't have subscales
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 
@@ -548,7 +548,7 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
   // EFAS has two sections: standardfragebogen and sportfragebogen
   const sections = ["standardfragebogen", "sportfragebogen"];
 
-  const subscaleScores: { [key: string]: ScoringData["subscales"][string] } = {};
+  const subscaleScores: { [key: string]: SubscaleScore | null } = {};
   let allQuestions: string[] = [];
 
   sections.forEach((sectionKey) => {
@@ -571,16 +571,16 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
 
     if (validAnswers.length > 0) {
       const rawScore = validAnswers.reduce((sum, value) => sum + value, 0);
-      const maxPossibleScore = questionKeys.length * 5; // EFAS uses 0-5 scale
+      const maxScore = questionKeys.length * 5; // EFAS uses 0-5 scale
       const completionRate = validAnswers.length / questionKeys.length;
-      const normalizedScore = (rawScore / maxPossibleScore) * 100;
+      const normalizedScore = (rawScore / maxScore) * 100;
 
       subscaleScores[sectionKey] = {
         name: sectionKey === "standardfragebogen" ? "Standard Questions" : "Sport Questions",
         description: sectionKey === "standardfragebogen" ? "Daily activity questions" : "Sports-specific questions",
         rawScore,
         normalizedScore: Math.round(normalizedScore * 100) / 100,
-        maxPossibleScore,
+        maxScore,
         answeredQuestions: validAnswers.length,
         totalQuestions: questionKeys.length,
         completionPercentage: Math.round(completionRate * 100),
@@ -591,9 +591,9 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
       subscaleScores[sectionKey] = {
         name: sectionKey === "standardfragebogen" ? "Standard Questions" : "Sport Questions",
         description: sectionKey === "standardfragebogen" ? "Daily activity questions" : "Sports-specific questions",
-        rawScore: null,
-        normalizedScore: null,
-        maxPossibleScore: questionKeys.length * 4,
+        rawScore: 0,
+        normalizedScore: 0,
+        maxScore: questionKeys.length * 4,
         answeredQuestions: 0,
         totalQuestions: questionKeys.length,
         completionPercentage: 0,
@@ -622,16 +622,16 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
   let totalScore = null;
   if (allValidAnswers.length > 0) {
     const rawScore = allValidAnswers.reduce((sum, value) => sum + value, 0);
-    const maxPossibleScore = allQuestionsList.length * 5;
+    const maxScore = allQuestionsList.length * 5;
     const completionRate = allValidAnswers.length / allQuestionsList.length;
-    const normalizedScore = (rawScore / maxPossibleScore) * 100;
+    const normalizedScore = (rawScore / maxScore) * 100;
 
     totalScore = {
       name: "EFAS Total",
       description: "European Foot and Ankle Society Score",
       rawScore,
       normalizedScore: Math.round(normalizedScore * 100) / 100,
-      maxPossibleScore,
+      maxScore,
       answeredQuestions: allValidAnswers.length,
       totalQuestions: allQuestionsList.length,
       completionPercentage: Math.round(completionRate * 100),
@@ -640,9 +640,9 @@ function calculateEfasScore(data: CustomFormData | Record<string, unknown>): Sco
   }
 
   return {
-    rawData: data,
+    rawFormData: data as FormQuestions,
     subscales: subscaleScores,
-    total: totalScore,
+    totalScore: totalScore,
   };
 }
 

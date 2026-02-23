@@ -14,9 +14,7 @@ export const CreatePatientCaseSchema = z.object({
   deletedAt: dateSchema.optional().nullable(),
   patient: zId("Patient"),
   mainDiagnosis: z.array(DiagnosisSchema).optional(),
-  studyDiagnosis: z.array(DiagnosisSchema).optional(),
   mainDiagnosisICD10: z.array(DiagnosisSchema).optional(),
-  studyDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   otherDiagnosis: z.array(DiagnosisSchema).optional(),
   otherDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   // Surgeries are now references to Surgery documents
@@ -36,9 +34,7 @@ export const PatientCaseSchema = z.object({
   deletedAt: dateSchema.optional().nullable(),
   patient: zId("Patient"),
   mainDiagnosis: z.array(DiagnosisSchema).optional(),
-  studyDiagnosis: z.array(DiagnosisSchema).optional(),
   mainDiagnosisICD10: z.array(DiagnosisSchema).optional(),
-  studyDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   otherDiagnosis: z.array(DiagnosisSchema).optional(),
   otherDiagnosisICD10: z.array(DiagnosisSchema).optional(),
   // Surgeries are now references to Surgery documents

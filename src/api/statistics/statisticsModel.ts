@@ -1,27 +1,16 @@
 import { dateSchema } from "@/api/generalSchemas";
 import { zId } from "@zodyac/zod-mongoose";
 import { z } from "@/common/utils/zodInit";
+import { SubscaleScoreSchema, FormQuestionsSchema } from "@/api/formtemplate/formTemplateModel";
 
 /**
- * Schema for the scoring object that matches the ScoringData interface
- * This ensures proper typing for the scoring field
+ * Schema for the scoring data extracted from PatientFormData
+ * This is a subset of PatientFormData focused on scoring information
  */
-export const SubscaleScoreSchema = z.object({
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  rawScore: z.number(),
-  normalizedScore: z.number(),
-  maxPossibleScore: z.number(),
-  answeredQuestions: z.number(),
-  totalQuestions: z.number(),
-  completionPercentage: z.number(),
-  isComplete: z.boolean(),
-});
-
 export const ScoringDataSchema = z.object({
-  rawData: z.record(z.string(), z.record(z.string(), z.union([z.string(), z.number(), z.null()]))).nullable(),
+  rawFormData: FormQuestionsSchema,
   subscales: z.record(z.string(), SubscaleScoreSchema.nullable()).optional(),
-  total: SubscaleScoreSchema.nullable(),
+  totalScore: SubscaleScoreSchema.nullable().optional(),
 });
 
 /**
@@ -85,7 +74,7 @@ export const ScoreDataResponseSchema = z.object({
 });
 
 // Export types
-export type SubscaleScore = z.infer<typeof SubscaleScoreSchema>;
+export type { SubscaleScore } from "@/api/formtemplate/formTemplateModel";
 export type ScoringData = z.infer<typeof ScoringDataSchema>;
 export type ConsultationWithScores = z.infer<typeof ConsultationWithScoresSchema>;
 export type SurgeryStatistics = z.infer<typeof SurgeryStatisticsSchema>;

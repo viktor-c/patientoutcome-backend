@@ -142,10 +142,9 @@ export class UserDepartmentRepository {
     try {
       await assertSeedingAllowed();
       const existingCount = await userDepartmentModel.countDocuments();
-      if (existingCount === 0) {
-        await userDepartmentModel.insertMany(this._mockDepartments);
-        logger.info("Mock departments seeded successfully");
-      }
+      await userDepartmentModel.deleteMany({});
+      await userDepartmentModel.insertMany(this._mockDepartments);
+      logger.info("Mock departments seeded successfully");
     } catch (error) {
       logger.error({ error }, "Error seeding mock departments");
       return Promise.reject(error);

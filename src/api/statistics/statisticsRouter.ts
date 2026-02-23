@@ -7,6 +7,7 @@
  */
 
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
+import { SubscaleScoreSchema } from "@/api/formtemplate/formTemplateModel";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
@@ -17,7 +18,6 @@ import {
   ConsultationWithScoresSchema,
   ScoreDataPointSchema,
   ScoreDataResponseSchema,
-  SubscaleScoreSchema,
   ScoringDataSchema,
   SurgeryStatisticsSchema,
 } from "./statisticsModel";

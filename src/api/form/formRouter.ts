@@ -16,7 +16,9 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { type NextFunction, type Request, type Response, Router } from "express";
 import { z } from "zod";
 import { formController } from "./formController";
+import { formVersionController } from "./formVersionController";
 import { Form } from "./formModel";
+import { PatientFormDataSchema } from "@/api/formtemplate/formTemplateModel";
 
 const router = Router();
 export const formRegistry = new OpenAPIRegistry();
@@ -36,7 +38,7 @@ const formIdSchema = z.object({
 
 // Schema for the body content only (used in OpenAPI docs)
 const createFormBodySchema = z.object({
-  formData: z.object({}).passthrough(),
+  patientFormData: PatientFormDataSchema.nullable().optional(),
 });
 
 // Full validation schema (used in validateRequest middleware)
@@ -47,12 +49,13 @@ const createFormSchema = z.object({
 // Schema for the update body content only (used in OpenAPI docs)
 const updateFormBodySchema = z
   .object({
-    formData: z.object({}).passthrough().optional(),
+    code: z.string().optional(),
+    // PatientFormData structure
+    patientFormData: PatientFormDataSchema.nullable().optional(),
+    // Form timing fields
     completionTimeSeconds: z.number().positive().optional(),
     formStartTime: z.coerce.date().optional(),
     formEndTime: z.coerce.date().optional(),
-    formFillStatus: z.enum(["draft", "incomplete", "completed"]).optional(),
-    scoring: z.object({}).passthrough().optional(), // Accept ScoringData structure
   })
   .passthrough();
 
@@ -127,7 +130,7 @@ formRegistry.registerPath({
     {
       schema: z.object({
         forms: z.array(Form),
-        total: z.number(),
+        totalScore: z.number(),
         page: z.number(),
         limit: z.number(),
         totalPages: z.number(),
@@ -226,7 +229,7 @@ formRegistry.registerPath({
   description: "Update a form answers by its id",
   summary: "Update a form answers by its id",
   request: {
-    params: z.object({ formId: commonValidations.id }),
+    params: updateFormSchema.shape.params,
     body: {
       content: {
         "application/json": { schema: updateFormBodySchema },
@@ -406,5 +409,202 @@ router.post(
   validateRequest(formIdSchema),
   formController.restoreForm
 );
+
+// ****************************************************
+// Form Versioning Routes (admin/doctor only)
+// ****************************************************
+
+// Get version history for a form
+formRegistry.registerPath({
+  method: "get",
+  path: "/form/{formId}/versions",
+  tags: ["form"],
+  operationId: "getVersionHistory",
+  summary: "Get version history for a form (admin/doctor only)",
+  description: "Retrieves all versions of a form with metadata. Requires admin or doctor role.",
+  request: { params: formIdSchema.shape.params },
+  responses: createApiResponses([
+    {
+      schema: z.array(z.object({
+        _id: z.string(),
+        formId: z.string(),
+        version: z.number(),
+        changedBy: z.string(),
+        changedAt: z.string(),
+        changeNotes: z.string(),
+        isRestoration: z.boolean(),
+        restoredFromVersion: z.number().nullable().optional(),
+      })),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Access denied",
+      statusCode: 403,
+    },
+  ]),
+});
+
+router.get("/form/:formId/versions", formVersionController.getVersionHistory);
+
+// Get a specific version
+formRegistry.registerPath({
+  method: "get",
+  path: "/form/{formId}/version/{versionNumber}",
+  tags: ["form"],
+  operationId: "getVersion",
+  summary: "Get a specific version (admin/doctor only)",
+  description: "Retrieves full data for a specific version. Requires admin or doctor role.",
+  request: { 
+    params: z.object({
+      formId: z.string(),
+      versionNumber: z.string(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        _id: z.string(),
+        formId: z.string(),
+        version: z.number(),
+        rawData: PatientFormDataSchema,
+        changedBy: z.string(),
+        changedAt: z.string(),
+        changeNotes: z.string(),
+        isRestoration: z.boolean(),
+        restoredFromVersion: z.number().nullable().optional(),
+      }),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Version not found",
+      statusCode: 404,
+    },
+  ]),
+});
+
+router.get("/form/:formId/version/:versionNumber", formVersionController.getVersion);
+
+// Compare two versions (diff)
+formRegistry.registerPath({
+  method: "get",
+  path: "/form/{formId}/diff",
+  tags: ["form"],
+  operationId: "compareVersions",
+  summary: "Compare two versions (admin/doctor only)",
+  description: "Compare two versions and get diff data. Query params: v1 and v2 as version numbers.",
+  request: { 
+    params: formIdSchema.shape.params,
+    query: z.object({
+      v1: z.string(),
+      v2: z.string(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        formId: z.string(),
+        v1: z.object({
+          version: z.number(),
+          changedBy: z.string(),
+          changedAt: z.date(),
+          changeNotes: z.string(),
+          rawData: PatientFormDataSchema,
+        }),
+        v2: z.object({
+          version: z.number(),
+          changedBy: z.string(),
+          changedAt: z.date(),
+          changeNotes: z.string(),
+          rawData: PatientFormDataSchema,
+        }),
+      }),
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Version not found",
+      statusCode: 404,
+    },
+  ]),
+});
+
+router.get("/form/:formId/diff", formVersionController.compareVersions);
+
+// Get change list between versions
+formRegistry.registerPath({
+  method: "get",
+  path: "/form/{formId}/changes",
+  tags: ["form"],
+  operationId: "getChangeList",
+  summary: "Get list of changes between versions (admin/doctor only)",
+  description: "Get list of all changes between two versions. Query params: v1 and v2 as version numbers.",
+  request: { 
+    params: formIdSchema.shape.params,
+    query: z.object({
+      v1: z.string(),
+      v2: z.string(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.array(z.object({
+        version: z.number(),
+        changedBy: z.string(),
+        changedAt: z.date(),
+        changeNotes: z.string(),
+        isRestoration: z.boolean(),
+        restoredFromVersion: z.number().nullable().optional(),
+      })),
+      description: "Success",
+      statusCode: 200,
+    },
+  ]),
+});
+
+router.get("/form/:formId/changes", formVersionController.getChangeList);
+
+// Restore a version
+formRegistry.registerPath({
+  method: "post",
+   path: "/form/{formId}/restore-version/{versionNumber}",
+  tags: ["form"],
+  operationId: "restoreVersion",
+  summary: "Restore a previous version (admin/doctor only)",
+  description: "Restores a form to a previous version. Creates a new version with the old data.",
+  request: { 
+    params: z.object({
+      formId: z.string(),
+      versionNumber: z.string(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            changeNotes: z.string().optional(),
+          }).optional(),
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: Form,
+      description: "Success",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Version not found",
+      statusCode: 404,
+    },
+  ]),
+});
+
+router.post("/form/:formId/restore-version/:versionNumber", formVersionController.restoreVersion);
 
 export { router as formRouter };
