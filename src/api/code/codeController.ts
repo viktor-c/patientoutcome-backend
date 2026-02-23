@@ -1,6 +1,7 @@
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
 import type { Request, RequestHandler, Response } from "express";
+import { getDepartmentCodeLifeMs } from "./codeService";
 import { codeService } from "./codeService";
 
 /**
@@ -20,7 +21,9 @@ class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
     const { code, consultationId } = req.params;
     logger.debug(`Activating code: ${code} for consultation: ${consultationId}`);
-    const serviceResponse = await codeService.activateCode(code, consultationId);
+    const deptId = req.session.department?.[0];
+    const expiresInMs = await getDepartmentCodeLifeMs(deptId);
+    const serviceResponse = await codeService.activateCode(code, consultationId, expiresInMs);
     return handleServiceResponse(serviceResponse, res);
   };
   /**

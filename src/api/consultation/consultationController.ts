@@ -1,4 +1,5 @@
 import { codeService } from "@/api/code/codeService";
+import { getDepartmentCodeLifeMs } from "@/api/code/codeService";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -112,7 +113,7 @@ class ConsultationController {
       });
     }
 
-    const serviceResponse = await consultationService.createConsultation(caseId, consultationData);
+    const serviceResponse = await consultationService.createConsultation(caseId, consultationData, await getDepartmentCodeLifeMs(req.session.department?.[0]));
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -184,7 +185,7 @@ class ConsultationController {
       });
     }
 
-    const serviceResponse = await consultationService.updateConsultation(consultationId, consultationData);
+    const serviceResponse = await consultationService.updateConsultation(consultationId, consultationData, await getDepartmentCodeLifeMs(req.session.department?.[0]));
     return handleServiceResponse(serviceResponse, res);
   };
 

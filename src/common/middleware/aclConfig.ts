@@ -80,6 +80,7 @@ export const aclConfig = {
   "userDepartment-create": { roles: ["admin"] },
   "userDepartment-update": { roles: ["admin"] },
   "userDepartment-delete": { roles: ["admin"] },
+  "userDepartment-update-code-life": { atLeastAuthenticationLevel: "doctor" }, // Doctor+ can set code life for their own departments
 
   // Backup routes - admin and developer only
   "backup-jobs-get-all": { roles: ["admin", "developer"] },

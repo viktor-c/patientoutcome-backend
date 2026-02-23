@@ -5,6 +5,7 @@ import type { UserDepartment } from "@/api/userDepartment/userDepartmentModel";
 import { userDepartmentRepository } from "@/api/seed/seedRouter";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
+import { parseCodeLifeToMs, DEFAULT_CODE_LIFE_MS } from "@/api/code/codeService";
 
 describe("UserDepartment API Endpoints", () => {
   let adminSessionCookie: string;
@@ -263,6 +264,156 @@ describe("UserDepartment API Endpoints", () => {
         .set("Cookie", userSessionCookie);
 
       expect(response.statusCode).toEqual(StatusCodes.FORBIDDEN);
+    });
+  });
+
+  // ─── externalAccessCodeLife field tests ──────────────────────────────────
+
+  describe("externalAccessCodeLife field", () => {
+    it("should accept valid externalAccessCodeLife values on create (admin)", async () => {
+      for (const value of ["4h", "2d", "3w", "1h", "14d", "52w"]) {
+        const res = await request(app)
+          .post("/userDepartment")
+          .set("Cookie", adminSessionCookie)
+          .send({ name: `CodeLifeDept-${value}`, externalAccessCodeLife: value });
+        expect(res.statusCode).toEqual(StatusCodes.CREATED);
+        expect(res.body.responseObject.externalAccessCodeLife).toBe(value);
+        // Cleanup
+        await request(app)
+          .delete(`/userDepartment/${res.body.responseObject._id}`)
+          .set("Cookie", adminSessionCookie);
+      }
+    });
+
+    it("should reject invalid externalAccessCodeLife formats on create (admin)", async () => {
+      for (const value of ["4x", "abc", "-1h", "h4", "4 h", "4H"]) {
+        const res = await request(app)
+          .post("/userDepartment")
+          .set("Cookie", adminSessionCookie)
+          .send({ name: `InvalidCodeLifeDept`, externalAccessCodeLife: value });
+        expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+      }
+    });
+
+    it("should create a department without externalAccessCodeLife (field is optional)", async () => {
+      const res = await request(app)
+        .post("/userDepartment")
+        .set("Cookie", adminSessionCookie)
+        .send({ name: "NoCodeLifeDept" });
+      expect(res.statusCode).toEqual(StatusCodes.CREATED);
+      expect(res.body.responseObject.externalAccessCodeLife).toBeUndefined();
+      // Cleanup
+      await request(app).delete(`/userDepartment/${res.body.responseObject._id}`).set("Cookie", adminSessionCookie);
+    });
+  });
+
+  // ─── PATCH /:id/code-life endpoint tests ─────────────────────────────────
+
+  describe("PATCH /userDepartment/:id/code-life", () => {
+    // Doctor user bwhite belongs to department 675000000000000000000001
+    const doctorDeptId = "675000000000000000000001";
+    let doctorSessionCookie: string;
+    let studentSessionCookie: string;
+
+    beforeAll(async () => {
+      // Login as doctor
+      const doctorLoginResponse = await request(app).post("/user/login").send({
+        username: "bwhite",
+        password: "password123#124",
+      });
+      expect(doctorLoginResponse.status).toBe(StatusCodes.OK);
+      doctorSessionCookie = doctorLoginResponse.headers["set-cookie"];
+
+      // Login as student (below doctor level)
+      const studentLoginResponse = await request(app).post("/user/login").send({
+        username: "student",
+        password: "password123#124",
+      });
+      expect(studentLoginResponse.status).toBe(StatusCodes.OK);
+      studentSessionCookie = studentLoginResponse.headers["set-cookie"];
+    });
+
+    it("should allow a doctor to set code life for their own department", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/code-life`)
+        .set("Cookie", doctorSessionCookie)
+        .send({ externalAccessCodeLife: "2d" });
+
+      expect(res.statusCode).toEqual(StatusCodes.OK);
+      expect(res.body.success).toBeTruthy();
+      expect(res.body.responseObject.externalAccessCodeLife).toBe("2d");
+    });
+
+    it("should allow admin to set code life for the same department", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/code-life`)
+        .set("Cookie", adminSessionCookie)
+        .send({ externalAccessCodeLife: "48h" });
+
+      expect(res.statusCode).toEqual(StatusCodes.OK);
+      expect(res.body.responseObject.externalAccessCodeLife).toBe("48h");
+    });
+
+    it("should reject invalid code life format", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/code-life`)
+        .set("Cookie", adminSessionCookie)
+        .send({ externalAccessCodeLife: "4x" });
+
+      expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    });
+
+    it("should deny access for users with role below doctor", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/code-life`)
+        .set("Cookie", studentSessionCookie)
+        .send({ externalAccessCodeLife: "1w" });
+
+      expect(res.statusCode).toEqual(StatusCodes.FORBIDDEN);
+    });
+
+    it("should deny doctor from updating code life for a department they do NOT belong to", async () => {
+      const otherDeptId = "675000000000000000000002"; // different department
+      const res = await request(app)
+        .patch(`/userDepartment/${otherDeptId}/code-life`)
+        .set("Cookie", doctorSessionCookie)
+        .send({ externalAccessCodeLife: "1w" });
+
+      // The doctor is not in this department, so expect 403
+      expect(res.statusCode).toEqual(StatusCodes.FORBIDDEN);
+    });
+
+    it("should require authentication", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/code-life`)
+        .send({ externalAccessCodeLife: "1w" });
+
+      expect(res.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+    });
+  });
+
+  // ─── parseCodeLifeToMs unit tests ────────────────────────────────────────
+
+  describe("parseCodeLifeToMs", () => {
+    it("should parse hours correctly", () => {
+      expect(parseCodeLifeToMs("4h")).toBe(4 * 60 * 60 * 1000);
+      expect(parseCodeLifeToMs("1h")).toBe(1 * 60 * 60 * 1000);
+      expect(parseCodeLifeToMs("24h")).toBe(24 * 60 * 60 * 1000);
+    });
+
+    it("should parse days correctly", () => {
+      expect(parseCodeLifeToMs("2d")).toBe(2 * 24 * 60 * 60 * 1000);
+      expect(parseCodeLifeToMs("7d")).toBe(7 * 24 * 60 * 60 * 1000);
+    });
+
+    it("should parse weeks correctly", () => {
+      expect(parseCodeLifeToMs("3w")).toBe(3 * 7 * 24 * 60 * 60 * 1000);
+    });
+
+    it("should return DEFAULT_CODE_LIFE_MS for invalid input", () => {
+      expect(parseCodeLifeToMs("4x")).toBe(DEFAULT_CODE_LIFE_MS);
+      expect(parseCodeLifeToMs("abc")).toBe(DEFAULT_CODE_LIFE_MS);
+      expect(parseCodeLifeToMs("")).toBe(DEFAULT_CODE_LIFE_MS);
     });
   });
 });

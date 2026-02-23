@@ -14,6 +14,15 @@ export const UserDepartmentSchema = z.object({
   departmentType: z.enum(["department", "center"]).default("department"),
   center: zId("UserDepartment").optional().nullable(), // Reference to center (only for departments)
   hasChildDepartments: z.boolean().optional(), // Computed field - true if this center has child departments
+  /**
+   * How long a generated external patient access code remains valid.
+   * Format: a positive integer followed by a unit: h (hours), d (days), w (weeks).
+   * Examples: "4h", "2d", "3w". Defaults to the system default (4 hours) when absent.
+   */
+  externalAccessCodeLife: z
+    .string()
+    .regex(/^\d+[hdw]$/, "Must be a positive number followed by h (hours), d (days) or w (weeks), e.g. '4h', '2d', '3w'")
+    .optional(),
 });
 
 // Infer TypeScript type from the schema
@@ -48,3 +57,15 @@ export const UpdateUserDepartmentSchema = z.object({
 export const DeleteUserDepartmentSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
+
+// Input validation for 'PATCH userDepartment/:id/code-life' endpoint (doctor+ only)
+export const UpdateCodeLifeSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    externalAccessCodeLife: z
+      .string()
+      .regex(/^\d+[hdw]$/, "Must be a positive number followed by h (hours), d (days) or w (weeks), e.g. '4h', '2d', '3w'"),
+  }),
+});
+
+export type UpdateCodeLife = z.infer<typeof UpdateCodeLifeSchema>["body"];

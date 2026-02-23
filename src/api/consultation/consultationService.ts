@@ -1,5 +1,6 @@
 import type { Code } from "@/api/code/codeModel";
 import { codeRepository } from "@/api/code/codeRepository";
+import { getDepartmentCodeLifeMs } from "@/api/code/codeService";
 import type { Form } from "@/api/form/formModel";
 import { formRepository } from "@/api/form/formRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
@@ -30,7 +31,7 @@ export class ConsultationService {
    * @param data
    * @returns
    */
-  async createConsultation(caseId: string, data: CreateConsultation): Promise<ServiceResponse<Consultation | null>> {
+  async createConsultation(caseId: string, data: CreateConsultation, codeLifeMs?: number): Promise<ServiceResponse<Consultation | null>> {
     try {
       // Step 1: Create consultation with empty proms array to satisfy validation
       const consultationData = {
@@ -59,7 +60,7 @@ export class ConsultationService {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
         // Pass the code string to activateCode
-        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString());
+        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString(), codeLifeMs);
         if (typeof activatedCode === "string") {
           return ServiceResponse.failure(activatedCode, null, StatusCodes.BAD_REQUEST);
         }
@@ -154,6 +155,7 @@ export class ConsultationService {
   async updateConsultation(
     consultationId: string,
     data: UpdateConsultation,
+    codeLifeMs?: number,
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
       const originalConsultation = await this.consultationRepository.getConsultationById(consultationId);
@@ -180,7 +182,7 @@ export class ConsultationService {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
 
-        await this.codeRepository.activateCode(code.code, consultationId);
+        await this.codeRepository.activateCode(code.code, consultationId, codeLifeMs);
       }
 
       /**

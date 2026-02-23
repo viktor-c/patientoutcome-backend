@@ -16,6 +16,7 @@ import {
   CreateUserDepartmentSchema,
   DeleteUserDepartmentSchema,
   GetUserDepartmentSchema,
+  UpdateCodeLifeSchema,
   UpdateUserDepartmentSchema,
   UserDepartmentSchema,
 } from "@/api/userDepartment/userDepartmentModel";
@@ -254,4 +255,51 @@ userDepartmentRouter.delete(
   AclMiddleware("userDepartment-delete"),
   validateRequest(DeleteUserDepartmentSchema),
   userDepartmentController.deleteDepartmentById,
+);
+
+// PATCH update code life setting for a department (doctor+ only)
+userDepartmentRegistry.registerPath({
+  method: "patch",
+  path: "/userDepartment/{id}/code-life",
+  tags: ["UserDepartment"],
+  operationId: "updateDepartmentCodeLife",
+  description: "Set the external access code life duration for a department. Requires doctor role or higher and the requesting user must belong to the department.",
+  summary: "Update code life setting (doctor+)",
+  request: {
+    params: UpdateCodeLifeSchema.shape.params,
+    body: {
+      content: {
+        "application/json": { schema: UpdateCodeLifeSchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: UserDepartmentSchema,
+      description: "Code life setting updated",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Department not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Forbidden - must belong to the department or insufficient role",
+      statusCode: 403,
+    },
+    {
+      schema: ValidationErrorsSchema,
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+userDepartmentRouter.patch(
+  "/:id/code-life",
+  AclMiddleware("userDepartment-update-code-life"),
+  validateRequest(UpdateCodeLifeSchema),
+  userDepartmentController.updateCodeLifeSetting,
 );

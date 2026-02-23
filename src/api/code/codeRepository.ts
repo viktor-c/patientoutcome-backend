@@ -127,7 +127,7 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
-  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
+  async activateCode(codeString: string, consultationId: string, expiresInMs = 4 * 60 * 60 * 1000): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -173,7 +173,7 @@ export class CodeRepository {
 
       // code should exist, because we just checked earlier
       code.activatedOn = new Date();
-      code.expiresOn = dayjs().add(4, "hours").toDate();
+      code.expiresOn = new Date(Date.now() + expiresInMs);
       code.consultationId = consultationId;
       await code.save();
 
