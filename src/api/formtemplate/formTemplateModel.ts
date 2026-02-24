@@ -156,6 +156,7 @@ export const FormTemplateListSchema = z.array(
     _id: true,
     title: true,
     description: true,
+    accessLevel: true,
   }).strict(),
 );
 

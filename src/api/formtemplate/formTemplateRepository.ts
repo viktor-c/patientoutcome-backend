@@ -45,13 +45,13 @@ export class FormTemplateRepository {
    */
   async getTemplatesByDepartment(departmentId: string): Promise<FormTemplate[]> {
     const mapping = await DepartmentFormTemplateModel.findOne({ departmentId }).lean();
-    
+
     if (!mapping || !mapping.formTemplateIds || mapping.formTemplateIds.length === 0) {
       return [];
     }
 
-    return FormTemplateModel.find({ 
-      _id: { $in: mapping.formTemplateIds } 
+    return FormTemplateModel.find({
+      _id: { $in: mapping.formTemplateIds }
     }).select("-__v").lean();
   }
 
@@ -65,17 +65,17 @@ export class FormTemplateRepository {
   async createTemplate(templateData: FormTemplate): Promise<FormTemplate> {
     // If frontend provides an _id, use it; otherwise MongoDB will generate one
     const data: any = { ...templateData };
-    
+
     if (data._id && typeof data._id === 'string') {
       data._id = new mongoose.Types.ObjectId(data._id);
     }
-    
+
     const formTemplate = new FormTemplateModel(data);
     return formTemplate.save();
   }
 
   async getFormTemplatesShortlist(): Promise<FormTemplate[]> {
-    return FormTemplateModel.find().select("title description").lean();
+    return FormTemplateModel.find().select("title description accessLevel").lean();
   }
 
   async updateTemplate(templateId: string, templateData: Partial<FormTemplate>): Promise<FormTemplate | null> {
@@ -111,7 +111,7 @@ export class FormTemplateRepository {
     if (existing) {
       return DepartmentFormTemplateModel.findOneAndUpdate(
         { departmentId },
-        { 
+        {
           formTemplateIds,
           updatedBy: userId ? new mongoose.Types.ObjectId(userId) : undefined,
         },
@@ -217,15 +217,15 @@ export class FormTemplateRepository {
 
       // Default department ID from userDepartmentRepository mock data
       const defaultDepartmentId = "675000000000000000000001"; // Orthopädie und Unfallchirurgie
-      
+
       // Get all form template IDs from mock data
       const formTemplateIds = this._mockFormTemplateData
         .map(t => t._id)
         .filter((id): id is string => id !== undefined);
 
       // Check if mapping already exists
-      const existingMapping = await DepartmentFormTemplateModel.findOne({ 
-        departmentId: defaultDepartmentId 
+      const existingMapping = await DepartmentFormTemplateModel.findOne({
+        departmentId: defaultDepartmentId
       });
 
       if (existingMapping) {
@@ -241,9 +241,9 @@ export class FormTemplateRepository {
         updatedBy: "675000000000000000000100",
       });
 
-      logger.info({ 
-        departmentId: defaultDepartmentId, 
-        templatesCount: formTemplateIds.length 
+      logger.info({
+        departmentId: defaultDepartmentId,
+        templatesCount: formTemplateIds.length
       }, "Department-formtemplate mapping seeded successfully");
     } catch (error) {
       logger.error({ error }, "Error seeding department-formtemplate mappings");
