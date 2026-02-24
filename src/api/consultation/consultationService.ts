@@ -96,12 +96,23 @@ export class ConsultationService {
             { proms: createdFormIds },
           );
           if (updatedConsultation) {
-            return ServiceResponse.created("Consultation created successfully", updatedConsultation);
+            // Fetch the consultation with populated forms before returning
+            const populatedConsultation = await this.consultationRepository.getConsultationById(
+              newConsultation._id.toString(),
+            );
+            return ServiceResponse.created(
+              "Consultation created successfully",
+              populatedConsultation,
+            );
           }
         }
       }
 
-      return ServiceResponse.created("Consultation created successfully", newConsultation);
+      // Fetch the consultation with populated forms before returning
+      const populatedConsultation = await this.consultationRepository.getConsultationById(
+        newConsultation._id.toString(),
+      );
+      return ServiceResponse.created("Consultation created successfully", populatedConsultation);
     } catch (ex) {
       const errorMessage = `Error creating consultation: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -252,9 +263,9 @@ export class ConsultationService {
         try {
           // if there are excluded forms, soft delete them from the database
           if (excludedFormsById.length > 0) {
-            const deletePromises = excludedFormsById.map((formId) => 
+            const deletePromises = excludedFormsById.map((formId) =>
               formRepository.softDeleteForm(
-                formId.toString(), 
+                formId.toString(),
                 "system", // deletedBy - system action when removing from consultation
                 "Form removed from consultation"
               )
@@ -285,9 +296,9 @@ export class ConsultationService {
         // so we need to soft delete all forms from the consultation
         const excludedFormsById = originalConsultation.proms.map((formId) => formId);
         // soft delete the excluded forms from the database, but only after consultation was successfully updated
-        const deletePromises = excludedFormsById.map((formId) => 
+        const deletePromises = excludedFormsById.map((formId) =>
           formRepository.softDeleteForm(
-            formId.toString(), 
+            formId.toString(),
             "system", // deletedBy - system action when removing from consultation
             "All forms removed from consultation"
           )
@@ -380,9 +391,9 @@ export class ConsultationService {
       // Soft delete all associated forms before deleting the consultation
       if (consultation.proms && consultation.proms.length > 0) {
         try {
-          const softDeletePromises = consultation.proms.map((formId) => 
+          const softDeletePromises = consultation.proms.map((formId) =>
             formRepository.softDeleteForm(
-              formId.toString(), 
+              formId.toString(),
               "system", // deletedBy - system action when consultation is deleted
               "Consultation was deleted"
             )
