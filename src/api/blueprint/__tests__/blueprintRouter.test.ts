@@ -170,6 +170,12 @@ describe("Blueprint API Endpoints", () => {
   });
 
   describe("POST /blueprints", () => {
+    afterAll(async () => {
+      if (newBlueprintId) {
+        await request(app).delete(`/blueprints/${newBlueprintId}`);
+        newBlueprintId = "";
+      }
+    });
     it("should create a new blueprint successfully", async () => {
       // Arrange
       const agent = await loginUserAgent("admin");
@@ -279,9 +285,9 @@ describe("Blueprint API Endpoints", () => {
       const mockBlueprintId = blueprintRepository.mockBlueprints[0]._id;
 
       const updateData = {
-        title: "Updated Blueprint Title",
-        description: "Updated description",
-        tags: ["updated", "test"],
+        title: "Blaupause für MICA",
+        description: "Blaupause für eine Hallux valgus Operation durch minimal invasive Chevron- und Akin Osteotomie",
+        tags: ["case", "patient-care", "hallux-valgus"],
       };
 
       // Act
@@ -327,11 +333,18 @@ describe("Blueprint API Endpoints", () => {
 
   describe("DELETE /blueprints/:id", () => {
     it("should delete a blueprint successfully", async () => {
-      // Arrange - Use the third mock blueprint for deletion to avoid affecting other tests
-      const mockBlueprintId = blueprintRepository.mockBlueprints[2]._id;
+      // Arrange - First create a test blueprint, then delete it
+      // Use the third mock blueprint for deletion to avoid affecting other tests
+      // Arrange
+      const agent = await loginUserAgent("admin");
 
       // Act
-      const response = await request(app).delete(`/blueprints/${mockBlueprintId}`);
+      const responsePostNewBlueprint = await agent.post("/blueprints").send(newBlueprint);
+      newBlueprintId = responsePostNewBlueprint.body.responseObject._id?.toString()
+      expect(newBlueprintId).toBeDefined();
+
+      // Act
+      const response = await request(app).delete(`/blueprints/${newBlueprintId}`);
       const responseBody: DeleteBlueprintResponse = response.body;
 
       // Assert
@@ -340,7 +353,7 @@ describe("Blueprint API Endpoints", () => {
       expect(responseBody.message).toContain("Blueprint deleted successfully");
 
       // Verify blueprint is actually deleted
-      const getResponse = await request(app).get(`/blueprints/${mockBlueprintId}`);
+      const getResponse = await request(app).get(`/blueprints/${newBlueprintId}`);
       expect(getResponse.statusCode).toEqual(StatusCodes.NOT_FOUND);
     });
 
