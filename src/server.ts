@@ -16,6 +16,8 @@ import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { feedbackRouter } from "@/api/feedback/feedbackRouter";
 import { formRouter } from "@/api/form/formRouter";
+import { icdopsRouter } from "@/api/icdops/icdopsRouter";
+import { icdopsService } from "@/api/icdops/icdopsService";
 import { formTemplateRouter } from "@/api/formtemplate/formTemplateRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { kioskRouter } from "@/api/kiosk/kioskRouter";
@@ -51,6 +53,12 @@ const app: Express = express();
 connectMongooseDB()
   .then(() => logger.info("server.ts: Mongoose connected successfully"))
   .catch((error) => logger.error({ error }, "server.ts: Mongoose failed to connect"));
+
+// Load ICD-10 / OPS classification data into memory (non-blocking, never crashes)
+icdopsService
+  .initialize()
+  .then(() => logger.info("server.ts: ICD-OPS data initialization complete"))
+  .catch((error) => logger.error({ error }, "server.ts: ICD-OPS data initialization failed – search will return empty results"));
 
 // Set the application to trust the reverse proxy
 app.set("trust proxy", true);
@@ -114,6 +122,7 @@ app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);
 app.use("/kiosk", kioskRouter);
 app.use("/feedback", feedbackRouter);
+app.use("/icdops", icdopsRouter);
 
 // Swagger UI - only load in non-test environments to avoid schema loading issues
 if (env.NODE_ENV !== "test") {

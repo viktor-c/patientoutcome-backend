@@ -38,6 +38,7 @@
     "express-acl": "^2.0.9",
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
+    "fast-xml-parser": "^5.4.1",
     "helmet": "^8.1.0",
     "http-status-codes": "^2.3.0",
     "mongoose": "^8.21.0",
