@@ -2,9 +2,10 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: [
-    "src",
+    "src/**/*.ts",
     "!src/**/__tests__/**",
     "!src/**/*.test.*",
+    "!src/**/*.spec.*",
     "!src/**/*.yaml.*",
     "!src/**/*.md",
     "!src/**/*.html",
