@@ -58,3 +58,36 @@ export const SearchQuerySchema = z.object({
 export const VersionQuerySchema = z.object({
   query: z.object({}).optional(),
 });
+
+// ──────────────────────────────────────────────────────────────
+// Prefix / hierarchical-navigation response
+// ──────────────────────────────────────────────────────────────
+
+export const IcdOpsPrefixResponseSchema = z.object({
+  /** Entries for navigation – one per next-level group when isGroup=true */
+  items: z.array(IcdOpsEntrySchema),
+  /** Normalized prefix used for the lookup */
+  prefix: z.string(),
+  /** Classification type */
+  type: z.enum(["icd", "ops"]),
+  /** Data version identifier */
+  version: z.string(),
+  /**
+   * True when the prefix is short enough that results are grouped into
+   * next-level buckets (one representative entry per group).
+   * False when the prefix is specific enough to show all matching entries.
+   */
+  isGroup: z.boolean(),
+});
+
+export type IcdOpsPrefixResponse = z.infer<typeof IcdOpsPrefixResponseSchema>;
+
+/** Query schema for the prefix/navigation endpoint */
+export const PrefixQuerySchema = z.object({
+  query: z.object({
+    /** Code prefix typed by the user, e.g. "M", "M2", "5", "52" */
+    q: z.string().min(1, "Prefix must not be empty"),
+    /** Max items returned (default 20, max 50) */
+    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  }),
+});

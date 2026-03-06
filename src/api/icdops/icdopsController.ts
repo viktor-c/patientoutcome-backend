@@ -48,6 +48,35 @@ class IcdOpsController {
   };
 
   /**
+   * GET /icdops/icd/prefix?q=&limit=
+   * Hierarchical prefix navigation for ICD-10 codes.
+   * Short prefix (1-2 chars): returns one entry per next-level code group.
+   * Longer prefix: returns all matching entries sorted broadest-first.
+   */
+  public prefixIcd: RequestHandler = async (req: Request, res: Response) => {
+    const { q, limit } = req.query as { q: string; limit?: string };
+    const serviceResponse = icdopsService.searchIcdByCodePrefix(
+      q,
+      limit ? Number(limit) : 20,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * GET /icdops/ops/prefix?q=&limit=
+   * Hierarchical prefix navigation for OPS codes.
+   * User types plain digits; the hyphen is inserted automatically.
+   */
+  public prefixOps: RequestHandler = async (req: Request, res: Response) => {
+    const { q, limit } = req.query as { q: string; limit?: string };
+    const serviceResponse = icdopsService.searchOpsByCodePrefix(
+      q,
+      limit ? Number(limit) : 20,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
    * GET /icdops/icd/status
    * Returns version and load status for ICD data
    */

@@ -6,6 +6,8 @@ import { StatusCodes } from "http-status-codes";
 import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import {
   IcdOpsPaginatedResponseSchema,
+  IcdOpsPrefixResponseSchema,
+  PrefixQuerySchema,
   SearchQuerySchema,
 } from "./icdopsModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
@@ -88,6 +90,64 @@ icdopsRouter.get(
   "/ops/search",
   validateRequest(SearchQuerySchema),
   icdopsController.searchOps,
+);
+
+// ─── ICD Prefix Navigation ─────────────────────────────────
+
+icdopsRegistry.registerPath({
+  method: "get",
+  path: "/icdops/icd/prefix",
+  tags: ["ICD-OPS"],
+  operationId: "prefixIcd",
+  summary: "ICD-10 hierarchical code navigation",
+  description:
+    "Returns next-level code groups for a given prefix (1-2 chars), or all matching entries for longer prefixes. " +
+    "Designed for step-by-step code selection: 'M' → M0x groups, 'M2' → M20-M29 groups, 'M20' → M20, M20.0 … direct entries.",
+  request: {
+    query: PrefixQuerySchema.shape.query,
+  },
+  responses: createApiResponses([
+    {
+      schema: IcdOpsPrefixResponseSchema,
+      description: "Prefix navigation results",
+      statusCode: StatusCodes.OK,
+    },
+  ]),
+});
+
+icdopsRouter.get(
+  "/icd/prefix",
+  validateRequest(PrefixQuerySchema),
+  icdopsController.prefixIcd,
+);
+
+// ─── OPS Prefix Navigation ─────────────────────────────────
+
+icdopsRegistry.registerPath({
+  method: "get",
+  path: "/icdops/ops/prefix",
+  tags: ["ICD-OPS"],
+  operationId: "prefixOps",
+  summary: "OPS hierarchical code navigation",
+  description:
+    "Returns next-level code groups for a given digit prefix. Hyphen is inserted automatically: " +
+    "'5' → 5-0x … 5-9x groups, '52' → 5-20 … 5-29 groups, '521' → all codes starting with 5-21.",
+  request: {
+    query: PrefixQuerySchema.shape.query,
+  },
+  responses: createApiResponses([
+    {
+      schema: IcdOpsPrefixResponseSchema,
+      description: "Prefix navigation results",
+      statusCode: StatusCodes.OK,
+    },
+  ]),
+});
+
+icdopsRouter.get(
+  "/ops/prefix",
+  validateRequest(PrefixQuerySchema),
+  icdopsController.prefixOps,
 );
 
 // ─── ICD Status ────────────────────────────────────────────

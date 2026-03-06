@@ -160,4 +160,111 @@ describe("IcdOpsService", () => {
       expect(opsStatus.responseObject.entryCount).toBe(0);
     });
   });
+
+  // ─── ICD Prefix Navigation ─────────────────────────────
+
+  describe("searchIcdByCodePrefix", () => {
+    it("returns grouped entries for a single-letter prefix", () => {
+      const result = service.searchIcdByCodePrefix("M");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.isGroup).toBe(true);
+      expect(result.responseObject.prefix).toBe("M");
+      expect(result.responseObject.type).toBe("icd");
+      // Should return groups like M0, M1, M2 ... (one per next-char bucket)
+      const codes = result.responseObject.items.map((i) => i.code);
+      // All codes start with M
+      expect(codes.every((c) => c.startsWith("M"))).toBe(true);
+      // Each item represents a distinct second-character group
+      const seconds = codes.map((c) => c[1]);
+      expect(new Set(seconds).size).toBe(seconds.length);
+    });
+
+    it("returns grouped entries for a two-char prefix", () => {
+      const result = service.searchIcdByCodePrefix("M2");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.isGroup).toBe(true);
+      // Codes should start with M2 and be one per third-char bucket
+      const codes = result.responseObject.items.map((i) => i.code);
+      expect(codes.every((c) => c.startsWith("M2"))).toBe(true);
+      const thirds = codes.map((c) => c.slice(0, 3));
+      expect(new Set(thirds).size).toBe(thirds.length);
+    });
+
+    it("returns direct entries (no grouping) for a three-char prefix", () => {
+      const result = service.searchIcdByCodePrefix("M20");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.isGroup).toBe(false);
+      const codes = result.responseObject.items.map((i) => i.code);
+      expect(codes.every((c) => c.startsWith("M20"))).toBe(true);
+    });
+
+    it("respects the limit parameter", () => {
+      const result = service.searchIcdByCodePrefix("M", 5);
+      expect(result.responseObject.items.length).toBeLessThanOrEqual(5);
+    });
+
+    it("returns empty items for a prefix that matches nothing", () => {
+      const result = service.searchIcdByCodePrefix("XYZ999");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.items).toHaveLength(0);
+    });
+
+    it("is case-insensitive for ICD (normalizes to uppercase)", () => {
+      const upper = service.searchIcdByCodePrefix("M");
+      const lower = service.searchIcdByCodePrefix("m");
+      expect(upper.responseObject.items.length).toBe(lower.responseObject.items.length);
+    });
+
+    it("returns empty list when data not loaded", () => {
+      const emptyService = new IcdOpsService();
+      const result = emptyService.searchIcdByCodePrefix("M");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.items).toHaveLength(0);
+    });
+  });
+
+  // ─── OPS Prefix Navigation ─────────────────────────────
+
+  describe("searchOpsByCodePrefix", () => {
+    it("normalizes single-digit prefix and returns groups", () => {
+      const result = service.searchOpsByCodePrefix("5");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.isGroup).toBe(true);
+      // Normalized prefix should be "5-"
+      expect(result.responseObject.prefix).toBe("5-");
+      const codes = result.responseObject.items.map((i) => i.code);
+      expect(codes.every((c) => c.startsWith("5-"))).toBe(true);
+      // Each item is from a distinct third-char bucket (5-0, 5-1, ...)
+      const groups = codes.map((c) => c.slice(0, 3));
+      expect(new Set(groups).size).toBe(groups.length);
+    });
+
+    it("normalizes two-digit prefix to hyphenated form", () => {
+      const result = service.searchOpsByCodePrefix("55");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.prefix).toBe("5-5");
+      const codes = result.responseObject.items.map((i) => i.code);
+      expect(codes.every((c) => c.startsWith("5-5"))).toBe(true);
+    });
+
+    it("returns direct entries for three-digit prefix", () => {
+      const result = service.searchOpsByCodePrefix("558");
+      expect(result.responseObject.isGroup).toBe(false);
+      expect(result.responseObject.prefix).toBe("5-58");
+      const codes = result.responseObject.items.map((i) => i.code);
+      expect(codes.every((c) => c.startsWith("5-58"))).toBe(true);
+    });
+
+    it("respects the limit parameter", () => {
+      const result = service.searchOpsByCodePrefix("5", 3);
+      expect(result.responseObject.items.length).toBeLessThanOrEqual(3);
+    });
+
+    it("returns empty list when data not loaded", () => {
+      const emptyService = new IcdOpsService();
+      const result = emptyService.searchOpsByCodePrefix("5");
+      expect(result.success).toBe(true);
+      expect(result.responseObject.items).toHaveLength(0);
+    });
+  });
 });

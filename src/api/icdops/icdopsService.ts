@@ -1,7 +1,7 @@
 import { logger } from "@/common/utils/logger";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { StatusCodes } from "http-status-codes";
-import type { IcdOpsEntry, IcdOpsPaginatedResponse } from "./icdopsModel";
+import type { IcdOpsEntry, IcdOpsPaginatedResponse, IcdOpsPrefixResponse } from "./icdopsModel";
 import { parseIcdData, parseOpsData } from "./icdopsClamlParser";
 
 // ──────────────────────────────────────────────────────────────
@@ -108,7 +108,128 @@ export class IcdOpsService {
     });
   }
 
+  /**
+   * Hierarchical / prefix-based ICD-10 code navigation.
+   *
+   * Short prefixes (1-2 alphanumeric chars, e.g. "M", "M2") return one
+   * representative entry per next-level group so the user can drill down.
+   * Longer prefixes return all matching entries sorted broadest-first.
+   */
+  searchIcdByCodePrefix(rawPrefix: string, limit = 20): ServiceResponse<IcdOpsPrefixResponse> {
+    return this.searchByCodePrefix("icd", this.icdEntries, rawPrefix, limit);
+  }
+
+  /**
+   * Hierarchical / prefix-based OPS code navigation.
+   *
+   * User types plain digits; the hyphen is inserted automatically:
+   *   "5"   → looks up "5-"   → groups 5-0x, 5-1x, 5-2x …
+   *   "52"  → looks up "5-2"  → groups 5-20, 5-21 …
+   *   "521" → looks up "5-21" → all codes starting with 5-21
+   */
+  searchOpsByCodePrefix(rawPrefix: string, limit = 20): ServiceResponse<IcdOpsPrefixResponse> {
+    return this.searchByCodePrefix("ops", this.opsEntries, rawPrefix, limit);
+  }
+
   // ─── Private helpers ─────────────────────────────────────
+
+  /**
+   * Normalize an OPS user-typed prefix to the stored code format.
+   * OPS codes: D-NNN.NN  (one digit, hyphen, then digits).
+   *   "5"   → "5-"
+   *   "52"  → "5-2"
+   *   "521" → "5-21"
+   */
+  private normalizeOpsPrefix(input: string): string {
+    const digits = input.replace(/-/g, "");
+    if (!digits) return input;
+    if (digits.length === 1) return `${digits}-`;
+    return `${digits[0]}-${digits.slice(1)}`;
+  }
+
+  /**
+   * True when the prefix is short enough that results should be grouped into
+   * next-level navigation buckets rather than shown as individual entries.
+   * Threshold: ≤ 2 alphanumeric characters (hyphens/dots excluded).
+   */
+  private shouldGroup(rawPrefix: string): boolean {
+    return rawPrefix.replace(/[^A-Za-z0-9]/g, "").length <= 2;
+  }
+
+  /**
+   * Core prefix search used by both ICD and OPS variants.
+   * Returns next-level group representatives for short prefixes, or all
+   * matching entries (shortest/broadest first) for longer prefixes.
+   */
+  private searchByCodePrefix(
+    type: "icd" | "ops",
+    entries: IcdOpsEntry[],
+    rawPrefix: string,
+    limit: number,
+  ): ServiceResponse<IcdOpsPrefixResponse> {
+    try {
+      const prefix =
+        type === "ops"
+          ? this.normalizeOpsPrefix(rawPrefix)
+          : rawPrefix.toUpperCase();
+
+      const isGroup = this.shouldGroup(rawPrefix);
+
+      // All entries whose code starts with the (normalized) prefix
+      const matching = entries.filter((e) => e.code.startsWith(prefix));
+
+      let items: IcdOpsEntry[];
+
+      if (isGroup) {
+        // Return one representative entry per next-character bucket
+        const prefixLen = prefix.length;
+        const groups = new Map<string, IcdOpsEntry>();
+
+        for (const entry of matching) {
+          if (entry.code.length <= prefixLen) continue;
+          const groupKey = entry.code.slice(0, prefixLen + 1);
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, entry);
+          } else {
+            // Prefer the shortest code as representative (broadest category)
+            const existing = groups.get(groupKey)!;
+            if (entry.code.length < existing.code.length) {
+              groups.set(groupKey, entry);
+            }
+          }
+        }
+
+        items = Array.from(groups.values())
+          .sort((a, b) => a.code.localeCompare(b.code))
+          .slice(0, limit);
+      } else {
+        // Show all matching entries – shortest (broadest) first
+        items = matching
+          .sort(
+            (a, b) =>
+              a.code.length - b.code.length || a.code.localeCompare(b.code),
+          )
+          .slice(0, limit);
+      }
+
+      const response: IcdOpsPrefixResponse = {
+        items,
+        prefix,
+        type,
+        version: DATA_VERSION,
+        isGroup,
+      };
+
+      return ServiceResponse.success(
+        `Found ${items.length} ${type.toUpperCase()} entries for prefix "${prefix}"`,
+        response,
+      );
+    } catch (error) {
+      const message = `Error searching ${type.toUpperCase()} by prefix`;
+      logger.error({ error, rawPrefix }, `${TAG}: ${message}`);
+      return ServiceResponse.failure(message, null as any, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 
   private search(
     type: "icd" | "ops",
