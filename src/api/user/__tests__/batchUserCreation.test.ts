@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import { addDays } from "date-fns";
 import request from "supertest";
 import { beforeAll, describe, expect, it, beforeEach, afterEach } from "vitest";
 
@@ -106,9 +107,9 @@ describe("Batch User Creation API", () => {
         expect(code.userDepartment).toEqual(["675000000000000000000001"]);
         expect(code.userBelongsToCenter).toBe("675000000000000000000003");
         expect(code.active).toBe(true);
-        // Check expiry is approximately 30 days from now
+        // Check expiry is approximately 30 calendar days from now (DST-safe)
         const expiryTime = code.validUntil.getTime();
-        const expectedTime = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        const expectedTime = addDays(new Date(), 30).getTime();
         expect(Math.abs(expiryTime - expectedTime)).toBeLessThan(60000); // Within 1 minute
       });
 

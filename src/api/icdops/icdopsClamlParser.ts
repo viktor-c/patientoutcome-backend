@@ -30,7 +30,7 @@ function resolveDataPath(relativePath: string): string {
     return srcPath;
   } catch {
     // fallback: dist-relative path (when running from built output)
-    return path.resolve(__dirname, "../ICD-OPS", relativePath);
+    return path.resolve(__dirname, "../dist/ICD-OPS", relativePath);
   }
 }
 
