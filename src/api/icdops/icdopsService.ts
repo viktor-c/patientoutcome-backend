@@ -155,20 +155,32 @@ export class IcdOpsService {
   /**
    * Derive the immediate parent code one level up in the hierarchy.
    * Context is only meaningful for terminal codes that carry a dot suffix.
-   *   "5-788.6"  → "5-788"  (strip from last dot) ← parent is valid OPS entry
-   *   "5-788.60" → "5-788"  (strip from last dot)
-   *   "M20.1"    → "M20"    (strip from last dot) ← parent is valid ICD entry
+   *
+   * Hierarchy examples for OPS:
+   *   "5-788.52" → "5-788.5"  (multi-char decimal: strip last char)
+   *   "5-788.5"  → "5-788"    (single-char decimal: strip entire dot-segment)
+   *   "5-788.6"  → "5-788"    (single-char decimal: strip entire dot-segment)
+   *
+   * Hierarchy examples for ICD:
+   *   "M20.1"    → "M20"      (single-char decimal: strip entire dot-segment)
+   *   "M20.10"   → "M20.1"    (multi-char decimal: strip last char)
+   *
    * For codes without a dot (e.g. "5-788", "M20") the caller is navigating
    * a mid-level group; no context entry is returned.
    */
   private computeParentCode(normalizedCode: string): string | null {
     const dotIdx = normalizedCode.lastIndexOf(".");
-    if (dotIdx >= 0) {
-      const parent = normalizedCode.slice(0, dotIdx);
-      return parent || null;
+    if (dotIdx < 0) return null; // no dot → mid-level navigation, no context
+
+    const decimalPart = normalizedCode.slice(dotIdx + 1);
+    if (decimalPart.length > 1) {
+      // Multi-char decimal suffix: step up one char within the decimal part
+      // "5-788.52" → "5-788.5",  "M20.10" → "M20.1"
+      return normalizedCode.slice(0, -1);
     }
-    // No dot → mid-level navigation, no parent context needed
-    return null;
+    // Single-char decimal suffix: remove entire dot segment
+    // "5-788.5" → "5-788",  "M20.1" → "M20"
+    return normalizedCode.slice(0, dotIdx) || null;
   }
 
   /**

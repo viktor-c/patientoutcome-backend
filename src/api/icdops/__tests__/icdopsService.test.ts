@@ -199,20 +199,30 @@ describe("IcdOpsService", () => {
     });
 
     it("includes parent context entry when isGroup=false and prefix has a dot", () => {
-      // "M20.1" → parent = "M20" (strip last dot-segment), which IS a real ICD entry
-      // Mid-level codes without a dot (e.g. "M20") have no discrete parent in the
-      // data (their parent is a range block like M20-M25), so context stays undefined.
-      const dotResult = service.searchIcdByCodePrefix("M20.1");
-      expect(dotResult.responseObject.isGroup).toBe(false);
-      expect(dotResult.responseObject.context).toBeDefined();
-      if (dotResult.responseObject.context) {
-        expect(dotResult.responseObject.context.code).toBe("M20");
+      // Single-char decimal: "M20.1" → parent = "M20" (strip dot-segment)
+      const singleDecimal = service.searchIcdByCodePrefix("M20.1");
+      expect(singleDecimal.responseObject.isGroup).toBe(false);
+      expect(singleDecimal.responseObject.context).toBeDefined();
+      if (singleDecimal.responseObject.context) {
+        expect(singleDecimal.responseObject.context.code).toBe("M20");
       }
 
       // No-dot prefix: context is absent (parent "M2" is not a discrete ICD entry)
       const noDotResult = service.searchIcdByCodePrefix("M20");
       expect(noDotResult.responseObject.isGroup).toBe(false);
       expect(noDotResult.responseObject.context).toBeUndefined();
+    });
+
+    it("computes two-level context for multi-char decimal OPS code", () => {
+      // "578852" → normalizes to "5-788.52"
+      // computeParentCode("5-788.52") → "5-788.5" (strip last char, not whole decimal)
+      // so the context banner should show the "5-788.5" category (osteotomy), not "5-788"
+      const result = service.searchOpsByCodePrefix("578852");
+      expect(result.responseObject.isGroup).toBe(false);
+      expect(result.responseObject.prefix).toBe("5-788.52");
+      if (result.responseObject.context) {
+        expect(result.responseObject.context.code).toBe("5-788.5");
+      }
     });
 
     it("respects the limit parameter", () => {
