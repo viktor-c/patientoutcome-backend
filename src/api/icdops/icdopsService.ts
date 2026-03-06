@@ -135,16 +135,40 @@ export class IcdOpsService {
 
   /**
    * Normalize an OPS user-typed prefix to the stored code format.
-   * OPS codes: D-NNN.NN  (one digit, hyphen, then digits).
-   *   "5"   → "5-"
-   *   "52"  → "5-2"
-   *   "521" → "5-21"
+   * Strips hyphens and dots, then rebuilds the canonical form:
+   *   "5"      → "5-"
+   *   "52"     → "5-2"
+   *   "521"    → "5-21"
+   *   "5788"   → "5-788"
+   *   "57886"  → "5-788.6"   ← also handles direct code entry without punctuation
+   *   "5-788.6" → "5-788.6"  ← idempotent
    */
   private normalizeOpsPrefix(input: string): string {
-    const digits = input.replace(/-/g, "");
-    if (!digits) return input;
-    if (digits.length === 1) return `${digits}-`;
-    return `${digits[0]}-${digits.slice(1)}`;
+    const alphanum = input.replace(/[-\.]/g, "");
+    if (!alphanum) return input;
+    if (alphanum.length === 1) return `${alphanum}-`;
+    if (alphanum.length <= 4) return `${alphanum[0]}-${alphanum.slice(1)}`;
+    // 5+ chars: D-NNN.NN...
+    return `${alphanum[0]}-${alphanum.slice(1, 4)}.${alphanum.slice(4)}`;
+  }
+
+  /**
+   * Derive the immediate parent code one level up in the hierarchy.
+   * Context is only meaningful for terminal codes that carry a dot suffix.
+   *   "5-788.6"  → "5-788"  (strip from last dot) ← parent is valid OPS entry
+   *   "5-788.60" → "5-788"  (strip from last dot)
+   *   "M20.1"    → "M20"    (strip from last dot) ← parent is valid ICD entry
+   * For codes without a dot (e.g. "5-788", "M20") the caller is navigating
+   * a mid-level group; no context entry is returned.
+   */
+  private computeParentCode(normalizedCode: string): string | null {
+    const dotIdx = normalizedCode.lastIndexOf(".");
+    if (dotIdx >= 0) {
+      const parent = normalizedCode.slice(0, dotIdx);
+      return parent || null;
+    }
+    // No dot → mid-level navigation, no parent context needed
+    return null;
   }
 
   /**
@@ -212,12 +236,24 @@ export class IcdOpsService {
           .slice(0, limit);
       }
 
+      // When showing terminal (non-group) results, include the immediate parent
+      // category entry as context so the UI can display "5-788 Arthroplastik"
+      // above a list of "5-788.6", "5-788.7" etc.
+      let context: IcdOpsEntry | undefined;
+      if (!isGroup) {
+        const parentCode = this.computeParentCode(prefix);
+        if (parentCode) {
+          context = entries.find((e) => e.code === parentCode);
+        }
+      }
+
       const response: IcdOpsPrefixResponse = {
         items,
         prefix,
         type,
         version: DATA_VERSION,
         isGroup,
+        ...(context ? { context } : {}),
       };
 
       return ServiceResponse.success(

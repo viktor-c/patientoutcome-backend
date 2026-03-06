@@ -198,6 +198,23 @@ describe("IcdOpsService", () => {
       expect(codes.every((c) => c.startsWith("M20"))).toBe(true);
     });
 
+    it("includes parent context entry when isGroup=false and prefix has a dot", () => {
+      // "M20.1" → parent = "M20" (strip last dot-segment), which IS a real ICD entry
+      // Mid-level codes without a dot (e.g. "M20") have no discrete parent in the
+      // data (their parent is a range block like M20-M25), so context stays undefined.
+      const dotResult = service.searchIcdByCodePrefix("M20.1");
+      expect(dotResult.responseObject.isGroup).toBe(false);
+      expect(dotResult.responseObject.context).toBeDefined();
+      if (dotResult.responseObject.context) {
+        expect(dotResult.responseObject.context.code).toBe("M20");
+      }
+
+      // No-dot prefix: context is absent (parent "M2" is not a discrete ICD entry)
+      const noDotResult = service.searchIcdByCodePrefix("M20");
+      expect(noDotResult.responseObject.isGroup).toBe(false);
+      expect(noDotResult.responseObject.context).toBeUndefined();
+    });
+
     it("respects the limit parameter", () => {
       const result = service.searchIcdByCodePrefix("M", 5);
       expect(result.responseObject.items.length).toBeLessThanOrEqual(5);
@@ -245,6 +262,16 @@ describe("IcdOpsService", () => {
       expect(result.responseObject.prefix).toBe("5-5");
       const codes = result.responseObject.items.map((i) => i.code);
       expect(codes.every((c) => c.startsWith("5-5"))).toBe(true);
+    });
+
+    it("normalizes five-digit input (no hyphen/dot) with dot insertion", () => {
+      // "57886" should become "5-788.6" – same result as typing "5-788.6"
+      const withFormatting = service.searchOpsByCodePrefix("5-788.6");
+      const withoutFormatting = service.searchOpsByCodePrefix("57886");
+      expect(withoutFormatting.responseObject.prefix).toBe("5-788.6");
+      expect(withoutFormatting.responseObject.items.length).toBe(
+        withFormatting.responseObject.items.length,
+      );
     });
 
     it("returns direct entries for three-digit prefix", () => {

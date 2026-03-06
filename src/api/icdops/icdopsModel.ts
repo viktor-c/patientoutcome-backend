@@ -78,6 +78,12 @@ export const IcdOpsPrefixResponseSchema = z.object({
    * False when the prefix is specific enough to show all matching entries.
    */
   isGroup: z.boolean(),
+  /**
+   * When isGroup=false, the immediate parent category entry (one level up
+   * in the hierarchy). Lets the frontend show context, e.g. "5-788 Arthroplastik"
+   * above the list of terminal codes like "5-788.6".
+   */
+  context: IcdOpsEntrySchema.optional(),
 });
 
 export type IcdOpsPrefixResponse = z.infer<typeof IcdOpsPrefixResponseSchema>;
