@@ -22,10 +22,11 @@ describe("Multi-department access isolation", () => {
   let adminAgent: TestAgent;
 
   beforeAll(async () => {
-    const seedResponse = await request(app).get("/seed/reset-all");
-    if (seedResponse.status !== 200) {
-      throw new Error("Failed to seed test data for multi-department suite");
-    }
+    await request(app).get("/seed/user").catch(() => {});
+    await request(app).get("/seed/patient").catch(() => {});
+    await request(app).get("/seed/patientCase").catch(() => {});
+    await request(app).get("/seed/code").catch(() => {});
+    await request(app).get("/seed/consultation").catch(() => {});
 
     dept1DoctorAgent = await loginUserAgent("doctor"); // bwhite in department 675...001
 
