@@ -1,5 +1,7 @@
 import { codeService } from "@/api/code/codeService";
 import { getDepartmentCodeLifeMs } from "@/api/code/codeService";
+import { PatientCaseModel } from "@/api/case/patientCaseModel";
+import { patientModel } from "@/api/patient/patientModel";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -7,6 +9,7 @@ import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { z } from "zod";
+import { consultationModel } from "./consultationModel";
 import { consultationService } from "./consultationService";
 
 /**
@@ -15,6 +18,69 @@ import { consultationService } from "./consultationService";
  * @description Handles HTTP requests for patient consultation management including creation, updates, and form access code linking
  */
 class ConsultationController {
+  private getSessionDepartmentIds(req: Request): string[] {
+    const departments = req.session?.department;
+    if (!departments) {
+      return [];
+    }
+
+    return departments
+      .flatMap((department: string) => department.toString().split(","))
+      .map((department: string) => department.trim())
+      .filter(Boolean);
+  }
+
+  private isAdmin(req: Request): boolean {
+    return Boolean(req.session?.roles?.includes("admin"));
+  }
+
+  private async canAccessPatientByDepartment(req: Request, patientId: string): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const userDepartments = this.getSessionDepartmentIds(req);
+    if (userDepartments.length === 0) {
+      return true;
+    }
+
+    const patient = await patientModel.findById(patientId).select("departments").lean();
+    const patientDepartments = (patient?.departments || []).map((department) => department.toString());
+
+    if (patientDepartments.length === 0) {
+      return true;
+    }
+
+    return patientDepartments.some((department) => userDepartments.includes(department));
+  }
+
+  private async canAccessCaseByDepartment(req: Request, caseId: string): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
+      .select("patient")
+      .lean<{ patient?: unknown } | null>();
+    if (!patientCase?.patient) {
+      return true;
+    }
+
+    return this.canAccessPatientByDepartment(req, patientCase.patient.toString());
+  }
+
+  private async canAccessConsultationByDepartment(req: Request, consultationId: string): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const consultation = await consultationModel.findById(consultationId).select("patientCaseId").lean();
+    if (!consultation?.patientCaseId) {
+      return true;
+    }
+
+    return this.canAccessCaseByDepartment(req, consultation.patientCaseId.toString());
+  }
   /**
    * Populate createdBy field for notes with current user ID
    * @private
@@ -72,6 +138,18 @@ class ConsultationController {
     const { caseId } = req.params;
     const consultationData = req.body;
 
+    const hasDepartmentAccess = await this.canAccessCaseByDepartment(req, caseId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only create consultations in your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     // Validate kioskId if provided
     if (consultationData.kioskId) {
       const kioskValidation = await this.validateKioskUser(consultationData.kioskId);
@@ -127,6 +205,19 @@ class ConsultationController {
    */
   public getConsultationById: RequestHandler = async (req: Request, res: Response) => {
     const consultationId = z.string().parse(req.params.consultationId);
+
+    const hasDepartmentAccess = await this.canAccessConsultationByDepartment(req, consultationId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only access consultations from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     const serviceResponse = await consultationService.getConsultationById(consultationId);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -199,6 +290,19 @@ class ConsultationController {
    */
   public deleteConsultation: RequestHandler = async (req: Request, res: Response) => {
     const consultationId = z.string().parse(req.params.consultationId);
+
+    const hasDepartmentAccess = await this.canAccessConsultationByDepartment(req, consultationId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only delete consultations from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     // save form access code before deleting the consultation
     const formAccessCode = await consultationService.getFormAccessCode(consultationId);
     if (formAccessCode?.responseObject) {
@@ -224,6 +328,19 @@ class ConsultationController {
    */
   public getAllConsultations: RequestHandler = async (req: Request, res: Response) => {
     const { caseId } = req.params;
+
+    const hasDepartmentAccess = await this.canAccessCaseByDepartment(req, caseId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only access consultations from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     const serviceResponse = await consultationService.getAllConsultations(caseId);
     return handleServiceResponse(serviceResponse, res);
   };

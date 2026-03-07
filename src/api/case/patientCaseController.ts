@@ -1,8 +1,12 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { z } from "zod";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "../../common/utils/httpHandlers";
+import { patientModel } from "../patient/patientModel";
 import { PatientCaseService } from "./patientCaseService";
+import { PatientCaseModel } from "./patientCaseModel";
 
 const service = new PatientCaseService();
 
@@ -12,6 +16,56 @@ const service = new PatientCaseService();
  * @description Handles HTTP requests for patient case management including CRUD operations, notes, and case queries
  */
 class PatientCaseController {
+  private getSessionDepartmentIds(req: Request): string[] {
+    const departments = req.session?.department;
+    if (!departments) {
+      return [];
+    }
+
+    return departments
+      .flatMap((department: string) => department.toString().split(","))
+      .map((department: string) => department.trim())
+      .filter(Boolean);
+  }
+
+  private isAdmin(req: Request): boolean {
+    return Boolean(req.session?.roles?.includes("admin"));
+  }
+
+  private async canAccessPatientByDepartment(req: Request, patientId: string): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const userDepartments = this.getSessionDepartmentIds(req);
+    if (userDepartments.length === 0) {
+      return true;
+    }
+
+    const patient = await patientModel.findById(patientId).select("departments").lean();
+    const patientDepartments = (patient?.departments || []).map((department) => department.toString());
+
+    if (patientDepartments.length === 0) {
+      return true;
+    }
+
+    return patientDepartments.some((department) => userDepartments.includes(department));
+  }
+
+  private async canAccessCaseByDepartment(req: Request, caseId: string): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
+      .select("patient")
+      .lean<{ patient?: unknown } | null>();
+    if (!patientCase?.patient) {
+      return true;
+    }
+
+    return this.canAccessPatientByDepartment(req, patientCase.patient.toString());
+  }
   /**
    * Populate createdBy field for notes with current user ID
    * @private
@@ -41,6 +95,18 @@ class PatientCaseController {
    */
   public getAllPatientCases: RequestHandler = async (req: Request, res: Response) => {
     const patientId = req.params.patientId;
+    const hasDepartmentAccess = await this.canAccessPatientByDepartment(req, patientId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only access cases from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     const serviceResponse = await service.getAllPatientCases(patientId);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -54,6 +120,18 @@ class PatientCaseController {
    * @description Retrieves a single patient case with all populated relationships
    */
   public getPatientCaseById: RequestHandler = async (req: Request, res: Response) => {
+    const hasDepartmentAccess = await this.canAccessCaseByDepartment(req, req.params.caseId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only access cases from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     const serviceResponse = await service.getPatientCaseById(req.params.patientId, req.params.caseId);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -86,6 +164,18 @@ class PatientCaseController {
   public createPatientCase: RequestHandler = async (req: Request, res: Response) => {
     const patientId = req.params.patientId;
     const caseData = req.body;
+
+    const hasDepartmentAccess = await this.canAccessPatientByDepartment(req, patientId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only create cases in your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
 
     // If case has notes and createdBy is empty, use the logged-in user's ID
     if (caseData.notes && req.session?.userId) {
@@ -140,6 +230,19 @@ class PatientCaseController {
   public deletePatientCaseById: RequestHandler = async (req: Request, res: Response) => {
     const patientId = z.string().parse(req.params.patientId);
     const caseId = z.string().parse(req.params.caseId);
+
+    const hasDepartmentAccess = await this.canAccessPatientByDepartment(req, patientId);
+    if (!hasDepartmentAccess) {
+      return handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only delete cases from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
     const serviceResponse = await service.deletePatientCaseById(patientId, caseId);
     return handleServiceResponse(serviceResponse, res);
   };

@@ -232,6 +232,96 @@ export class PatientService {
       );
     }
   }
+
+  async findAllScoped(
+    options: PaginationOptions = {},
+    departmentIds?: string[],
+    isAdmin = false,
+  ): Promise<ServiceResponse<PaginatedResult<PatientWithCounts> | null>> {
+    const scopedOptions: PaginationOptions = {
+      ...options,
+      departmentIds: isAdmin ? undefined : departmentIds,
+    };
+    return this.findAll(scopedOptions);
+  }
+
+  async findAllDeletedScoped(
+    options: PaginationOptions = {},
+    departmentIds?: string[],
+    isAdmin = false,
+  ): Promise<ServiceResponse<PaginatedResult<PatientWithCounts> | null>> {
+    const scopedOptions: PaginationOptions = {
+      ...options,
+      departmentIds: isAdmin ? undefined : departmentIds,
+    };
+    return this.findAllDeleted(scopedOptions);
+  }
+
+  async findByIdScoped(id: string, departmentIds?: string[], isAdmin = false): Promise<ServiceResponse<Patient | null>> {
+    try {
+      const patient = await this.patientRepository.findByIdAsync(id, isAdmin ? undefined : departmentIds);
+      if (!patient) {
+        return ServiceResponse.failure("Patient not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Patient found", patient);
+    } catch (ex) {
+      if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
+        logger.error(`Invalid ID: ${id}`);
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
+      }
+      return ServiceResponse.failure(
+        "An error occurred while retrieving the patient.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async findByExternalIdScoped(
+    externalPatientId: string,
+    departmentIds?: string[],
+    isAdmin = false,
+  ): Promise<ServiceResponse<Patient | null>> {
+    try {
+      const patient = await this.patientRepository.findByExternalIdAsync(
+        externalPatientId,
+        isAdmin ? undefined : departmentIds,
+      );
+      if (!patient) {
+        return ServiceResponse.failure("No patient found with the given external ID", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Patient found", patient);
+    } catch (ex) {
+      return ServiceResponse.failure(
+        "An error occurred while retrieving patients by external ID.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async searchByExternalIdScoped(
+    searchQuery: string,
+    departmentIds?: string[],
+    isAdmin = false,
+  ): Promise<ServiceResponse<Patient[] | null>> {
+    try {
+      const patients = await this.patientRepository.searchByExternalIdAsync(
+        searchQuery,
+        isAdmin ? undefined : departmentIds,
+      );
+      if (!patients || patients.length === 0) {
+        return ServiceResponse.success("No patients found matching the search query", []);
+      }
+      return ServiceResponse.success(`Found ${patients.length} patient(s)`, patients);
+    } catch (ex) {
+      return ServiceResponse.failure(
+        "An error occurred while searching patients by external ID.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
 
 export const patientService = new PatientService();

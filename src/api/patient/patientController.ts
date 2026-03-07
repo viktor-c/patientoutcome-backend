@@ -1,6 +1,8 @@
 import { patientService } from "@/api/patient/patientService";
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import type { Request, RequestHandler, Response } from "express";
+import { StatusCodes } from "http-status-codes";
 
 /**
  * Patient Controller
@@ -8,6 +10,56 @@ import type { Request, RequestHandler, Response } from "express";
  * @description Handles HTTP requests for patient record management including demographics and case associations
  */
 class PatientController {
+  private getSessionDepartmentIds(req: Request): string[] {
+    const departments = req.session?.department;
+    if (!departments) {
+      return [];
+    }
+
+    return departments
+      .flatMap((department: string) => department.toString().split(","))
+      .map((department: string) => department.trim())
+      .filter(Boolean);
+  }
+
+  private isAdmin(req: Request): boolean {
+    return Boolean(req.session?.roles?.includes("admin"));
+  }
+
+  private async assertPatientDepartmentAccess(req: Request, patientId: string, res: Response): Promise<boolean> {
+    if (this.isAdmin(req)) {
+      return true;
+    }
+
+    const userDepartments = this.getSessionDepartmentIds(req);
+    if (userDepartments.length === 0) {
+      return true;
+    }
+
+    const patientResponse = await patientService.findById(patientId);
+    if (!patientResponse.success || !patientResponse.responseObject) {
+      return true;
+    }
+
+    const patientDepartments = (patientResponse.responseObject.departments || []).map((department) => department.toString());
+    if (patientDepartments.length === 0) {
+      return true;
+    }
+
+    const hasAccess = patientDepartments.some((department) => userDepartments.includes(department));
+    if (!hasAccess) {
+      await handleServiceResponse(
+        ServiceResponse.failure(
+          "Access denied: You can only access patients from your own departments",
+          null,
+          StatusCodes.FORBIDDEN,
+        ),
+        res,
+      );
+    }
+
+    return hasAccess;
+  }
   /**
    * Get all patients with pagination
    * @route GET /patient
@@ -25,7 +77,8 @@ class PatientController {
       includeDeleted: includeDeleted === 'true',
     };
 
-    const serviceResponse = await patientService.findAll(options);
+    const departmentIds = this.getSessionDepartmentIds(req);
+    const serviceResponse = await patientService.findAllScoped(options, departmentIds, this.isAdmin(req));
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -39,7 +92,13 @@ class PatientController {
    */
   public getPatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const serviceResponse = await patientService.findById(id);
+    const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
+    if (!hasAccess) {
+      return;
+    }
+
+    const departmentIds = this.getSessionDepartmentIds(req);
+    const serviceResponse = await patientService.findByIdScoped(id, departmentIds, this.isAdmin(req));
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -53,7 +112,8 @@ class PatientController {
    */
   public getPatientByExternalId: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const serviceResponse = await patientService.findByExternalId(id);
+    const departmentIds = this.getSessionDepartmentIds(req);
+    const serviceResponse = await patientService.findByExternalIdScoped(id, departmentIds, this.isAdmin(req));
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -67,7 +127,12 @@ class PatientController {
    */
   public findPatientsByExternalId: RequestHandler = async (req: Request, res: Response) => {
     const { searchQuery } = req.params;
-    const serviceResponse = await patientService.searchByExternalId(searchQuery);
+    const departmentIds = this.getSessionDepartmentIds(req);
+    const serviceResponse = await patientService.searchByExternalIdScoped(
+      searchQuery,
+      departmentIds,
+      this.isAdmin(req),
+    );
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -82,6 +147,31 @@ class PatientController {
   public createPatient: RequestHandler = async (req: Request, res: Response) => {
     const patientData = req.body;
     const userId = req.session?.userId;
+
+    if (!this.isAdmin(req)) {
+      const userDepartments = this.getSessionDepartmentIds(req);
+      if (
+        Array.isArray(patientData.departments) &&
+        patientData.departments.length > 0 &&
+        userDepartments.length > 0
+      ) {
+        const hasInvalidDepartment = patientData.departments.some(
+          (department: string) => !userDepartments.includes(department.toString()),
+        );
+
+        if (hasInvalidDepartment) {
+          return handleServiceResponse(
+            ServiceResponse.failure(
+              "Access denied: You can only create patients in your own departments",
+              null,
+              StatusCodes.FORBIDDEN,
+            ),
+            res,
+          );
+        }
+      }
+    }
+
     const serviceResponse = await patientService.createPatient(patientData, userId);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -97,6 +187,12 @@ class PatientController {
   public updatePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
     const patientData = req.body;
+
+    const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
+    if (!hasAccess) {
+      return;
+    }
+
     const serviceResponse = await patientService.updatePatient(id, patientData);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -111,6 +207,12 @@ class PatientController {
    */
   public deletePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
+    if (!hasAccess) {
+      return;
+    }
+
     const serviceResponse = await patientService.deletePatient(id);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -125,6 +227,12 @@ class PatientController {
    */
   public softDeletePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
+    if (!hasAccess) {
+      return;
+    }
+
     const serviceResponse = await patientService.softDeletePatient(id);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -153,6 +261,12 @@ class PatientController {
    */
   public restorePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
+    if (!hasAccess) {
+      return;
+    }
+
     const serviceResponse = await patientService.restorePatient(id);
     return handleServiceResponse(serviceResponse, res);
   };
@@ -173,7 +287,8 @@ class PatientController {
       limit: limit ? Number(limit) : undefined,
     };
 
-    const serviceResponse = await patientService.findAllDeleted(options);
+    const departmentIds = this.getSessionDepartmentIds(req);
+    const serviceResponse = await patientService.findAllDeletedScoped(options, departmentIds, this.isAdmin(req));
     return handleServiceResponse(serviceResponse, res);
   };
 }

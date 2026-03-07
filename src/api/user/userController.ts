@@ -179,10 +179,8 @@ class UserController {
       req.session.lastLogin = new Date(); // Store last login time
       req.session.loggedIn = true; // Mark the user as logged in
       req.session.username = username;
-      // Store user department ObjectId as array
-      req.session.department = serviceResponse.responseObject.department 
-        ? [serviceResponse.responseObject.department.toString()] 
-        : [];
+      // Store user departments as string array in session
+      req.session.department = (serviceResponse.responseObject.department || []).map((dept) => dept.toString());
 
       // Log the activity
       activityLogService.log({

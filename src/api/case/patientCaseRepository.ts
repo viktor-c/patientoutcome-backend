@@ -406,6 +406,46 @@ export class PatientCaseRepository {
       ],
       supervisors: ["676336bea497301f6eff8c91"],
     },
+    {
+      _id: "677da5efcb4569ad1c655161",
+      patient: "6771d9d410ede2552b7bba42",
+      externalId: "R4501",
+      createdAt: faker.date.past().toISOString(),
+      mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 2 }),
+      mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 2 }),
+      __v: 0,
+      surgeries: [],
+      medicalHistory: faker.lorem.paragraph(),
+      notes: [
+        {
+          _id: new mongoose.Types.ObjectId().toString(),
+          dateCreated: new Date().toISOString(),
+          createdBy: "676336bea497301f6eff8a8f",
+          note: faker.lorem.paragraph(),
+        },
+      ],
+      supervisors: ["676336bea497301f6eff8a8f"],
+    },
+    {
+      _id: "677da5efcb4569ad1c655162",
+      patient: "6771d9d410ede2552b7bba43",
+      externalId: "R4502",
+      createdAt: faker.date.past().toISOString(),
+      mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 2 }),
+      mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 2 }),
+      __v: 0,
+      surgeries: [],
+      medicalHistory: faker.lorem.paragraph(),
+      notes: [
+        {
+          _id: new mongoose.Types.ObjectId().toString(),
+          dateCreated: new Date().toISOString(),
+          createdBy: "676336bea497301f6eff8a8f",
+          note: faker.lorem.paragraph(),
+        },
+      ],
+      supervisors: ["676336bea497301f6eff8a8f"],
+    },
   ];
   /**
    * Creates mock data for testing and development purposes.

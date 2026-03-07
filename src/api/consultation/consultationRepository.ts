@@ -242,6 +242,42 @@ export class ConsultationRepository {
         images: [],
         visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
       },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a6",
+        __v: 0,
+        patientCaseId: "677da5efcb4569ad1c655161",
+        dateAndTime: faker.date.recent({ days: 4 }),
+        reasonForConsultation: ["planned"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b8",
+            dateCreated: faker.date.recent({ days: 4 }),
+            createdBy: userRepository.mockUsers?.[3]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: [],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[3]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a7",
+        __v: 0,
+        patientCaseId: "677da5efcb4569ad1c655162",
+        dateAndTime: faker.date.soon({ days: 5 }),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8b9",
+            dateCreated: faker.date.soon({ days: 5 }),
+            createdBy: userRepository.mockUsers?.[3]?._id || "",
+            note: faker.lorem.paragraph(),
+          },
+        ],
+        proms: [],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[3]?._id || ""],
+      },
     ];
   }
 

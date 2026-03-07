@@ -48,7 +48,7 @@ export class UserRepository {
     {
       _id: "676336bea497301f6eff8a8f",
       belongsToCenter: "675000000000000000000003", // Klinikum Fulda
-      department: ["675000000000000000000001"], // References first mock department (Orthopädie)
+      department: ["675000000000000000000002"], // References second mock department (Radiology)
       email: "jdoe@example.com",
       lastLogin: faker.date.recent().toISOString(),
       name: "John Doe",

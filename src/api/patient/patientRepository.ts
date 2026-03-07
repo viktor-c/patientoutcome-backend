@@ -8,6 +8,7 @@ export interface PaginationOptions {
   page?: number;
   limit?: number;
   includeDeleted?: boolean;
+  departmentIds?: string[];
 }
 
 export interface PaginatedResult<T> {
@@ -19,6 +20,17 @@ export interface PaginatedResult<T> {
 }
 
 export class PatientRepository {
+  private addDepartmentFilter(baseFilter: Record<string, unknown>, departmentIds?: string[]): Record<string, unknown> {
+    if (!departmentIds || departmentIds.length === 0) {
+      return baseFilter;
+    }
+
+    return {
+      ...baseFilter,
+      departments: { $in: departmentIds },
+    };
+  }
+
   /**
    * Helper method to enrich patients with case and consultation counts
    * @param patients Array of patient documents
@@ -77,11 +89,11 @@ export class PatientRepository {
 
   async findAllAsync(options: PaginationOptions = {}): Promise<PaginatedResult<PatientWithCounts>> {
     try {
-      const { page = 1, limit = 10, includeDeleted = false } = options;
+      const { page = 1, limit = 10, includeDeleted = false, departmentIds } = options;
       const skip = (page - 1) * limit;
 
       // Build query filter
-      const filter = includeDeleted ? {} : { deletedAt: null };
+      const filter = this.addDepartmentFilter(includeDeleted ? {} : { deletedAt: null }, departmentIds);
 
       const [patients, total] = await Promise.all([
         patientModel.find(filter)
@@ -110,14 +122,15 @@ export class PatientRepository {
     }
   }
 
-  async findByIdAsync(id: string): Promise<Patient | null> {
+  async findByIdAsync(id: string, departmentIds?: string[]): Promise<Patient | null> {
     try {
       mongoose.isValidObjectId(id);
     } catch (error) {
       return Promise.reject(error);
     }
     try {
-      const patient = await patientModel.findOne({ _id: id, deletedAt: null }).populate(["cases"]);
+      const query = this.addDepartmentFilter({ _id: id, deletedAt: null }, departmentIds);
+      const patient = await patientModel.findOne(query).populate(["cases"]);
       return patient;
     } catch (error) {
       return Promise.reject(error);
@@ -129,10 +142,11 @@ export class PatientRepository {
    * @param externalId - The exact external ID to match
    * @returns Patient if found, null otherwise
    */
-  async findByExternalIdAsync(externalId: string): Promise<Patient | null> {
+  async findByExternalIdAsync(externalId: string, departmentIds?: string[]): Promise<Patient | null> {
     try {
       // Exact match - the externalId must be exactly in the array, and not deleted
-      const patient = await patientModel.findOne({ externalPatientId: externalId, deletedAt: null }).lean();
+      const query = this.addDepartmentFilter({ externalPatientId: externalId, deletedAt: null }, departmentIds);
+      const patient = await patientModel.findOne(query).lean();
       return patient || null;
     } catch (error) {
       return Promise.reject(error);
@@ -144,12 +158,17 @@ export class PatientRepository {
    * @param searchQuery - The partial external ID to search for
    * @returns Array of patients matching the search query with only ID and externalPatientId
    */
-  async searchByExternalIdAsync(searchQuery: string): Promise<Patient[]> {
+  async searchByExternalIdAsync(searchQuery: string, departmentIds?: string[]): Promise<Patient[]> {
     try {
       // Partial match using regex - case insensitive, exclude deleted
       const regex = new RegExp(searchQuery, "i");
+      const query = this.addDepartmentFilter(
+        { externalPatientId: { $elemMatch: { $regex: regex } }, deletedAt: null },
+        departmentIds,
+      );
+
       const patients = await patientModel
-        .find({ externalPatientId: { $elemMatch: { $regex: regex } }, deletedAt: null })
+        .find(query)
         .select("_id externalPatientId")
         .lean();
       return patients;
@@ -267,16 +286,18 @@ export class PatientRepository {
    */
   async findAllDeletedAsync(options: PaginationOptions = {}): Promise<PaginatedResult<PatientWithCounts>> {
     try {
-      const { page = 1, limit = 10 } = options;
+      const { page = 1, limit = 10, departmentIds } = options;
       const skip = (page - 1) * limit;
 
+      const deletedFilter = this.addDepartmentFilter({ deletedAt: { $ne: null } }, departmentIds);
+
       const [patients, total] = await Promise.all([
-        patientModel.find({ deletedAt: { $ne: null } })
+        patientModel.find(deletedFilter)
           .sort({ deletedAt: -1 })
           .skip(skip)
           .limit(limit)
           .lean(),
-        patientModel.countDocuments({ deletedAt: { $ne: null } }),
+        patientModel.countDocuments(deletedFilter),
       ]);
 
       const totalPages = Math.ceil(total / limit);
@@ -320,48 +341,56 @@ export class PatientRepository {
       externalPatientId: ["4g2kz"],
       sex: "F",
       cases: ["677da5d8cb4569ad1c65515f"],
+      departments: ["675000000000000000000001"],
     },
     {
       _id: "6771d9d410ede2552b7bba41",
       externalPatientId: ["a9b7c"],
       sex: "M",
       cases: ["677da5efcb4569ad1c655160"],
+      departments: ["675000000000000000000001"],
     },
     {
       _id: "6771d9d410ede2552b7bba42",
       externalPatientId: ["q1w2e"],
       sex: "F",
-      cases: [],
+      cases: ["677da5efcb4569ad1c655161"],
+      departments: ["675000000000000000000002"],
     },
     {
       _id: "6771d9d410ede2552b7bba43",
       externalPatientId: ["m5n8p"],
       sex: "M",
-      cases: [],
+      cases: ["677da5efcb4569ad1c655162"],
+      departments: ["675000000000000000000002"],
     },
     {
       _id: "6771d9d410ede2552b7bba44",
       externalPatientId: ["z0x9v"],
       sex: "F",
       cases: [],
+      departments: ["675000000000000000000001"],
     },
     {
       _id: "6771d9d410ede2552b7bba45",
       externalPatientId: ["b3t6y"],
       sex: "M",
       cases: [],
+      departments: ["675000000000000000000001"],
     },
     {
       _id: "6771d9d410ede2552b7bba46",
       externalPatientId: ["n2c4r"],
       sex: "F",
       cases: [],
+      departments: ["675000000000000000000002"],
     },
     {
       _id: "6771d9d410ede2552b7bba47",
       externalPatientId: ["h7u1s"],
       sex: "M",
       cases: [],
+      departments: ["675000000000000000000002"],
     },
     {
       _id: "6771d9d410ede2552b7bba48",
