@@ -275,7 +275,7 @@ export class FormRepository {
       // VAS Form 2
       const vasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
-        _id: "6832337195b15e2d7e223d54",
+        _id: "6832337195b15e2d7e223d52",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
@@ -351,6 +351,111 @@ export class FormRepository {
         description: formTemplateRepository.mockFormTemplateData[2].description,
         accessLevel: FormAccessLevel.PATIENT,
         currentVersion: 0
+      });
+
+      // EFAS Form for Consultation a3
+      this.mockForms.push({
+        _id: "6832337595b15e2d7e223d59",
+        caseId: "677da5efcb4569ad1c655160",
+        consultationId: "60d5ec49f1b2c12d88f1e8a3",
+        formTemplateId: "67b4e612d0feb4ad99ae2e83",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e83"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[0].title,
+        description: formTemplateRepository.mockFormTemplateData[0].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // AOFAS Form for Consultation a3
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d5a",
+        caseId: "677da5efcb4569ad1c655160",
+        consultationId: "60d5ec49f1b2c12d88f1e8a3",
+        formTemplateId: "67b4e612d0feb4ad99ae2e84",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e84"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[1].title,
+        description: formTemplateRepository.mockFormTemplateData[1].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // VAS Form for Consultation a4
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d5b",
+        caseId: "677da5efcb4569ad1c655160",
+        consultationId: "60d5ec49f1b2c12d88f1e8a4",
+        formTemplateId: "67b4e612d0feb4ad99ae2e86",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e86"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[3].title,
+        description: formTemplateRepository.mockFormTemplateData[3].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // AOFAS Form for Consultation a5
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d5c",
+        caseId: "677da5efcb4569ad1c655160",
+        consultationId: "60d5ec49f1b2c12d88f1e8a5",
+        formTemplateId: "67b4e612d0feb4ad99ae2e84",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e84"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[1].title,
+        description: formTemplateRepository.mockFormTemplateData[1].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // MOXFQ Form for Consultation a6
+      this.mockForms.push({
+        _id: "6832337595b15e2d7e223d5d",
+        caseId: "677da5efcb4569ad1c655161",
+        consultationId: "60d5ec49f1b2c12d88f1e8a6",
+        formTemplateId: "67b4e612d0feb4ad99ae2e85",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e85"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[2].title,
+        description: formTemplateRepository.mockFormTemplateData[2].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // VAS Form for Consultation a6
+      this.mockForms.push({
+        _id: "6832337195b15e2d7e223d5e",
+        caseId: "677da5efcb4569ad1c655161",
+        consultationId: "60d5ec49f1b2c12d88f1e8a6",
+        formTemplateId: "67b4e612d0feb4ad99ae2e86",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e86"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[3].title,
+        description: formTemplateRepository.mockFormTemplateData[3].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // EFAS Form for Consultation a7
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d5f",
+        caseId: "677da5efcb4569ad1c655162",
+        consultationId: "60d5ec49f1b2c12d88f1e8a7",
+        formTemplateId: "67b4e612d0feb4ad99ae2e83",
+        patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e83"]),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: formTemplateRepository.mockFormTemplateData[0].title,
+        description: formTemplateRepository.mockFormTemplateData[0].description,
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
       });
 
       logger.info("Mock forms populated with template data successfully");

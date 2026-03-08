@@ -144,6 +144,29 @@ describe("Multi-department access isolation", () => {
     expect(allowedConsultationGet.status).toBe(200);
   });
 
+  it("filters date-range consultations by user departments", async () => {
+    const fromDate = "2020-01-01T00:00:00.000Z";
+    const toDate = "2099-12-31T23:59:59.999Z";
+
+    const dept1Range = await dept1DoctorAgent.get(`/consultations/from/${fromDate}/to/${toDate}`);
+    expect(dept1Range.status).toBe(200);
+    const dept1Ids = (dept1Range.body.responseObject || []).map((consultation: any) => consultation._id);
+    expect(dept1Ids).toContain(DEPT1_CONSULTATION_ID);
+    expect(dept1Ids).not.toContain(DEPT2_CONSULTATION_ID);
+
+    const dept2Range = await dept2DoctorAgent.get(`/consultations/from/${fromDate}/to/${toDate}`);
+    expect(dept2Range.status).toBe(200);
+    const dept2Ids = (dept2Range.body.responseObject || []).map((consultation: any) => consultation._id);
+    expect(dept2Ids).toContain(DEPT2_CONSULTATION_ID);
+    expect(dept2Ids).not.toContain(DEPT1_CONSULTATION_ID);
+
+    const adminRange = await adminAgent.get(`/consultations/from/${fromDate}/to/${toDate}`);
+    expect(adminRange.status).toBe(200);
+    const adminIds = (adminRange.body.responseObject || []).map((consultation: any) => consultation._id);
+    expect(adminIds).toContain(DEPT1_CONSULTATION_ID);
+    expect(adminIds).toContain(DEPT2_CONSULTATION_ID);
+  });
+
   it("allows admin to access/create/delete cases and consultations across departments", async () => {
     const adminCaseList = await adminAgent.get(`/patient/${DEPT2_PATIENT_ID}/cases`);
     expect(adminCaseList.status).toBe(200);

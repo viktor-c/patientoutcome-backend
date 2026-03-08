@@ -357,7 +357,49 @@ class ConsultationController {
     const fromDate = z.string().parse(req.params.fromDate);
     const toDate = z.string().parse(req.params.toDate);
     const serviceResponse = await consultationService.getAllConsultationsOnDay(fromDate, toDate);
-    return handleServiceResponse(serviceResponse, res);
+
+    if (!serviceResponse.success || this.isAdmin(req)) {
+      return handleServiceResponse(serviceResponse, res);
+    }
+
+    const userDepartments = this.getSessionDepartmentIds(req);
+    if (userDepartments.length === 0) {
+      return handleServiceResponse(serviceResponse, res);
+    }
+
+    const consultations = serviceResponse.responseObject || [];
+    const filteredConsultations = consultations.filter((consultation: any) => {
+      const patientDepartments = consultation?.patientCaseId?.patient?.departments;
+
+      if (!Array.isArray(patientDepartments) || patientDepartments.length === 0) {
+        return true;
+      }
+
+      const departmentIds = patientDepartments
+        .map((department: any) => {
+          if (typeof department === "string") {
+            return department;
+          }
+
+          if (department?._id) {
+            return department._id.toString();
+          }
+
+          if (department?.id) {
+            return department.id.toString();
+          }
+
+          return undefined;
+        })
+        .filter(Boolean) as string[];
+
+      return departmentIds.some((departmentId) => userDepartments.includes(departmentId));
+    });
+
+    return handleServiceResponse(
+      ServiceResponse.success("Consultations retrieved successfully", filteredConsultations),
+      res,
+    );
   };
 
   /**

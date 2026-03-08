@@ -65,7 +65,7 @@ describe("PatientCase API", () => {
 
   it("should return empty array when patient has no cases", async () => {
     // Use a patient ID that exists but has no cases (from mock patients without cases)
-    const patientIdWithNoCases = "6771d9d410ede2552b7bba44"; // Patient with externalPatientId "z0x9v" has no cases
+    const patientIdWithNoCases = "6771d9d410ede2552b7bba4c"; // Patient with externalPatientId "e1r8t" has no cases
     const res = await request(app).get(`/patient/${patientIdWithNoCases}/cases`);
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
