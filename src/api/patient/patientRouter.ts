@@ -351,7 +351,22 @@ patientRegistry.registerPath({
   ]),
 });
 
-patientRouter.post("/:id/soft-delete", validateRequest(GetPatientSchema), patientController.softDeletePatient);
+patientRouter.post(
+  "/:id/soft-delete",
+  validateRequest(
+    z.object({
+      params: GetPatientSchema.shape.params,
+      body: z
+        .object({
+          deleteCases: z.boolean().optional(),
+          deleteConsultations: z.boolean().optional(),
+          deleteForms: z.boolean().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  patientController.softDeletePatient,
+);
 
 // Register the path for soft deleting multiple patients
 patientRegistry.registerPath({

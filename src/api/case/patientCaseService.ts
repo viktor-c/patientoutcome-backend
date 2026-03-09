@@ -4,6 +4,8 @@ import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import { surgeryController } from "../surgery/surgeryController";
 import { SurgeryRepository } from "../surgery/surgeryRepository";
+import { consultationRepository } from "@/api/consultation/consultationRepository";
+import { formRepository } from "@/api/form/formRepository";
 import type { PatientCase, PatientCaseWithPopulatedSurgeries } from "./patientCaseModel";
 import { PatientCaseRepository } from "./patientCaseRepository";
 
@@ -18,6 +20,19 @@ export class PatientCaseService {
   constructor() {
     this.repository = new PatientCaseRepository();
     this.surgeryRepository = new SurgeryRepository();
+  }
+
+  private getConsultationId(consultation: unknown): string | null {
+    if (!consultation || typeof consultation !== "object") return null;
+    const consultationRecord = consultation as Record<string, unknown>;
+    const rawId = consultationRecord._id ?? consultationRecord.id;
+    if (typeof rawId === "string") return rawId;
+    if (rawId && typeof rawId === "object") {
+      const idRecord = rawId as Record<string, unknown>;
+      if (typeof idRecord._id === "string") return idRecord._id;
+      if (typeof idRecord.id === "string") return idRecord.id;
+    }
+    return null;
   }
 
   /**
@@ -187,8 +202,41 @@ export class PatientCaseService {
    * @returns the soft deleted case
    * @throws {ServiceResponse} if an error occurs while soft deleting the case
    */
-  async softDeletePatientCaseById(patientId: string, caseId: string): Promise<ServiceResponse<PatientCase | null>> {
+  async softDeletePatientCaseById(
+    patientId: string,
+    caseId: string,
+    options: { deleteConsultations?: boolean; deleteForms?: boolean } = {},
+  ): Promise<ServiceResponse<PatientCase | null>> {
     try {
+      const shouldDeleteConsultations = options.deleteConsultations ?? false;
+      const shouldDeleteForms = options.deleteForms ?? false;
+
+      if (shouldDeleteConsultations || shouldDeleteForms) {
+        const consultations = await consultationRepository.getAllConsultations(caseId);
+
+        for (const consultation of consultations) {
+          const consultationId = this.getConsultationId(consultation);
+          if (!consultationId) continue;
+
+          if (shouldDeleteConsultations) {
+            if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
+              await Promise.all(
+                consultation.proms.map((formId) =>
+                  formRepository.softDeleteForm(formId.toString(), "system", "Consultation was deleted"),
+                ),
+              );
+            }
+            await consultationRepository.deleteConsultation(consultationId);
+          } else if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
+            await Promise.all(
+              consultation.proms.map((formId) =>
+                formRepository.softDeleteForm(formId.toString(), "system", "Parent case was soft deleted"),
+              ),
+            );
+          }
+        }
+      }
+
       const softDeletedCase = await this.repository.softDeletePatientCaseById(patientId, caseId);
       if (!softDeletedCase) {
         return ServiceResponse.failure("Case not found", null, StatusCodes.NOT_FOUND);

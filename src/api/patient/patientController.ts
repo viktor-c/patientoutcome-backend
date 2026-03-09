@@ -227,13 +227,20 @@ class PatientController {
    */
   public softDeletePatient: RequestHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
+    const deleteCases = req.body?.deleteCases === true;
+    const deleteConsultations = req.body?.deleteConsultations === true;
+    const deleteForms = req.body?.deleteForms === true;
 
     const hasAccess = await this.assertPatientDepartmentAccess(req, id, res);
     if (!hasAccess) {
       return;
     }
 
-    const serviceResponse = await patientService.softDeletePatient(id);
+    const serviceResponse = await patientService.softDeletePatient(id, {
+      deleteCases,
+      deleteConsultations,
+      deleteForms,
+    });
     return handleServiceResponse(serviceResponse, res);
   };
 

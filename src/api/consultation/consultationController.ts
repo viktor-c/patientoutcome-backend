@@ -290,6 +290,7 @@ class ConsultationController {
    */
   public deleteConsultation: RequestHandler = async (req: Request, res: Response) => {
     const consultationId = z.string().parse(req.params.consultationId);
+    const deleteForms = req.body?.deleteForms !== false;
 
     const hasDepartmentAccess = await this.canAccessConsultationByDepartment(req, consultationId);
     if (!hasDepartmentAccess) {
@@ -314,7 +315,7 @@ class ConsultationController {
         await codeService.deleteCode(fullCodeDocument.responseObject._id.toString());
       }
     }
-    const serviceResponse = await consultationService.deleteConsultation(consultationId);
+    const serviceResponse = await consultationService.deleteConsultation(consultationId, { deleteForms });
     return handleServiceResponse(serviceResponse, res);
   };
 

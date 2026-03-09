@@ -380,8 +380,13 @@ export class ConsultationService {
    * If an error occurs during the deletion process, it logs the error and returns a failure response.
    * @returns
    */
-  async deleteConsultation(consultationId: string): Promise<ServiceResponse<null>> {
+  async deleteConsultation(
+    consultationId: string,
+    options: { deleteForms?: boolean } = {},
+  ): Promise<ServiceResponse<null>> {
     try {
+      const shouldDeleteForms = options.deleteForms ?? true;
+
       // First, get the consultation to find associated forms
       const consultation = await this.consultationRepository.getConsultationById(consultationId);
       if (!consultation) {
@@ -389,7 +394,7 @@ export class ConsultationService {
       }
 
       // Soft delete all associated forms before deleting the consultation
-      if (consultation.proms && consultation.proms.length > 0) {
+      if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
         try {
           const softDeletePromises = consultation.proms.map((formId) =>
             formRepository.softDeleteForm(

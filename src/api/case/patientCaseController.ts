@@ -258,7 +258,12 @@ class PatientCaseController {
   public softDeletePatientCaseById: RequestHandler = async (req: Request, res: Response) => {
     const patientId = z.string().parse(req.params.patientId);
     const caseId = z.string().parse(req.params.caseId);
-    const serviceResponse = await service.softDeletePatientCaseById(patientId, caseId);
+    const deleteConsultations = req.body?.deleteConsultations === true;
+    const deleteForms = req.body?.deleteForms === true;
+    const serviceResponse = await service.softDeletePatientCaseById(patientId, caseId, {
+      deleteConsultations,
+      deleteForms,
+    });
     return handleServiceResponse(serviceResponse, res);
   };
 

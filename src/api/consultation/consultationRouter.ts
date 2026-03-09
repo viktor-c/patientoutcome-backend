@@ -271,7 +271,22 @@ consultationRegistry.registerPath({
   ]),
 });
 
-consultationRouter.delete("/consultation/:consultationId", consultationController.deleteConsultation);
+consultationRouter.delete(
+  "/consultation/:consultationId",
+  validateRequest(
+    z.object({
+      params: z.object({
+        consultationId: commonValidations.id,
+      }),
+      body: z
+        .object({
+          deleteForms: z.boolean().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  consultationController.deleteConsultation,
+);
 
 // Register the path for getting a consultation by form access code
 consultationRegistry.registerPath({

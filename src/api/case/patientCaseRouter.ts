@@ -394,6 +394,12 @@ caseRouter.post(
         patientId: commonValidations.id,
         caseId: commonValidations.id,
       }),
+      body: z
+        .object({
+          deleteConsultations: z.boolean().optional(),
+          deleteForms: z.boolean().optional(),
+        })
+        .optional(),
     }),
   ),
   patientCaseController.softDeletePatientCaseById,
