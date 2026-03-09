@@ -117,6 +117,9 @@ export class UserRepository {
       permissions: [],
       username: "kiosk1",
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+      // tie the kiosk user to the consultation that has kioskId set in the
+      // consultation mock data (60d5ec49f1b2c12d88f1e8a4)
+      consultationId: "60d5ec49f1b2c12d88f1e8a4",
     },
     {
       _id: "676336bea497301f6eff8c96",
@@ -129,6 +132,7 @@ export class UserRepository {
       permissions: [],
       username: "kiosk2",
       password: "$2b$10$5WBwIE90gQNqIaJEf4eD5ORB5Nrpnh5YqehxWIm.b3zbl8vS7ysAe", // plaintext password123#124
+      consultationId: "60d5ec49f1b2c12d88f1e8a7",
     },
   ];
 

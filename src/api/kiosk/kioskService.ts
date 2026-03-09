@@ -43,13 +43,26 @@ export class KioskService {
         return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
       }
 
-      if (!kioskUser.consultationId) {
-        return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
+      // first try the explicit link on the user document
+      let consultation: Consultation | null = null;
+      if (kioskUser.consultationId) {
+        consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
       }
 
-      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
+      // if we didn't find anything, fall back to searching by kioskId on the
+      // consultation record itself (mock data used to set kioskId instead of the
+      // user field).  This keeps the service behaviour robust when the two
+      // sides are not kept in sync.
       if (!consultation) {
-        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+        consultation = await consultationRepository.getConsultationByKioskId(kioskUserId);
+        if (consultation && !kioskUser.consultationId) {
+          // update the user record so future lookups are fast and consistent
+          await userRepository.updateByIdAsync(kioskUserId, { consultationId: consultation._id });
+        }
+      }
+
+      if (!consultation) {
+        return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success("Consultation retrieved successfully", consultation);
@@ -76,12 +89,22 @@ export class KioskService {
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
       const kioskUser = await userRepository.findByIdAsync(kioskUserId);
-      if (!kioskUser || !kioskUser.consultationId) {
+      if (!kioskUser) {
         return ServiceResponse.failure("No active consultation found for kiosk user", null, StatusCodes.NOT_FOUND);
       }
 
-      // Get consultation, then add the note to the existing notes
-      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
+      // obtain the consultation using the same fallback logic as getConsultation
+      let consultation: Consultation | null = null;
+      if (kioskUser.consultationId) {
+        consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
+      }
+      if (!consultation) {
+        consultation = await consultationRepository.getConsultationByKioskId(kioskUserId);
+        if (consultation && !kioskUser.consultationId) {
+          await userRepository.updateByIdAsync(kioskUserId, { consultationId: consultation._id });
+        }
+      }
+
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
@@ -138,13 +161,21 @@ export class KioskService {
         return ServiceResponse.failure("Kiosk user not found", null, StatusCodes.NOT_FOUND);
       }
 
-      if (!kioskUser.consultationId) {
-        return ServiceResponse.failure("No active consultation found for this kiosk user", null, StatusCodes.NOT_FOUND);
+      let consultation: Consultation | null = null;
+      if (kioskUser.consultationId) {
+        consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
+      }
+      if (!consultation) {
+        consultation = await consultationRepository.getConsultationByKioskId(kioskUserId);
+        if (consultation && !kioskUser.consultationId) {
+          // update the user as above; admin endpoints don't necessarily need
+          // this but it keeps data in sync.
+          await userRepository.updateByIdAsync(kioskUserId, { consultationId: consultation._id });
+        }
       }
 
-      const consultation = await consultationRepository.getConsultationById(kioskUser.consultationId.toString());
       if (!consultation) {
-        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure("No active consultation found for this kiosk user", null, StatusCodes.NOT_FOUND);
       }
 
       return ServiceResponse.success("Consultation retrieved successfully", consultation);

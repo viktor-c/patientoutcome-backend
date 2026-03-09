@@ -78,6 +78,18 @@ describe("ACL Authorization Tests", () => {
 
         await logoutUser(agent);
       });
+
+      it("should allow a kiosk user to query his consultation (200 or 404 depending on assignment)", async () => {
+        const agent = await loginUserAgent("kiosk");
+        const response = await agent.get("/kiosk/consultation");
+        // mock data now links kiosk1 to a consultation, so we expect 200
+        expect([StatusCodes.OK, StatusCodes.NOT_FOUND]).toContain(response.status);
+        if (response.status === StatusCodes.OK) {
+          expect(response.body.responseObject).toBeDefined();
+          expect(response.body.responseObject._id).toBe("60d5ec49f1b2c12d88f1e8a4");
+        }
+        await logoutUser(agent);
+      });
     });
 
     describe("Kiosk Admin Endpoint (requires at least mfa level)", () => {

@@ -75,6 +75,26 @@ export class ConsultationRepository {
   }
 
   /**
+   * Find a consultation by the kiosk user that it is assigned to.
+   * This is the inverse link to `consultation.kioskId` and is used by the
+   * kiosk service when the user document does not have a `consultationId`
+   * (which may happen with older mock data or in edge cases where the two
+   * sides get out of sync).
+   */
+  async getConsultationByKioskId(kioskUserId: string): Promise<Consultation | null> {
+    return consultationModel
+      .findOne({ kioskId: kioskUserId })
+      .populate([
+        { path: "proms", match: { deletedAt: null } },
+        { path: "visitedBy" },
+        { path: "patientCaseId", populate: { path: "patient" } },
+        { path: "kioskId" },
+        { path: "formAccessCode" },
+      ])
+      .lean();
+  }
+
+  /**
    * @param consultationId id of the consultation to update
    * @description This is used to update a consultation by its ID
    * @param data data to update the consultation with

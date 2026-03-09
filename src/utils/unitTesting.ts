@@ -12,6 +12,7 @@ const roleToUserIndex: Record<string, string> = {
   "project-manager": "676336bea497301f6eff8c91",
   admin: "676336bea497301f6eff8c92",
   developer: "676336bea497301f6eff8c94",
+  kiosk: "676336bea497301f6eff8c95", // kiosk1 user id
 };
 
 /**
