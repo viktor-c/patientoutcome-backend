@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { Request, RequestHandler, Response } from "express";
+import type { RequestHandler, Response } from "express";
 import { StatusCodes, getReasonPhrase } from "http-status-codes";
 import type { LevelWithSilent } from "pino";
 import { type CustomAttributeKeys, type Options, pinoHttp } from "pino-http";
@@ -18,8 +18,6 @@ enum LogLevel {
 }
 
 type PinoCustomProps = {
-  request: Request;
-  response: Response;
   error: Error;
   responseBody: unknown;
 };
@@ -47,9 +45,7 @@ const customAttributeKeys: CustomAttributeKeys = {
   responseTime: "timeTaken",
 };
 
-const customProps = (req: Request, res: Response): PinoCustomProps => ({
-  request: req,
-  response: res,
+const customProps = (_req: unknown, res: Response): PinoCustomProps => ({
   error: res.locals.err,
   responseBody: res.locals.responseBody,
 });
