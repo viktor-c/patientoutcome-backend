@@ -1,7 +1,6 @@
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 import { logger } from "@/server";
 import type { Request, RequestHandler, Response } from "express";
-import { getDepartmentCodeLifeMs } from "./codeService";
 import { codeService } from "./codeService";
 
 /**
@@ -21,9 +20,14 @@ class CodeController {
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
     const { code, consultationId } = req.params;
     logger.debug(`Activating code: ${code} for consultation: ${consultationId}`);
-    const deptId = req.session.department?.[0];
-    const expiresInMs = await getDepartmentCodeLifeMs(deptId);
-    const serviceResponse = await codeService.activateCode(code, consultationId, expiresInMs);
+    const serviceResponse = await codeService.activateCode(code, consultationId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public activateCodeForCase: RequestHandler = async (req: Request, res: Response) => {
+    const { code, caseId } = req.params;
+    logger.debug(`Activating code: ${code} for patient case: ${caseId}`);
+    const serviceResponse = await codeService.activateCodeForPatientCase(code, caseId);
     return handleServiceResponse(serviceResponse, res);
   };
   /**
@@ -90,6 +94,12 @@ class CodeController {
   public getCode: RequestHandler = async (req: Request, res: Response) => {
     const { code } = req.params;
     const serviceResponse = await codeService.getCode(code);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public getActiveCodeForCase: RequestHandler = async (req: Request, res: Response) => {
+    const { caseId } = req.params;
+    const serviceResponse = await codeService.getActiveCodeForPatientCase(caseId);
     return handleServiceResponse(serviceResponse, res);
   };
 

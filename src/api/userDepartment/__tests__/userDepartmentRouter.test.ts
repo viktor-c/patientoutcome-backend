@@ -307,6 +307,40 @@ describe("UserDepartment API Endpoints", () => {
     });
   });
 
+  describe("consultation access window fields", () => {
+    it("should accept consultation access window values on create (admin)", async () => {
+      const res = await request(app)
+        .post("/userDepartment")
+        .set("Cookie", adminSessionCookie)
+        .send({
+          name: "ConsultationAccessWindowDept",
+          consultationAccessDaysBefore: 2,
+          consultationAccessDaysAfter: 14,
+        });
+
+      expect(res.statusCode).toEqual(StatusCodes.CREATED);
+      expect(res.body.responseObject.consultationAccessDaysBefore).toBe(2);
+      expect(res.body.responseObject.consultationAccessDaysAfter).toBe(14);
+
+      await request(app)
+        .delete(`/userDepartment/${res.body.responseObject._id}`)
+        .set("Cookie", adminSessionCookie);
+    });
+
+    it("should reject invalid consultation access window values on create (admin)", async () => {
+      const res = await request(app)
+        .post("/userDepartment")
+        .set("Cookie", adminSessionCookie)
+        .send({
+          name: "InvalidConsultationAccessWindowDept",
+          consultationAccessDaysBefore: -1,
+          consultationAccessDaysAfter: 366,
+        });
+
+      expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    });
+  });
+
   // ─── PATCH /:id/code-life endpoint tests ─────────────────────────────────
 
   describe("PATCH /userDepartment/:id/code-life", () => {
@@ -387,6 +421,75 @@ describe("UserDepartment API Endpoints", () => {
       const res = await request(app)
         .patch(`/userDepartment/${doctorDeptId}/code-life`)
         .send({ externalAccessCodeLife: "1w" });
+
+      expect(res.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+    });
+  });
+
+  describe("PATCH /userDepartment/:id/consultation-access-window", () => {
+    const doctorDeptId = "675000000000000000000001";
+    let doctorSessionCookie: string;
+    let studentSessionCookie: string;
+
+    beforeAll(async () => {
+      const doctorLoginResponse = await request(app).post("/user/login").send({
+        username: "bwhite",
+        password: "password123#124",
+      });
+      expect(doctorLoginResponse.status).toBe(StatusCodes.OK);
+      doctorSessionCookie = doctorLoginResponse.headers["set-cookie"];
+
+      const studentLoginResponse = await request(app).post("/user/login").send({
+        username: "student",
+        password: "password123#124",
+      });
+      expect(studentLoginResponse.status).toBe(StatusCodes.OK);
+      studentSessionCookie = studentLoginResponse.headers["set-cookie"];
+    });
+
+    it("should allow a doctor to update consultation access settings for their own department", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/consultation-access-window`)
+        .set("Cookie", doctorSessionCookie)
+        .send({ consultationAccessDaysBefore: 2, consultationAccessDaysAfter: 21 });
+
+      expect(res.statusCode).toEqual(StatusCodes.OK);
+      expect(res.body.success).toBeTruthy();
+      expect(res.body.responseObject.consultationAccessDaysBefore).toBe(2);
+      expect(res.body.responseObject.consultationAccessDaysAfter).toBe(21);
+    });
+
+    it("should reject invalid consultation access window values", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/consultation-access-window`)
+        .set("Cookie", adminSessionCookie)
+        .send({ consultationAccessDaysBefore: -1, consultationAccessDaysAfter: 10 });
+
+      expect(res.statusCode).toEqual(StatusCodes.BAD_REQUEST);
+    });
+
+    it("should deny access for users with role below doctor", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/consultation-access-window`)
+        .set("Cookie", studentSessionCookie)
+        .send({ consultationAccessDaysBefore: 1, consultationAccessDaysAfter: 7 });
+
+      expect(res.statusCode).toEqual(StatusCodes.FORBIDDEN);
+    });
+
+    it("should deny doctor from updating consultation access settings for a different department", async () => {
+      const res = await request(app)
+        .patch("/userDepartment/675000000000000000000002/consultation-access-window")
+        .set("Cookie", doctorSessionCookie)
+        .send({ consultationAccessDaysBefore: 1, consultationAccessDaysAfter: 7 });
+
+      expect(res.statusCode).toEqual(StatusCodes.FORBIDDEN);
+    });
+
+    it("should require authentication", async () => {
+      const res = await request(app)
+        .patch(`/userDepartment/${doctorDeptId}/consultation-access-window`)
+        .send({ consultationAccessDaysBefore: 1, consultationAccessDaysAfter: 7 });
 
       expect(res.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
     });

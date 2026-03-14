@@ -1,5 +1,5 @@
 import { logger } from "@/common/utils/logger";
-import { isPast } from "date-fns";
+import { PatientCaseModel } from "../case/patientCaseModel";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
 import { type Code, codeModel } from "./codeModel";
@@ -12,6 +12,7 @@ export class CodeRepository {
       activatedOn: new Date(),
       expiresOn: dayjs().add(4, "hours").toDate(),
       consultationId: "60d5ec49f1b2c12d88f1e8a1",
+      patientCaseId: "677da5d8cb4569ad1c65515f",
     },
     {
       code: "SJM13",
@@ -103,6 +104,7 @@ export class CodeRepository {
         activatedOn: undefined,
         expiresOn: undefined,
         consultationId: undefined,
+        patientCaseId: undefined,
       };
       codes.push(code);
     }
@@ -120,6 +122,7 @@ export class CodeRepository {
       //@ts-ignore
       code.consultationId.formAccessCode = undefined;
       code.consultationId = undefined;
+      code.patientCaseId = undefined;
       // should be saved, so that the formAccessCode is removed from the consultation
       //@ts-ignore
       await code.consultationId.save();
@@ -127,7 +130,7 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
-  async activateCode(codeString: string, consultationId: string, expiresInMs = 4 * 60 * 60 * 1000): Promise<Code | string> {
+  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -159,22 +162,11 @@ export class CodeRepository {
         return Promise.resolve("Code already activated");
       }
 
-      // if a code had the consultationId, but is expired or inactive, remove the consultationId
-      // and set activatedOn and expiresOn to undefined
-      // this is to allow the code to be reused for another consultation
-      if (code.consultationId && code.activatedOn && code.expiresOn && isPast(code.expiresOn)) {
-        //@ts-ignore
-        code.consultationId.formAccessCode = undefined;
-        code.consultationId = undefined;
-        code.activatedOn = undefined;
-        code.expiresOn = undefined;
-        await code.save();
-      }
-
       // code should exist, because we just checked earlier
       code.activatedOn = new Date();
-      code.expiresOn = new Date(Date.now() + expiresInMs);
+      code.expiresOn = undefined;
       code.consultationId = consultationId;
+      code.patientCaseId = consultation.patientCaseId?.toString();
       await code.save();
 
       consultation.formAccessCode = code._id;
@@ -188,6 +180,54 @@ export class CodeRepository {
     } catch (error) {
       return Promise.reject("An unknown error occurred while activating the code.");
     }
+  }
+
+  async activateCodeForPatientCase(codeString: string, patientCaseId: string): Promise<Code | string> {
+    try {
+      const patientCase = await PatientCaseModel.findById(patientCaseId);
+      if (!patientCase) {
+        return Promise.resolve("Patient case not found");
+      }
+
+      const existingCodeForCase = await codeModel.findOne({
+        patientCaseId,
+        activatedOn: { $exists: true, $ne: null },
+      });
+      if (existingCodeForCase && existingCodeForCase.code !== codeString) {
+        return Promise.resolve("Patient case already has an active code");
+      }
+
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return Promise.resolve("Code not found");
+      }
+      if (code.activatedOn) {
+        return Promise.resolve("Code already activated");
+      }
+
+      code.activatedOn = new Date();
+      code.expiresOn = undefined;
+      code.consultationId = undefined;
+      code.patientCaseId = patientCaseId;
+      await code.save();
+
+      const codeToReturnWithoutId = await codeModel.findById(code._id).select("-_id -__v").lean();
+      if (!codeToReturnWithoutId) {
+        return Promise.resolve("Internal code not found");
+      }
+      return Promise.resolve(codeToReturnWithoutId);
+    } catch (error) {
+      return Promise.reject("An unknown error occurred while activating the code for patient case.");
+    }
+  }
+
+  async getActiveCodeByPatientCaseId(patientCaseId: string): Promise<Code | null> {
+    return codeModel
+      .findOne({
+        patientCaseId,
+        activatedOn: { $exists: true, $ne: null },
+      })
+      .lean();
   }
 
   /*
@@ -227,6 +267,7 @@ export class CodeRepository {
       existingCode.activatedOn = undefined;
       existingCode.expiresOn = undefined;
       existingCode.consultationId = undefined;
+      existingCode.patientCaseId = undefined;
       await existingCode.save();
 
       logger.info({ codeId: existingCode.id }, "Code deactivated successfully");

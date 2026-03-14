@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Code } from "@/api/code/codeModel";
 import type { Consultation } from "@/api/consultation/consultationModel";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
-import { codeRepository, patientCaseRepository, userRepository } from "@/api/seed/seedRouter";
+import { codeRepository, patientCaseRepository, patientRepository, userRepository } from "@/api/seed/seedRouter";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { consultationService } from "../consultationService";
 
@@ -141,5 +141,52 @@ describe("Patient Case Consultation API", () => {
     const response = await agent.get(`/consultation/${invalidConsultationId}`);
     expect(response.status).toBe(StatusCodes.NOT_FOUND);
     expect(response.body.message).toBe("Consultation not found");
+  });
+
+  it("should keep consultation access active based on persisted consultation window when department defaults change", async () => {
+    const caseId = patientCaseRepository.mockPatientCases[0]._id?.toString() as string;
+    const departmentId = patientRepository.mockPatients[0]?.departments?.[0]?.toString();
+    expect(caseId).toBeTruthy();
+    expect(departmentId).toBeTruthy();
+
+    const codeResponse = await agent.post("/form-access-code/addCodes/1");
+    expect(codeResponse.status).toBe(StatusCodes.CREATED);
+    const externalCode = codeResponse.body.responseObject[0]?.code as string;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const createResponse = await agent.post(`/consultation/case/${caseId}`).send({
+      patientCaseId: caseId,
+      dateAndTime: yesterday.toISOString(),
+      reasonForConsultation: ["planned"],
+      notes: [],
+      images: [],
+      visitedBy: [],
+      formTemplates: ["67b4e612d0feb4ad99ae2e83"],
+      formAccessCode: externalCode,
+      consultationAccessDaysBefore: 0,
+      consultationAccessDaysAfter: 1,
+    });
+
+    expect(createResponse.status).toBe(StatusCodes.CREATED);
+
+    const adminAgent = request.agent(app);
+    const adminLogin = await adminAgent.post("/user/login").send({
+      username: "ewilson",
+      password: "password123#124",
+    });
+    expect(adminLogin.status).toBe(StatusCodes.OK);
+
+    const updateDeptResponse = await adminAgent
+      .patch(`/userDepartment/${departmentId}/consultation-access-window`)
+      .send({ consultationAccessDaysBefore: 0, consultationAccessDaysAfter: 0 });
+    expect(updateDeptResponse.status).toBe(StatusCodes.OK);
+
+    const consultationByCode = await agent.get(`/consultation/code/${externalCode}`);
+    expect(consultationByCode.status).toBe(StatusCodes.OK);
+    expect(consultationByCode.body.responseObject?.consultationAccessWindow?.isActive).toBeTruthy();
+
+    await agent.delete(`/consultation/${createResponse.body.responseObject._id}`);
   });
 });

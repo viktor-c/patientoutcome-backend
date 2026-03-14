@@ -1,12 +1,19 @@
 import type { Code } from "@/api/code/codeModel";
 import { codeRepository } from "@/api/code/codeRepository";
-import { getDepartmentCodeLifeMs } from "@/api/code/codeService";
+import { PatientCaseModel } from "@/api/case/patientCaseModel";
 import type { Form } from "@/api/form/formModel";
 import { formRepository } from "@/api/form/formRepository";
+import { patientModel } from "@/api/patient/patientModel";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 import { isValidObjectId } from "mongoose";
+import {
+  attachConsultationAccessWindow,
+  buildConsultationAccessWindow,
+  buildStoredConsultationAccessWindowFields,
+  getDepartmentConsultationAccessSettings,
+} from "./consultationAccessWindow";
 import type { Consultation, CreateConsultation, UpdateConsultation } from "./consultationModel";
 import { type ConsultationRepository, consultationRepository } from "./consultationRepository";
 
@@ -25,19 +32,134 @@ export class ConsultationService {
     this.codeRepository = codeRepository;
   }
 
+  private async resolveDepartmentIdForCase(caseId: string): Promise<string | undefined> {
+    const patientCase = await PatientCaseModel.findById(caseId).select("patient").lean<{ patient?: unknown } | null>();
+    if (!patientCase?.patient) {
+      return undefined;
+    }
+
+    const patient = await patientModel.findById(patientCase.patient.toString()).select("departments").lean();
+    const departments = patient?.departments || [];
+    const firstDepartment = Array.isArray(departments) && departments.length > 0 ? departments[0] : undefined;
+    return firstDepartment?.toString();
+  }
+
+  private async ensureConsultationWindowFields(
+    caseId: string,
+    consultationData: Partial<CreateConsultation & UpdateConsultation>,
+  ): Promise<void> {
+    const dateAndTime = consultationData.dateAndTime;
+    if (!dateAndTime) {
+      return;
+    }
+
+    const departmentId = await this.resolveDepartmentIdForCase(caseId);
+    const departmentSettings = await getDepartmentConsultationAccessSettings(departmentId);
+    const consultationAccessDaysBefore =
+      consultationData.consultationAccessDaysBefore ?? departmentSettings.consultationAccessDaysBefore;
+    const consultationAccessDaysAfter =
+      consultationData.consultationAccessDaysAfter ?? departmentSettings.consultationAccessDaysAfter;
+
+    consultationData.consultationAccessDaysBefore = consultationAccessDaysBefore;
+    consultationData.consultationAccessDaysAfter = consultationAccessDaysAfter;
+
+    if (consultationData.consultationAccessActiveFrom && consultationData.consultationAccessActiveUntil) {
+      return;
+    }
+
+    const storedWindow = buildStoredConsultationAccessWindowFields(dateAndTime, {
+      consultationAccessDaysBefore,
+      consultationAccessDaysAfter,
+    });
+    if (!storedWindow) {
+      return;
+    }
+
+    consultationData.consultationAccessActiveFrom = new Date(storedWindow.consultationAccessActiveFrom);
+    consultationData.consultationAccessActiveUntil = new Date(storedWindow.consultationAccessActiveUntil);
+  }
+
+  private async attachCaseCodeIfMissing<T extends Consultation>(consultation: T): Promise<T> {
+    if (consultation.formAccessCode) {
+      return consultation;
+    }
+
+    const caseField = consultation.patientCaseId as unknown;
+    const caseId =
+      typeof caseField === "string"
+        ? caseField
+        : caseField && typeof caseField === "object"
+          ? ((caseField as Record<string, unknown>)._id as string | undefined) ||
+            ((caseField as { toString?: () => string }).toString?.() ?? undefined)
+          : undefined;
+    if (!caseId) {
+      return consultation;
+    }
+
+    const activeCaseCode = await this.codeRepository.getActiveCodeByPatientCaseId(caseId);
+    if (!activeCaseCode) {
+      return consultation;
+    }
+
+    return {
+      ...(consultation as unknown as Record<string, unknown>),
+      formAccessCode: activeCaseCode,
+    } as unknown as T;
+  }
+
+  private async resolveConsultationByActiveCode(foundCode: Code): Promise<Consultation | null> {
+    if (foundCode.consultationId) {
+      const consultation = await this.consultationRepository.getConsultationById(foundCode.consultationId.toString());
+      if (!consultation) {
+        return null;
+      }
+      const accessWindow = await buildConsultationAccessWindow(consultation);
+      return accessWindow?.isActive ? consultation : null;
+    }
+
+    if (!foundCode.patientCaseId) {
+      return null;
+    }
+
+    const consultations = await this.consultationRepository.getAllConsultations(foundCode.patientCaseId.toString());
+    if (!consultations.length) {
+      return null;
+    }
+
+    const now = new Date().getTime();
+    const activeConsultations = (
+      await Promise.all(
+        consultations.map(async (consultation) => ({
+          consultation,
+          accessWindow: await buildConsultationAccessWindow(consultation),
+        })),
+      )
+    )
+      .filter((entry) => entry.accessWindow?.isActive)
+      .sort((left, right) => {
+        const leftTime = new Date(left.consultation.dateAndTime || 0).getTime();
+        const rightTime = new Date(right.consultation.dateAndTime || 0).getTime();
+        return Math.abs(leftTime - now) - Math.abs(rightTime - now);
+      });
+
+    return activeConsultations[0]?.consultation || null;
+  }
+
   /**
    *
    * @param caseId
    * @param data
    * @returns
    */
-  async createConsultation(caseId: string, data: CreateConsultation, codeLifeMs?: number): Promise<ServiceResponse<Consultation | null>> {
+  async createConsultation(caseId: string, data: CreateConsultation): Promise<ServiceResponse<Consultation | null>> {
     try {
       // Step 1: Create consultation with empty proms array to satisfy validation
       const consultationData = {
         ...data,
         proms: [], // Initialize with empty array
       };
+
+      await this.ensureConsultationWindowFields(caseId, consultationData);
 
       const newConsultation = await this.consultationRepository.createConsultation(caseId, consultationData);
       if (!newConsultation) {
@@ -60,7 +182,7 @@ export class ConsultationService {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
         // Pass the code string to activateCode
-        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString(), codeLifeMs);
+        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString());
         if (typeof activatedCode === "string") {
           return ServiceResponse.failure(activatedCode, null, StatusCodes.BAD_REQUEST);
         }
@@ -102,7 +224,7 @@ export class ConsultationService {
             );
             return ServiceResponse.created(
               "Consultation created successfully",
-              populatedConsultation,
+              populatedConsultation ? await attachConsultationAccessWindow(populatedConsultation) : populatedConsultation,
             );
           }
         }
@@ -112,7 +234,10 @@ export class ConsultationService {
       const populatedConsultation = await this.consultationRepository.getConsultationById(
         newConsultation._id.toString(),
       );
-      return ServiceResponse.created("Consultation created successfully", populatedConsultation);
+      return ServiceResponse.created(
+        "Consultation created successfully",
+        populatedConsultation ? await attachConsultationAccessWindow(populatedConsultation) : populatedConsultation,
+      );
     } catch (ex) {
       const errorMessage = `Error creating consultation: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -141,7 +266,8 @@ export class ConsultationService {
       if (!consultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Consultation found", consultation);
+      const enrichedConsultation = await this.attachCaseCodeIfMissing(consultation);
+      return ServiceResponse.success("Consultation found", await attachConsultationAccessWindow(enrichedConsultation));
     } catch (ex) {
       const errorMessage = `Error fetching consultation: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -166,13 +292,42 @@ export class ConsultationService {
   async updateConsultation(
     consultationId: string,
     data: UpdateConsultation,
-    codeLifeMs?: number,
   ): Promise<ServiceResponse<Consultation | null>> {
     try {
       const originalConsultation = await this.consultationRepository.getConsultationById(consultationId);
       let updatedConsultation = null;
       if (!originalConsultation) {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      const originalCaseField = originalConsultation.patientCaseId as unknown;
+      const caseId =
+        typeof originalCaseField === "string"
+          ? originalCaseField
+          : originalCaseField && typeof originalCaseField === "object"
+            ? ((originalCaseField as Record<string, unknown>)._id as string | undefined) ||
+              ((originalCaseField as { toString?: () => string }).toString?.() ?? undefined)
+            : undefined;
+      if (caseId) {
+        const windowUpdatePayload: Partial<UpdateConsultation> = {
+          dateAndTime: data.dateAndTime ?? originalConsultation.dateAndTime,
+          consultationAccessDaysBefore:
+            data.consultationAccessDaysBefore ?? originalConsultation.consultationAccessDaysBefore,
+          consultationAccessDaysAfter:
+            data.consultationAccessDaysAfter ?? originalConsultation.consultationAccessDaysAfter,
+          consultationAccessActiveFrom: data.consultationAccessActiveFrom,
+          consultationAccessActiveUntil: data.consultationAccessActiveUntil,
+        };
+
+        await this.ensureConsultationWindowFields(caseId, windowUpdatePayload);
+        data.consultationAccessDaysBefore = windowUpdatePayload.consultationAccessDaysBefore;
+        data.consultationAccessDaysAfter = windowUpdatePayload.consultationAccessDaysAfter;
+        if (windowUpdatePayload.consultationAccessActiveFrom) {
+          data.consultationAccessActiveFrom = windowUpdatePayload.consultationAccessActiveFrom;
+        }
+        if (windowUpdatePayload.consultationAccessActiveUntil) {
+          data.consultationAccessActiveUntil = windowUpdatePayload.consultationAccessActiveUntil;
+        }
       }
 
       /**
@@ -193,7 +348,7 @@ export class ConsultationService {
           return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
         }
 
-        await this.codeRepository.activateCode(code.code, consultationId, codeLifeMs);
+        await this.codeRepository.activateCode(code.code, consultationId);
       }
 
       /**
@@ -320,7 +475,10 @@ export class ConsultationService {
         return ServiceResponse.failure("Failed to update consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
       // if updatedConsultation was successfully updated, delete excluded forms from forms table
-      return ServiceResponse.success("Consultation updated successfully", updatedConsultation);
+      return ServiceResponse.success(
+        "Consultation updated successfully",
+        updatedConsultation ? await attachConsultationAccessWindow(updatedConsultation) : updatedConsultation,
+      );
     } catch (ex) {
       const errorMessage = `Error updating consultation: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -439,7 +597,12 @@ export class ConsultationService {
   async getAllConsultations(caseId: string): Promise<ServiceResponse<Consultation[]>> {
     try {
       const consultations = await this.consultationRepository.getAllConsultations(caseId);
-      return ServiceResponse.success("Consultations retrieved successfully", consultations);
+      const enrichedConsultations = await Promise.all(
+        consultations.map(async (consultation) =>
+          attachConsultationAccessWindow(await this.attachCaseCodeIfMissing(consultation)),
+        ),
+      );
+      return ServiceResponse.success("Consultations retrieved successfully", enrichedConsultations);
     } catch (ex) {
       const errorMessage = `Error fetching consultations: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -463,7 +626,12 @@ export class ConsultationService {
   async getAllConsultationsOnDay(fromDate: string, toDate: string): Promise<ServiceResponse<Consultation[]>> {
     try {
       const consultations = await this.consultationRepository.getAllConsultationsOnDay(fromDate, toDate);
-      return ServiceResponse.success("Consultations retrieved successfully", consultations);
+      const enrichedConsultations = await Promise.all(
+        consultations.map(async (consultation) =>
+          attachConsultationAccessWindow(await this.attachCaseCodeIfMissing(consultation)),
+        ),
+      );
+      return ServiceResponse.success("Consultations retrieved successfully", enrichedConsultations);
     } catch (ex) {
       const errorMessage = `Error fetching consultations on day: ${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -492,17 +660,23 @@ export class ConsultationService {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }
 
-      if (!foundCode.consultationId) {
-        return ServiceResponse.failure("Code is not associated with any consultation", null, StatusCodes.BAD_REQUEST);
+      if (!foundCode.activatedOn) {
+        return ServiceResponse.failure("Code is not active", null, StatusCodes.BAD_REQUEST);
       }
 
-      const consultation = await this.consultationRepository.getConsultationById(
-        typeof foundCode.consultationId === "string" ? foundCode.consultationId : foundCode.consultationId.toString(),
-      );
+      const consultation = await this.resolveConsultationByActiveCode(foundCode);
       if (!consultation) {
-        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.failure(
+          "Consultation is not currently active for external form access",
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
       }
-      return ServiceResponse.success("Consultation retrieved successfully", consultation);
+
+      return ServiceResponse.success(
+        "Consultation retrieved successfully",
+        await attachConsultationAccessWindow(await this.attachCaseCodeIfMissing(consultation)),
+      );
     } catch (ex) {
       const errorMessage = `Error fetching consultation by code: ${(ex as Error).message}`;
       logger.error(errorMessage);

@@ -175,7 +175,7 @@ describe("Code API Endpoints", () => {
 
       expect(activateResponse.status).toBe(StatusCodes.OK);
       expect(activateResponse.body.responseObject.activatedOn).toBeDefined();
-      expect(activateResponse.body.responseObject.expiresOn).toBeDefined();
+      expect(activateResponse.body.responseObject.expiresOn).toBeUndefined();
       expect(activateResponse.body.responseObject.consultationId).toEqual(consultation._id);
       expect(activateResponse.body.responseObject.code).toEqual(codeToActivate.code);
       expect(activateResponse.body.responseObject._id).toBeUndefined(); // _id should not be returned
@@ -271,6 +271,37 @@ describe("Code API Endpoints", () => {
       expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
       expect(responseBody.success).toBeFalsy();
       expect(responseBody.message).toContain("Internal code not found");
+    });
+  });
+
+  describe("Case-level code assignment", () => {
+    const patientCaseId = consultationRepository.mockConsultations[2].patientCaseId?.toString();
+
+    it("should activate a code for a patient case", async () => {
+      const createCodeResponse = await agent.post("/form-access-code/addCodes/1");
+      expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
+
+      const codeToActivate = createCodeResponse.body.responseObject[0]?.code as string;
+      expect(codeToActivate).toBeTruthy();
+      expect(patientCaseId).toBeTruthy();
+
+      const response = await agent.put(`/form-access-code/activate/${codeToActivate}/case/${patientCaseId}`);
+
+      expect(response.statusCode).toBe(StatusCodes.OK);
+      expect(response.body.success).toBeTruthy();
+      expect(response.body.responseObject.code).toEqual(codeToActivate);
+      expect(response.body.responseObject.patientCaseId).toEqual(patientCaseId);
+      expect(response.body.responseObject.consultationId).toBeUndefined();
+    });
+
+    it("should return active code for a patient case", async () => {
+      expect(patientCaseId).toBeTruthy();
+
+      const response = await agent.get(`/form-access-code/active/case/${patientCaseId}`);
+      expect(response.statusCode).toBe(StatusCodes.OK);
+      expect(response.body.success).toBeTruthy();
+      expect(response.body.responseObject.patientCaseId).toEqual(patientCaseId);
+      expect(response.body.responseObject.activatedOn).toBeDefined();
     });
   });
 });

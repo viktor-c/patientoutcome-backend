@@ -6,6 +6,7 @@ import { comparePasswords, hashPassword } from "@/utils/hashUtil";
 import { type CreateUser, type User, type UserNoPassword, userModel } from "./userModel";
 import { UserRepository } from "./userRepository";
 import { permissionsService } from "@/api/permissions/permissionsService";
+import { getDepartmentConsultationAccessSettings } from "@/api/consultation/consultationAccessWindow";
 import type { Role } from "@/common/middleware/aclConfig";
 
 /**
@@ -286,6 +287,7 @@ export class UserService {
       // Get dynamic permissions based on role and settings
       const userRole = user.roles[0] || "authenticated"; // Use first role or fallback
       const permissions = await permissionsService.getUserPermissions(userRole);
+      const departmentSettings = await getDepartmentConsultationAccessSettings(user.department?.[0]?.toString());
 
       // Create UserNoPassword object with all fields including roles and dynamic permissions
       const userWithoutPassword: UserNoPassword = {
@@ -302,6 +304,8 @@ export class UserService {
         email: user.email,
         lastLogin: user.lastLogin,
         belongsToCenter: user.belongsToCenter,
+        consultationAccessDaysBefore: departmentSettings.consultationAccessDaysBefore,
+        consultationAccessDaysAfter: departmentSettings.consultationAccessDaysAfter,
       };
 
       return ServiceResponse.success("Login successful", userWithoutPassword, StatusCodes.OK);

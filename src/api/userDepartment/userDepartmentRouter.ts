@@ -16,6 +16,7 @@ import {
   CreateUserDepartmentSchema,
   DeleteUserDepartmentSchema,
   GetUserDepartmentSchema,
+  UpdateConsultationAccessWindowSchema,
   UpdateCodeLifeSchema,
   UpdateUserDepartmentSchema,
   UserDepartmentSchema,
@@ -302,4 +303,51 @@ userDepartmentRouter.patch(
   AclMiddleware("userDepartment-update-code-life"),
   validateRequest(UpdateCodeLifeSchema),
   userDepartmentController.updateCodeLifeSetting,
+);
+
+userDepartmentRegistry.registerPath({
+  method: "patch",
+  path: "/userDepartment/{id}/consultation-access-window",
+  tags: ["UserDepartment"],
+  operationId: "updateDepartmentConsultationAccessWindow",
+  description:
+    "Set how many days before and after a consultation patients may access forms. Requires doctor role or higher and department membership.",
+  summary: "Update consultation access window (doctor+)",
+  request: {
+    params: UpdateConsultationAccessWindowSchema.shape.params,
+    body: {
+      content: {
+        "application/json": { schema: UpdateConsultationAccessWindowSchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: UserDepartmentSchema,
+      description: "Consultation access window updated",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Department not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Forbidden - must belong to the department or insufficient role",
+      statusCode: 403,
+    },
+    {
+      schema: ValidationErrorsSchema,
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+userDepartmentRouter.patch(
+  "/:id/consultation-access-window",
+  AclMiddleware("userDepartment-update-consultation-access-window"),
+  validateRequest(UpdateConsultationAccessWindowSchema),
+  userDepartmentController.updateConsultationAccessWindow,
 );

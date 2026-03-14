@@ -17,6 +17,8 @@ export const UserNoPasswordSchema = z.object({
   lastLogin: z.string().datetime().optional(),
   // center the user belongs to, 
   belongsToCenter: zId("UserDepartment").optional(),
+  consultationAccessDaysBefore: z.number().int().min(0).max(365).optional(),
+  consultationAccessDaysAfter: z.number().int().min(0).max(365).optional(),
   // per-user frontend setting: how many days to look back for consultations
   daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   // consultationId for kiosk users - links a kiosk user to an active consultation
@@ -47,6 +49,8 @@ export const UserNoPasswordApiSchema = z.object({
   email: z.string().email(),
   lastLogin: z.string().datetime().optional(),
   belongsToCenter: z.string().optional(),
+  consultationAccessDaysBefore: z.number().int().min(0).max(365).optional(),
+  consultationAccessDaysAfter: z.number().int().min(0).max(365).optional(),
   daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   consultationId: z.string().optional().nullable(),
   postopWeek: z.number().int().min(1).optional(),

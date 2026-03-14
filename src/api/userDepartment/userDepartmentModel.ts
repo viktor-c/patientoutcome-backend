@@ -23,6 +23,8 @@ export const UserDepartmentSchema = z.object({
     .string()
     .regex(/^\d+[hdw]$/, "Must be a positive number followed by h (hours), d (days) or w (weeks), e.g. '4h', '2d', '3w'")
     .optional(),
+  consultationAccessDaysBefore: z.number().int().min(0).max(365).optional(),
+  consultationAccessDaysAfter: z.number().int().min(0).max(365).optional(),
 });
 
 // Infer TypeScript type from the schema
@@ -68,4 +70,13 @@ export const UpdateCodeLifeSchema = z.object({
   }),
 });
 
+export const UpdateConsultationAccessWindowSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    consultationAccessDaysBefore: z.number().int().min(0).max(365),
+    consultationAccessDaysAfter: z.number().int().min(0).max(365),
+  }),
+});
+
 export type UpdateCodeLife = z.infer<typeof UpdateCodeLifeSchema>["body"];
+export type UpdateConsultationAccessWindow = z.infer<typeof UpdateConsultationAccessWindowSchema>["body"];

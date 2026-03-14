@@ -2,6 +2,7 @@ import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import type { UserNoPassword } from "@/api/user/userModel";
+import { getDepartmentConsultationAccessSettings } from "@/api/consultation/consultationAccessWindow";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { activityLogService } from "@/common/services/activityLogService";
@@ -250,6 +251,8 @@ class UserController {
       details: `From: ${previousUser} → To: ${username} (${user.roles.join(", ")})`,
     });
 
+    const departmentSettings = await getDepartmentConsultationAccessSettings(user.department?.[0]?.toString());
+
     // Create UserNoPassword response object
     const userWithoutPassword: UserNoPassword = {
       _id: user._id,
@@ -261,6 +264,8 @@ class UserController {
       email: user.email,
       lastLogin: user.lastLogin,
       belongsToCenter: user.belongsToCenter,
+      consultationAccessDaysBefore: departmentSettings.consultationAccessDaysBefore,
+      consultationAccessDaysAfter: departmentSettings.consultationAccessDaysAfter,
       consultationId: user.consultationId,
       postopWeek: user.postopWeek,
     };

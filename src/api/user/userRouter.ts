@@ -62,6 +62,8 @@ const LoginResponseSchema = z.object({
   email: z.string().email().optional(),
   lastLogin: z.string().datetime().optional(),
   belongsToCenter: z.string().optional(),
+  consultationAccessDaysBefore: z.number().int().min(0).max(365).optional(),
+  consultationAccessDaysAfter: z.number().int().min(0).max(365).optional(),
   daysBeforeConsultations: z.number().int().min(0).max(365).optional(),
   consultationId: z.string().optional().nullable(),
   postopWeek: z.number().int().min(1).optional(),
