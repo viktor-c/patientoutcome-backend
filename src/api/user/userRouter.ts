@@ -168,6 +168,37 @@ userRegistry.registerPath({
 
 userRouter.get("/logout", AclMiddleware("user-logout"), userController.logoutUser);
 
+// Register the path for session check
+userRegistry.registerPath({
+  method: "get",
+  path: "/user/session",
+  tags: ["User"],
+  operationId: "checkSession",
+  description: "Probe whether the current session cookie is still valid. With rolling sessions enabled this call also refreshes the cookie lifetime.",
+  summary: "Check if the current session is active",
+  request: {},
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        authenticated: z.boolean(),
+        username: z.string().nullable(),
+        expiresAt: z.string().datetime(),
+      }),
+      description: "Session is active",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "No active session / session expired",
+      statusCode: 401,
+    },
+  ]),
+});
+
+// No ACL middleware – the controller itself returns 401 when no session is present.
+// Do NOT put this after the /:id wildcard route.
+userRouter.get("/session", userController.checkSession);
+
 // register the path get /user
 userRegistry.registerPath({
   method: "get",
