@@ -345,13 +345,17 @@ export class FormService {
         // This ensures we don't accidentally clear the data
       }
 
-      // Calculate completion time if not provided but start and end times are available
-      // If there's already a completion time, add the new time to it (patient reviewing answers)
-      // Prefer timestamps from patientFormData (beginFill and completedAt) when present.
+      // Calculate completion time if not provided but start and end times are available.
+      // IMPORTANT: beginFill is the very first time a form was opened (preserved across sessions).
+      // It must NOT be subtracted from completedAt when the form spans multiple sessions because
+      // the gap between sessions (e.g. yesterday → today) would be falsely counted as fill time.
+      //
+      // Path 1 – derive from patientFormData timestamps (first-session only)
       if (
         !updateData.completionTimeSeconds &&
         patientFormData?.beginFill &&
-        patientFormData?.completedAt
+        patientFormData?.completedAt &&
+        !existingForm.completionTimeSeconds  // Only safe when no prior timing exists
       ) {
         const startTime = new Date(patientFormData.beginFill);
         const endTime = new Date(patientFormData.completedAt);
@@ -359,28 +363,51 @@ export class FormService {
         updateData.completionTimeSeconds = Math.round(diffMs / 1000);
         logger.debug(
           { beginFill: patientFormData.beginFill, completedAt: patientFormData.completedAt, completionTimeSeconds: updateData.completionTimeSeconds },
-          "Calculated completion time from patientFormData timestamps"
+          "Calculated completion time from patientFormData timestamps (first session)"
+        );
+      } else if (
+        !updateData.completionTimeSeconds &&
+        patientFormData?.beginFill &&
+        patientFormData?.completedAt &&
+        existingForm.completionTimeSeconds
+      ) {
+        // Form is being resumed from a previous session.
+        // beginFill is from session 1 – using it here would give an inflated value.
+        // Timing for this session is handled by Path 2 (formStartTime / formEndTime) below.
+        logger.debug(
+          { existingCompletionTimeSeconds: existingForm.completionTimeSeconds, beginFill: patientFormData.beginFill },
+          "Skipping beginFill→completedAt recalculation: form resumed from a previous session; session timing handled via formStartTime/formEndTime"
         );
       }
-      // Fallback: Calculate completion time if not provided but start and end times are available
-      else if (
+      // Path 2 – accumulate per-session delta from formStartTime / formEndTime.
+      // Prefers updatedForm.formStartTime (sent by the frontend for the *current* session)
+      // over existingForm.formStartTime (which may be stale from a prior session).
+      if (
         !updateData.completionTimeSeconds &&
-        existingForm.formStartTime &&
+        (updateData.formStartTime || existingForm.formStartTime) &&
         (updateData.formEndTime || existingForm.formEndTime)
       ) {
+        // Use the session start reported by the frontend for this save; fall back to stored value.
+        const sessionStart = updateData.formStartTime || existingForm.formStartTime!;
         const endTime = updateData.formEndTime || existingForm.formEndTime!;
-        const diffMs = endTime.getTime() - existingForm.formStartTime.getTime();
+        const diffMs = endTime.getTime() - sessionStart.getTime();
         const newTimeSeconds = Math.round(diffMs / 1000);
-        
-        // If there's already a completion time recorded, add to it instead of replacing
-        if (existingForm.completionTimeSeconds) {
-          updateData.completionTimeSeconds = existingForm.completionTimeSeconds + newTimeSeconds;
-          logger.debug(
-            { existingTime: existingForm.completionTimeSeconds, newTime: newTimeSeconds, total: updateData.completionTimeSeconds },
-            "Adding new completion time to existing time"
-          );
-        } else {
-          updateData.completionTimeSeconds = newTimeSeconds;
+
+        if (newTimeSeconds > 0) {
+          // Accumulate: add this session's duration to any previously recorded time.
+          if (existingForm.completionTimeSeconds) {
+            updateData.completionTimeSeconds = existingForm.completionTimeSeconds + newTimeSeconds;
+            logger.debug(
+              { existingTime: existingForm.completionTimeSeconds, sessionTime: newTimeSeconds, total: updateData.completionTimeSeconds },
+              "Accumulated session completion time onto existing total"
+            );
+          } else {
+            updateData.completionTimeSeconds = newTimeSeconds;
+            logger.debug(
+              { sessionTime: newTimeSeconds },
+              "Set completion time from formStartTime/formEndTime (first session via path 2)"
+            );
+          }
         }
       }
 
