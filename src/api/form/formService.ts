@@ -330,7 +330,7 @@ export class FormService {
 
       // Handle patientFormData: this includes fillStatus, completedAt, and all form data
       if (patientFormData) {
-        if (typeof patientFormData === "object" && patientFormData !== null && "comments" in patientFormData) {
+        if (typeof patientFormData === "object" && patientFormData !== null) {
           const commentsValue = (patientFormData as { comments?: unknown }).comments;
           (patientFormData as { comments?: unknown }).comments = normalizeComments(commentsValue, userContext);
         }
@@ -500,6 +500,16 @@ export class FormService {
               ? "Form restored"
               : "Form updated";
 
+          const previousPatientFormData = existingForm.patientFormData
+            ? {
+              ...existingForm.patientFormData,
+              comments: normalizeComments(
+                (existingForm.patientFormData as { comments?: unknown }).comments,
+                userContext,
+              ),
+            }
+            : null;
+
         await formVersionService.createVersionBackup(
           existingForm,
           versionUserId,
@@ -507,7 +517,7 @@ export class FormService {
           updatedForm.isRestoration || false,
           updatedForm.restoredFromVersion,
           previousVersion,
-          existingForm.patientFormData ?? null,
+            previousPatientFormData,
         );
       }
 
