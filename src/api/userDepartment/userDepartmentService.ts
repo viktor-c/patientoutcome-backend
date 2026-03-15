@@ -234,6 +234,37 @@ export class UserDepartmentService {
     }
   }
 
+  async updateConsultationAccessWindow(
+    id: string,
+    consultationAccessDaysBefore: number,
+    consultationAccessDaysAfter: number,
+  ): Promise<ServiceResponse<UserDepartment | null>> {
+    try {
+      const department = await this.userDepartmentRepository.findByIdAsync(id);
+      if (!department) {
+        return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      const updated = await this.userDepartmentRepository.updateAsync(id, {
+        consultationAccessDaysBefore,
+        consultationAccessDaysAfter,
+      });
+      if (!updated) {
+        return ServiceResponse.failure("Department not found after update", null, StatusCodes.NOT_FOUND);
+      }
+
+      return ServiceResponse.success<UserDepartment>("Consultation access window updated", updated);
+    } catch (ex) {
+      const errorMessage = `Error updating consultation access window: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while updating the consultation access window.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // Deletes a department
   async delete(id: string): Promise<ServiceResponse<null>> {
     try {

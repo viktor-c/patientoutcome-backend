@@ -135,6 +135,31 @@ class UserDepartmentController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public updateConsultationAccessWindow: RequestHandler = async (req: Request, res: Response) => {
+    const id = z.string().parse(req.params.id);
+    const { consultationAccessDaysBefore, consultationAccessDaysAfter } = req.body as {
+      consultationAccessDaysBefore: number;
+      consultationAccessDaysAfter: number;
+    };
+
+    const userRoles: string[] = req.session?.roles ?? [];
+    const isAdmin = userRoles.includes("admin");
+    const userDepts = req.session?.department ?? [];
+    if (!isAdmin && !userDepts.includes(id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update consultation access settings for your own departments.",
+      });
+    }
+
+    const serviceResponse = await userDepartmentService.updateConsultationAccessWindow(
+      id,
+      consultationAccessDaysBefore,
+      consultationAccessDaysAfter,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   /**
    * Delete a department
    * @route DELETE /userDepartment/:id

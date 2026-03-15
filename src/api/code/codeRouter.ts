@@ -16,6 +16,7 @@ import { z } from "zod";
 import { ConsultationWithFormsSchema } from "../consultation/consultationModel";
 import { codeController } from "./codeController";
 import {
+  ActivateCodeForCaseSchema,
   ActivateCodeSchema,
   CodeSchema,
   CreateCodeSchema,
@@ -100,6 +101,48 @@ formAccessCodeRouter.put(
   "/activate/:code/consultation/:consultationId",
   validateRequest(ActivateCodeSchema),
   codeController.activateCode,
+);
+
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/activate/{code}/case/{caseId}",
+  tags: ["Code"],
+  operationId: "activateCodeForCase",
+  summary: "Activate a code for a patient case",
+  description: "Activate a code and link it to a patient case so it can be reused for consultations in that case.",
+  request: { params: ActivateCodeForCaseSchema.shape.params },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code activated successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Patient case not found", statusCode: 404 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+    { schema: z.object({ message: z.string() }), description: "Code already activated", statusCode: 409 },
+  ]),
+});
+formAccessCodeRouter.put(
+  "/activate/:code/case/:caseId",
+  validateRequest(ActivateCodeForCaseSchema),
+  codeController.activateCodeForCase,
+);
+
+codeRegistry.registerPath({
+  method: "get",
+  path: "/form-access-code/active/case/{caseId}",
+  tags: ["Code"],
+  operationId: "getActiveCodeForCase",
+  summary: "Get active code for patient case",
+  description: "Retrieve the currently active code linked to a patient case.",
+  request: { params: z.object({ caseId: commonValidations.id }) },
+  responses: createApiResponses([
+    { schema: CodeWithConsultationSchema, description: "Code retrieved successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "No active code for patient case", statusCode: 404 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.get(
+  "/active/case/:caseId",
+  validateRequest(z.object({ params: z.object({ caseId: commonValidations.id }) })),
+  codeController.getActiveCodeForCase,
 );
 
 // Route to deactivate a code

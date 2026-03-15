@@ -16,6 +16,17 @@ export const env = cleanEnv(process.env, {
   SESSION_SECRET: str({
     devDefault: testOnly("test-session-secret-do-not-use-in-production-replace-with-secure-random-value"),
   }),
+  /**
+   * How long (in hours) an idle session cookie stays valid.
+   * With rolling sessions, the timer resets on every request, so users who are
+   * actively working will never be logged out. The env var lets ops teams tune
+   * this without touching code. Default: 36 hours.
+   */
+  SESSION_MAX_AGE_HOURS: num({
+    devDefault: testOnly(36),
+    default: 36,
+    desc: "Session cookie max-age in hours (default 36). With rolling sessions this is reset on every request.",
+  }),
   // Backup configuration
   BACKUP_STORAGE_PATH: str({ devDefault: testOnly("/tmp/backups") }),
   BACKUP_MASTER_KEY: str({

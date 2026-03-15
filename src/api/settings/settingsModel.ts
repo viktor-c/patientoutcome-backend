@@ -13,6 +13,7 @@ export const FieldValidationSchema = z.object({
   min: z.number().optional(),
   max: z.number().optional(),
   pattern: z.string().optional(),
+  enum: z.array(z.string()).optional(),
 });
 
 // Translation schema for descriptions and help text

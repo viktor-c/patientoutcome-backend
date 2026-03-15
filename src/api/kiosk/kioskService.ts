@@ -128,8 +128,13 @@ export class KioskService {
         });
       }
 
+        const consultationId = kioskUser.consultationId?.toString() || consultation._id?.toString();
+        if (!consultationId) {
+          return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+        }
+
       const updatedConsultation = await consultationRepository.updateConsultation(
-        kioskUser.consultationId.toString(),
+          consultationId,
         updateData,
       );
 

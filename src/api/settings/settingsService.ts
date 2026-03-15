@@ -169,6 +169,7 @@ export class SettingsService {
       min?: number;
       max?: number;
       pattern?: string;
+      enum?: string[];
     },
     type: string
   ): void {
@@ -185,6 +186,9 @@ export class SettingsService {
         if (!regex.test(value)) {
           throw new Error(`${fieldKey}: Value does not match required pattern`);
         }
+      }
+      if (validation.enum && validation.enum.length > 0 && !validation.enum.includes(value)) {
+        throw new Error(`${fieldKey}: Value must be one of ${validation.enum.join(", ")}`);
       }
     }
 

@@ -47,6 +47,7 @@ export const CodeSchema = z.object({
    * this string will be used to access the consultation data
    * */
   consultationId: zId("Consultation").optional(),
+  patientCaseId: zId("PatientCase").optional(),
 });
 
 // Infer TypeScript type from the schema
@@ -67,6 +68,10 @@ export const GetCodeSchema = z.object({
 // Input validation for 'PUT code/:code/consultation/:consultationId' endpoint
 export const ActivateCodeSchema = z.object({
   params: z.object({ code: z.string(), consultationId: commonValidations.id }),
+});
+
+export const ActivateCodeForCaseSchema = z.object({
+  params: z.object({ code: z.string(), caseId: commonValidations.id }),
 });
 
 // Input validation for 'POST code/:numberOfCodes' endpoint

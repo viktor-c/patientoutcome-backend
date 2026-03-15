@@ -81,6 +81,7 @@ export const aclConfig = {
   "userDepartment-update": { roles: ["admin"] },
   "userDepartment-delete": { roles: ["admin"] },
   "userDepartment-update-code-life": { atLeastAuthenticationLevel: "doctor" }, // Doctor+ can set code life for their own departments
+  "userDepartment-update-consultation-access-window": { atLeastAuthenticationLevel: "doctor" },
 
   // Backup routes - admin and developer only
   "backup-jobs-get-all": { roles: ["admin", "developer"] },

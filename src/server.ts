@@ -81,6 +81,9 @@ app.use(
 
     resave: false,
     saveUninitialized: false,
+    // rolling: true renews the session cookie maxAge on every response that has an active session,
+    // so users who are actively using the app never get a surprise 401 due to cookie expiry.
+    rolling: true,
     store: MongoStore.create({
       mongoUrl: env.MONGO_URI, // Use the existing MongoDB connection URI
       collectionName: "sessions",
@@ -93,7 +96,7 @@ app.use(
       // For development with HTTP localhost, use secure: false with sameSite: "lax"
       secure: env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      maxAge: env.SESSION_MAX_AGE_HOURS * 60 * 60 * 1000, // configurable via SESSION_MAX_AGE_HOURS env var (default 36 h)
     },
   }),
 );

@@ -2,6 +2,7 @@ import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import type { UserNoPassword } from "@/api/user/userModel";
+import { getDepartmentConsultationAccessSettings } from "@/api/consultation/consultationAccessWindow";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { activityLogService } from "@/common/services/activityLogService";
@@ -250,6 +251,8 @@ class UserController {
       details: `From: ${previousUser} → To: ${username} (${user.roles.join(", ")})`,
     });
 
+    const departmentSettings = await getDepartmentConsultationAccessSettings(user.department?.[0]?.toString());
+
     // Create UserNoPassword response object
     const userWithoutPassword: UserNoPassword = {
       _id: user._id,
@@ -261,6 +264,8 @@ class UserController {
       email: user.email,
       lastLogin: user.lastLogin,
       belongsToCenter: user.belongsToCenter,
+      consultationAccessDaysBefore: departmentSettings.consultationAccessDaysBefore,
+      consultationAccessDaysAfter: departmentSettings.consultationAccessDaysAfter,
       consultationId: user.consultationId,
       postopWeek: user.postopWeek,
     };
@@ -272,6 +277,40 @@ class UserController {
     return handleServiceResponse(
       ServiceResponse.success("Role switch successful", userWithoutPassword, StatusCodes.OK),
       res
+    );
+  };
+
+  /**
+   * Check if the current session is authenticated and return its expiry time.
+   * @route GET /user/session
+   * @access Public (returns 401 when not authenticated)
+   * @param {Request} req - Express request
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with `{ authenticated, username, expiresAt }` or 401
+   * @description Lightweight session-health probe used by the frontend to proactively detect expired
+   *   sessions (e.g. after the browser tab was idle for a long time). Because `rolling: true` is
+   *   enabled on the server, calling this endpoint also refreshes the session cookie.
+   */
+  public checkSession: RequestHandler = (req: Request, res: Response) => {
+    if (!req.session?.userId) {
+      return handleServiceResponse(
+        ServiceResponse.failure("Authentication required: No active session", null, StatusCodes.UNAUTHORIZED),
+        res,
+      );
+    }
+
+    // cookie.maxAge reflects the remaining lifetime in ms (refreshed by rolling sessions).
+    // If maxAge is undefined fall back to the configured maxAge of 1 day.
+    const maxAgeMs = req.session.cookie.maxAge ?? 1000 * 60 * 60 * 24;
+    const expiresAt = new Date(Date.now() + maxAgeMs).toISOString();
+
+    return handleServiceResponse(
+      ServiceResponse.success("Session active", {
+        authenticated: true,
+        username: req.session.username ?? null,
+        expiresAt,
+      }),
+      res,
     );
   };
 

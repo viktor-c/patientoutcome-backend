@@ -1,9 +1,54 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { string } from "zod/v4";
+import { buildConsultationAccessWindow } from "@/api/consultation/consultationAccessWindow";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
+
+async function resolveActiveConsultationForCode(codeDocument: Code) {
+  if (codeDocument.consultationId) {
+    const consultation = await consultationRepository.getConsultationById(codeDocument.consultationId.toString());
+    if (!consultation) {
+      return null;
+    }
+
+    const accessWindow = await buildConsultationAccessWindow(consultation);
+    if (!accessWindow?.isActive) {
+      return null;
+    }
+
+    return consultation;
+  }
+
+  if (!codeDocument.patientCaseId) {
+    return null;
+  }
+
+  const consultations = await consultationRepository.getAllConsultations(codeDocument.patientCaseId.toString());
+  if (!Array.isArray(consultations) || consultations.length === 0) {
+    return null;
+  }
+
+  const now = new Date().getTime();
+  const withActiveWindow = await Promise.all(
+    consultations.map(async (consultation) => ({
+      consultation,
+      accessWindow: await buildConsultationAccessWindow(consultation),
+    })),
+  );
+
+  const activeConsultations = withActiveWindow
+    .filter((entry) => entry.accessWindow?.isActive)
+    .sort((left, right) => {
+      const leftDate = new Date(left.consultation.dateAndTime || 0).getTime();
+      const rightDate = new Date(right.consultation.dateAndTime || 0).getTime();
+      return Math.abs(leftDate - now) - Math.abs(rightDate - now);
+    });
+
+  return activeConsultations[0]?.consultation || null;
+}
 
 /** Default code expiry: 4 hours in milliseconds. */
 export const DEFAULT_CODE_LIFE_MS = 4 * 60 * 60 * 1000;
@@ -72,9 +117,9 @@ class CodeService {
     }
   }
 
-  async activateCode(code: string, consultationId: string, expiresInMs?: number): Promise<ServiceResponse<Code | null>> {
+  async activateCode(code: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const foundCode = await this.codeRepository.activateCode(code, consultationId, expiresInMs);
+      const foundCode = await this.codeRepository.activateCode(code, consultationId);
       if (typeof foundCode === "string") {
         if (foundCode === "Code not found") {
           return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
@@ -96,6 +141,52 @@ class CodeService {
       logger.error({ error }, "Error activating code");
       return ServiceResponse.failure(
         "An error occurred while activating the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async activateCodeForPatientCase(code: string, caseId: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const foundCode = await this.codeRepository.activateCodeForPatientCase(code, caseId);
+      if (typeof foundCode === "string") {
+        if (foundCode === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        } else if (foundCode === "Code already activated") {
+          return ServiceResponse.failure("Code already activated", null, StatusCodes.CONFLICT);
+        } else if (foundCode === "Patient case not found") {
+          return ServiceResponse.failure("Patient case not found", null, StatusCodes.NOT_FOUND);
+        } else if (foundCode === "Patient case already has an active code") {
+          return ServiceResponse.failure("Patient case already has an active code", null, StatusCodes.CONFLICT);
+        }
+      } else if (foundCode === null) {
+        return ServiceResponse.failure("Internal code not found", null, StatusCodes.NOT_FOUND);
+      }
+      if (typeof foundCode === "object" && foundCode !== null) {
+        return ServiceResponse.success("Code activated successfully", foundCode);
+      }
+      return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      logger.error({ error }, "Error activating code for patient case");
+      return ServiceResponse.failure(
+        "An error occurred while activating the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getActiveCodeForPatientCase(caseId: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const code = await this.codeRepository.getActiveCodeByPatientCaseId(caseId);
+      if (!code) {
+        return ServiceResponse.failure("No active code for patient case", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Code retrieved successfully", code);
+    } catch (error) {
+      return ServiceResponse.failure(
+        "An error occurred while retrieving active case code.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
@@ -220,11 +311,20 @@ class CodeService {
       if (!codeDocument) {
         return ServiceResponse.failure("Code not found", false, StatusCodes.NOT_FOUND);
       }
-      if (codeDocument.activatedOn && codeDocument.expiresOn && codeDocument.expiresOn > new Date()) {
-        return ServiceResponse.success("Code is valid", true);
-      } else {
+      if (!codeDocument.activatedOn) {
         return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);
       }
+
+      const consultation = await resolveActiveConsultationForCode(codeDocument);
+      if (!consultation) {
+        return ServiceResponse.failure(
+          "Consultation is not currently active for external form access",
+          false,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      return ServiceResponse.success("Code is valid", true);
     } catch (error) {
       return ServiceResponse.failure(
         "An error occurred while checking the external code.",
