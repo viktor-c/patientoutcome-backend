@@ -24,6 +24,10 @@ export class IcdOpsService {
   private icdLoaded = false;
   private opsLoaded = false;
 
+  /** code → concatenated ancestor labels for deep text search */
+  private icdAncestorLabels = new Map<string, string>();
+  private opsAncestorLabels = new Map<string, string>();
+
   // ─── Initialisation ──────────────────────────────────────
 
   /**
@@ -39,6 +43,7 @@ export class IcdOpsService {
   private async loadIcd(): Promise<void> {
     try {
       this.icdEntries = parseIcdData();
+      this.icdAncestorLabels = this.buildAncestorLabels(this.icdEntries);
       this.icdLoaded = true;
       logger.info(`${TAG}: ICD-10-GM data loaded – ${this.icdEntries.length} entries`);
     } catch (error) {
@@ -50,6 +55,7 @@ export class IcdOpsService {
   private async loadOps(): Promise<void> {
     try {
       this.opsEntries = parseOpsData();
+      this.opsAncestorLabels = this.buildAncestorLabels(this.opsEntries);
       this.opsLoaded = true;
       logger.info(`${TAG}: OPS data loaded – ${this.opsEntries.length} entries`);
     } catch (error) {
@@ -131,6 +137,33 @@ export class IcdOpsService {
     return this.searchByCodePrefix("ops", this.opsEntries, rawPrefix, limit);
   }
 
+  /**
+   * Build a map of code → concatenated ancestor labels (lowercased).
+   * E.g. for "5-787.1" the ancestor label includes the label of "5-787".
+   * This allows text search to match parent descriptions on child codes.
+   */
+  private buildAncestorLabels(entries: IcdOpsEntry[]): Map<string, string> {
+    const codeToLabel = new Map<string, string>();
+    for (const e of entries) {
+      codeToLabel.set(e.code, e.label.toLowerCase());
+    }
+
+    const ancestorMap = new Map<string, string>();
+    for (const e of entries) {
+      const parts: string[] = [];
+      let parent = this.computeParentCode(e.code);
+      while (parent) {
+        const parentLabel = codeToLabel.get(parent);
+        if (parentLabel) parts.push(parentLabel);
+        parent = this.computeParentCode(parent);
+      }
+      if (parts.length > 0) {
+        ancestorMap.set(e.code, parts.join(" "));
+      }
+    }
+    return ancestorMap;
+  }
+
   // ─── Private helpers ─────────────────────────────────────
 
   /**
@@ -154,33 +187,41 @@ export class IcdOpsService {
 
   /**
    * Derive the immediate parent code one level up in the hierarchy.
-   * Context is only meaningful for terminal codes that carry a dot suffix.
    *
    * Hierarchy examples for OPS:
    *   "5-788.52" → "5-788.5"  (multi-char decimal: strip last char)
    *   "5-788.5"  → "5-788"    (single-char decimal: strip entire dot-segment)
    *   "5-788.6"  → "5-788"    (single-char decimal: strip entire dot-segment)
+   *   "5-788"    → "5-78"     (dot-less: strip last char after hyphen)
+   *   "5-78"     → null       (block level: no further parent)
    *
    * Hierarchy examples for ICD:
-   *   "M20.1"    → "M20"      (single-char decimal: strip entire dot-segment)
    *   "M20.10"   → "M20.1"    (multi-char decimal: strip last char)
-   *
-   * For codes without a dot (e.g. "5-788", "M20") the caller is navigating
-   * a mid-level group; no context entry is returned.
+   *   "M20.1"    → "M20"      (single-char decimal: strip entire dot-segment)
+   *   "M20"      → null       (3-char code: base level)
    */
   private computeParentCode(normalizedCode: string): string | null {
     const dotIdx = normalizedCode.lastIndexOf(".");
-    if (dotIdx < 0) return null; // no dot → mid-level navigation, no context
+    if (dotIdx >= 0) {
+      const decimalPart = normalizedCode.slice(dotIdx + 1);
+      if (decimalPart.length > 1) {
+        // Multi-char decimal suffix: step up one char within the decimal part
+        // "5-788.52" → "5-788.5",  "M20.10" → "M20.1"
+        return normalizedCode.slice(0, -1);
+      }
+      // Single-char decimal suffix: remove entire dot segment
+      // "5-788.5" → "5-788",  "M20.1" → "M20"
+      return normalizedCode.slice(0, dotIdx) || null;
+    }
 
-    const decimalPart = normalizedCode.slice(dotIdx + 1);
-    if (decimalPart.length > 1) {
-      // Multi-char decimal suffix: step up one char within the decimal part
-      // "5-788.52" → "5-788.5",  "M20.10" → "M20.1"
+    // No dot — try stripping last character for OPS-style codes (e.g. "5-787" → "5-78")
+    const hyphenIdx = normalizedCode.lastIndexOf("-");
+    if (hyphenIdx >= 0 && normalizedCode.length > hyphenIdx + 2) {
+      // "5-787" → "5-78", but "5-7" stays as is (two-char block = stop)
       return normalizedCode.slice(0, -1);
     }
-    // Single-char decimal suffix: remove entire dot segment
-    // "5-788.5" → "5-788",  "M20.1" → "M20"
-    return normalizedCode.slice(0, dotIdx) || null;
+
+    return null;
   }
 
   /**
@@ -289,17 +330,21 @@ export class IcdOpsService {
   ): ServiceResponse<IcdOpsPaginatedResponse> {
     try {
       const lowerQuery = query.toLowerCase().trim();
+      const ancestorLabels = type === "icd" ? this.icdAncestorLabels : this.opsAncestorLabels;
 
       // Filter by kind first
       let filtered = kindFilter === "all" ? entries : entries.filter((e) => e.kind === kindFilter);
 
-      // Then filter by search query – matches code or label
+      // Then filter by search query – matches code, label, or ancestor labels.
+      // Split the query into words so that "entfernung osteosynthese schraube" finds
+      // "5-787.1 Schraube" (whose parent is "5-787 Entfernung von Osteosynthesematerial").
       if (lowerQuery.length > 0) {
-        filtered = filtered.filter(
-          (entry) =>
-            entry.code.toLowerCase().includes(lowerQuery) ||
-            entry.label.toLowerCase().includes(lowerQuery),
-        );
+        const words = lowerQuery.split(/\s+/).filter((w) => w.length > 0);
+        filtered = filtered.filter((entry) => {
+          const ancestors = ancestorLabels.get(entry.code) ?? "";
+          const combined = `${entry.code.toLowerCase()} ${entry.label.toLowerCase()} ${ancestors}`;
+          return words.every((w) => combined.includes(w));
+        });
       }
 
       const total = filtered.length;

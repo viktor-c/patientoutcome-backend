@@ -74,6 +74,26 @@ export interface SubscaleScore {
   isComplete: boolean;
 }
 
+export const FormAnswerCommentSchema = z.object({
+  questionKey: z.string().nullable().optional(),
+  questionLabel: z.string().nullable().optional(),
+  content: z.string().min(1),
+  createdAt: z.coerce.date(),
+  createdByUserId: z.string().nullable().optional(),
+  createdByUsername: z.string().nullable().optional(),
+  source: z.enum(["patient", "staff"]),
+});
+
+export interface FormAnswerComment {
+  questionKey?: string | null;
+  questionLabel?: string | null;
+  content: string;
+  createdAt: Date;
+  createdByUserId?: string | null;
+  createdByUsername?: string | null;
+  source: "patient" | "staff";
+}
+
 /**
  * patientFormData:
  *  - this is a standard interface and describes how the form data looks like for a specific form.
@@ -88,6 +108,7 @@ export const PatientFormDataSchema = z.object({
   fillStatus: z.enum(["draft", "incomplete", "complete"]),
   completedAt: z.coerce.date().nullable(),
   beginFill: z.coerce.date().nullable(),
+  comments: z.array(FormAnswerCommentSchema).optional(),
 });
 
 export interface PatientFormData {
@@ -99,6 +120,7 @@ export interface PatientFormData {
   fillStatus: "draft" | "incomplete" | "complete";
   completedAt: Date | null;
   beginFill: Date | null;
+  comments?: FormAnswerComment[];
 }
 
 // Access level enum - determines who can fill out the form

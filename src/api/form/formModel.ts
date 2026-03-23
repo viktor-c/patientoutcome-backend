@@ -69,6 +69,47 @@ const PatientFormDataNestedSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
+    comments: {
+      type: [
+        {
+          questionKey: {
+            type: String,
+            required: false,
+            default: null,
+          },
+          questionLabel: {
+            type: String,
+            required: false,
+            default: null,
+          },
+          content: {
+            type: String,
+            required: true,
+          },
+          createdAt: {
+            type: Date,
+            required: true,
+          },
+          createdByUserId: {
+            type: String,
+            required: false,
+            default: null,
+          },
+          createdByUsername: {
+            type: String,
+            required: false,
+            default: null,
+          },
+          source: {
+            type: String,
+            enum: ["patient", "staff"],
+            required: true,
+          },
+        },
+      ],
+      required: false,
+      default: [],
+    },
   },
   { _id: false, strict: true }
 );

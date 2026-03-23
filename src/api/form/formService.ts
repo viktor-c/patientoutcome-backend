@@ -17,6 +17,57 @@ export interface UserContext {
   roles?: Role[];
 }
 
+type FormAnswerCommentInput = {
+  questionKey?: unknown;
+  questionLabel?: unknown;
+  content?: unknown;
+  createdAt?: unknown;
+  createdByUserId?: unknown;
+  createdByUsername?: unknown;
+  source?: unknown;
+};
+
+function normalizeComments(comments: unknown, userContext?: UserContext) {
+  if (!Array.isArray(comments)) {
+    return [];
+  }
+
+  const sourceFromUserContext: "patient" | "staff" = userContext?.roles && userContext.roles.length > 0
+    ? userContext.roles.includes("kiosk")
+      ? "patient"
+      : "staff"
+    : "patient";
+
+  return comments
+    .map((entry): FormAnswerCommentInput => (entry && typeof entry === "object" ? (entry as FormAnswerCommentInput) : {}))
+    .map((entry) => {
+      const rawContent = typeof entry.content === "string" ? entry.content.trim() : "";
+      if (!rawContent) return null;
+
+      const createdAt = entry.createdAt ? new Date(entry.createdAt as string | number | Date) : new Date();
+      const validCreatedAt = Number.isNaN(createdAt.getTime()) ? new Date() : createdAt;
+
+      const normalizedSource: "patient" | "staff" = entry.source === "staff" || entry.source === "patient"
+        ? entry.source
+        : sourceFromUserContext;
+
+      return {
+        questionKey: typeof entry.questionKey === "string" ? entry.questionKey : null,
+        questionLabel: typeof entry.questionLabel === "string" ? entry.questionLabel : null,
+        content: rawContent,
+        createdAt: validCreatedAt,
+        createdByUserId: typeof entry.createdByUserId === "string"
+          ? entry.createdByUserId
+          : userContext?.userId ?? null,
+        createdByUsername: typeof entry.createdByUsername === "string"
+          ? entry.createdByUsername
+          : userContext?.username ?? null,
+        source: normalizedSource,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+}
+
 /**
  * Helper function to calculate the relative creation date for a form based on postopWeek.
  * For kiosk users, the form's createdAt should reflect the consultation date (which is based on postopWeek),
@@ -279,6 +330,11 @@ export class FormService {
 
       // Handle patientFormData: this includes fillStatus, completedAt, and all form data
       if (patientFormData) {
+        if (typeof patientFormData === "object" && patientFormData !== null) {
+          const commentsValue = (patientFormData as { comments?: unknown }).comments;
+          (patientFormData as { comments?: unknown }).comments = normalizeComments(commentsValue, userContext);
+        }
+
         updateData.patientFormData = patientFormData;
         updateData.updatedAt = new Date();
 
@@ -388,8 +444,8 @@ export class FormService {
         (updateData.formEndTime || existingForm.formEndTime)
       ) {
         // Use the session start reported by the frontend for this save; fall back to stored value.
-        const sessionStart = updateData.formStartTime || existingForm.formStartTime!;
-        const endTime = updateData.formEndTime || existingForm.formEndTime!;
+        const sessionStart = new Date(updateData.formStartTime || existingForm.formStartTime!);
+        const endTime = new Date(updateData.formEndTime || existingForm.formEndTime!);
         const diffMs = endTime.getTime() - sessionStart.getTime();
         const newTimeSeconds = Math.round(diffMs / 1000);
 
@@ -444,6 +500,16 @@ export class FormService {
               ? "Form restored"
               : "Form updated";
 
+          const previousPatientFormData = existingForm.patientFormData
+            ? {
+              ...existingForm.patientFormData,
+              comments: normalizeComments(
+                (existingForm.patientFormData as { comments?: unknown }).comments,
+                userContext,
+              ),
+            }
+            : null;
+
         await formVersionService.createVersionBackup(
           existingForm,
           versionUserId,
@@ -451,7 +517,7 @@ export class FormService {
           updatedForm.isRestoration || false,
           updatedForm.restoredFromVersion,
           previousVersion,
-          existingForm.patientFormData ?? null,
+            previousPatientFormData,
         );
       }
 

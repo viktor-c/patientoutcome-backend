@@ -93,7 +93,7 @@ export const PrefixQuerySchema = z.object({
   query: z.object({
     /** Code prefix typed by the user, e.g. "M", "M2", "5", "52" */
     q: z.string().min(1, "Prefix must not be empty"),
-    /** Max items returned (default 20, max 50) */
-    limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+    /** Max items returned (default 100, max 200) */
+    limit: z.coerce.number().int().min(1).max(200).optional().default(100),
   }),
 });

@@ -73,6 +73,15 @@ describe("Form API", () => {
       fillStatus: "incomplete" as const,
       completedAt: null,
       beginFill: new Date(),
+      comments: [
+        {
+          questionKey: "q1",
+          questionLabel: "Do you have pain at rest in the foot/ankle?",
+          content: "Pain starts in the morning.",
+          createdAt: new Date(),
+          source: "patient" as const,
+        },
+      ],
     };
     
     const updateData = { patientFormData: newPatientFormData };
@@ -81,5 +90,7 @@ describe("Form API", () => {
     // The response should have patientFormData updated
     expect(res.body.responseObject).toHaveProperty("patientFormData");
     expect(res.body.responseObject.patientFormData.rawFormData).toEqual(newPatientFormData.rawFormData);
+    expect(res.body.responseObject.patientFormData.comments).toBeInstanceOf(Array);
+    expect(res.body.responseObject.patientFormData.comments[0].content).toBe("Pain starts in the morning.");
   });
 });
