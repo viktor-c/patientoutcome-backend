@@ -107,7 +107,7 @@ export function parseClamlXml(xmlFilePath: string): IcdOpsEntry[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
-    isArray: (name) => name === "Class" || name === "Rubric" || name === "SubClass",
+    isArray: (name) => name === "Class" || name === "Rubric" || name === "SubClass" || name === "ModifierClass",
     textNodeName: "#text",
   });
 
@@ -116,6 +116,19 @@ export function parseClamlXml(xmlFilePath: string): IcdOpsEntry[] {
 
   if (!claml) {
     throw new Error(`${TAG}: Invalid ClaML XML – missing root ClaML element in ${xmlFilePath}`);
+  }
+
+  // Build modifier map: modifierCode → Map<suffix, label>
+  // Used to expand composite codes like "5-787.1" + "a" → "5-787.1a"
+  const modifierMap = new Map<string, Map<string, string>>();
+  const modifierClasses: any[] = claml.ModifierClass ?? [];
+  for (const mc of modifierClasses) {
+    const modCode = mc["@_modifier"];
+    const suffix = mc["@_code"];
+    if (!modCode || suffix === undefined) continue;
+    const label = extractPreferredLabel(mc.Rubric);
+    if (!modifierMap.has(modCode)) modifierMap.set(modCode, new Map());
+    modifierMap.get(modCode)!.set(String(suffix), label);
   }
 
   const classes: any[] = claml.Class ?? [];
@@ -136,6 +149,23 @@ export function parseClamlXml(xmlFilePath: string): IcdOpsEntry[] {
       label,
       kind: kind as IcdOpsEntry["kind"],
     });
+
+    // Generate composite entries for codes that require a modifier (localisation / sub-type).
+    // E.g. "5-787.1" (Schraube) modified by ST5780 generates "5-787.1a" (Schraube – Karpale).
+    const modifiedBy = cls.ModifiedBy;
+    if (modifiedBy) {
+      const modifierCode = modifiedBy["@_code"];
+      const suffixMap = modifierCode ? modifierMap.get(modifierCode) : undefined;
+      if (suffixMap) {
+        for (const [suffix, modLabel] of suffixMap) {
+          entries.push({
+            code: code + suffix,
+            label: modLabel ? `${label} – ${modLabel}` : label,
+            kind: "category",
+          });
+        }
+      }
+    }
   }
 
   const elapsed = Date.now() - startTime;
