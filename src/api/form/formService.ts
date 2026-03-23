@@ -444,8 +444,8 @@ export class FormService {
         (updateData.formEndTime || existingForm.formEndTime)
       ) {
         // Use the session start reported by the frontend for this save; fall back to stored value.
-        const sessionStart = updateData.formStartTime || existingForm.formStartTime!;
-        const endTime = updateData.formEndTime || existingForm.formEndTime!;
+        const sessionStart = new Date(updateData.formStartTime || existingForm.formStartTime!);
+        const endTime = new Date(updateData.formEndTime || existingForm.formEndTime!);
         const diffMs = endTime.getTime() - sessionStart.getTime();
         const newTimeSeconds = Math.round(diffMs / 1000);
 
