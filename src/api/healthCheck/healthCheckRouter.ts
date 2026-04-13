@@ -17,6 +17,7 @@ import { app } from "@/server";
 
 export const healthCheckRegistry = new OpenAPIRegistry();
 export const healthCheckRouter: Router = express.Router();
+const backendStartedAt = new Date().toISOString();
 
 healthCheckRegistry.registerPath({
   method: "get",
@@ -47,6 +48,40 @@ healthCheckRegistry.registerPath({
 
 healthCheckRouter.get("/", (_req: Request, res: Response) => {
   const serviceResponse = ServiceResponse.success("Service is healthy", null);
+  return handleServiceResponse(serviceResponse, res);
+});
+
+healthCheckRegistry.registerPath({
+  method: "get",
+  summary: "Backend Build Information",
+  description: "Returns backend build metadata used by the frontend About/footer display.",
+  operationId: "backendBuildInfo",
+  path: "/health-check/build-info",
+  tags: ["Health Check"],
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        message: z.string(),
+        responseObject: z.object({
+          appVersion: z.string(),
+          buildRef: z.string(),
+          builtAt: z.string().nullable(),
+          startedAt: z.string(),
+        }),
+      }),
+      description: "Build information returned successfully",
+      statusCode: 200,
+    },
+  ]),
+});
+
+healthCheckRouter.get("/build-info", (_req: Request, res: Response) => {
+  const serviceResponse = ServiceResponse.success("Build information", {
+    appVersion: process.env.BACKEND_APP_VERSION ?? "unknown",
+    buildRef: process.env.BACKEND_BUILD_REF ?? "unknown",
+    builtAt: process.env.BACKEND_BUILT_AT ?? null,
+    startedAt: backendStartedAt,
+  });
   return handleServiceResponse(serviceResponse, res);
 });
 

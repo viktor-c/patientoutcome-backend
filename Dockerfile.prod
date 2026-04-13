@@ -44,6 +44,13 @@ RUN pnpm prune --prod || true
 FROM base AS production
 WORKDIR /app
 
+ARG BACKEND_APP_VERSION=unknown
+ARG BACKEND_BUILD_REF=unknown
+ARG BACKEND_BUILT_AT=unknown
+ENV BACKEND_APP_VERSION=${BACKEND_APP_VERSION}
+ENV BACKEND_BUILD_REF=${BACKEND_BUILD_REF}
+ENV BACKEND_BUILT_AT=${BACKEND_BUILT_AT}
+
 # Create non-root user for security with specific UID/GID for consistent permissions
 # Use || true to handle cases where UID/GID already exist on the build system
 RUN groupadd -g 1000 appuser 2>/dev/null || groupadd appuser
