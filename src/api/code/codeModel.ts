@@ -74,6 +74,10 @@ export const ActivateCodeForCaseSchema = z.object({
   params: z.object({ code: z.string(), caseId: commonValidations.id }),
 });
 
+export const RenewCodeSchema = z.object({
+  params: z.object({ code: z.string() }),
+});
+
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
   params: z.object({

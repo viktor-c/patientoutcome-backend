@@ -3,6 +3,7 @@ import { PatientCaseModel } from "../case/patientCaseModel";
 import dayjs from "dayjs";
 import { consultationModel } from "../consultation/consultationModel";
 import { type Code, codeModel } from "./codeModel";
+import { getDepartmentCodeLifeMs } from "./codeLifeUtils";
 
 export class CodeRepository {
   private _codeMockData: Code[] = [
@@ -228,8 +229,60 @@ export class CodeRepository {
       .findOne({
         patientCaseId,
         activatedOn: { $exists: true, $ne: null },
+        $or: [{ expiresOn: { $exists: false } }, { expiresOn: null }, { expiresOn: { $gt: new Date() } }],
       })
       .lean();
+  }
+
+  async renewCode(codeString: string): Promise<Code | string> {
+    const existingCode = await codeModel.findOne({ code: codeString });
+    if (!existingCode) {
+      return "Code not found";
+    }
+
+    if (!existingCode.activatedOn) {
+      return "Code is not active";
+    }
+
+    let departmentId: string | undefined;
+
+    if (existingCode.consultationId) {
+      const consultation = await consultationModel
+        .findById(existingCode.consultationId)
+        .populate({ path: "patientCaseId", populate: { path: "patient" } })
+        .lean();
+
+      const patientCase = consultation?.patientCaseId as
+        | { patient?: { departments?: Array<string | { _id?: string; id?: string }> } }
+        | undefined;
+      const firstDepartment = patientCase?.patient?.departments?.[0];
+      if (typeof firstDepartment === "string") {
+        departmentId = firstDepartment;
+      } else if (firstDepartment && typeof firstDepartment === "object") {
+        departmentId = firstDepartment._id || firstDepartment.id;
+      }
+    } else if (existingCode.patientCaseId) {
+      const patientCase = await PatientCaseModel.findById(existingCode.patientCaseId)
+        .populate("patient")
+        .lean();
+
+      const patient = (patientCase as Record<string, unknown> | null | undefined)?.patient as
+        | { departments?: Array<string | { _id?: string; id?: string }> }
+        | undefined;
+      const firstDepartment = patient?.departments?.[0];
+      if (typeof firstDepartment === "string") {
+        departmentId = firstDepartment;
+      } else if (firstDepartment && typeof firstDepartment === "object") {
+        departmentId = firstDepartment._id || firstDepartment.id;
+      }
+    }
+
+    const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
+    existingCode.expiresOn = new Date(Date.now() + codeLifeMs);
+    await existingCode.save();
+
+    const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
+    return codeToReturnWithoutId || "Code not found";
   }
 
   /*

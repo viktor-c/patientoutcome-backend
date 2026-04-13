@@ -43,6 +43,12 @@ class CodeController {
     const serviceResponse = await codeService.deactivateCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  public renewCode: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const serviceResponse = await codeService.renewCode(code);
+    return handleServiceResponse(serviceResponse, res);
+  };
   /**
    * Generate new form access codes
    * @route POST /form-access-code/generate/:numberOfCodes

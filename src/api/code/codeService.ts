@@ -6,8 +6,18 @@ import { string } from "zod/v4";
 import { buildConsultationAccessWindow } from "@/api/consultation/consultationAccessWindow";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
+export { DEFAULT_CODE_LIFE_MS, parseCodeLifeToMs } from "./codeLifeUtils";
+
+function isCodeExpired(codeDocument: Code): boolean {
+  if (!codeDocument.expiresOn) return false;
+  return new Date(codeDocument.expiresOn).getTime() < Date.now();
+}
 
 async function resolveActiveConsultationForCode(codeDocument: Code) {
+  if (isCodeExpired(codeDocument)) {
+    return null;
+  }
+
   if (codeDocument.consultationId) {
     const consultation = await consultationRepository.getConsultationById(codeDocument.consultationId.toString());
     if (!consultation) {
@@ -48,42 +58,6 @@ async function resolveActiveConsultationForCode(codeDocument: Code) {
     });
 
   return activeConsultations[0]?.consultation || null;
-}
-
-/** Default code expiry: 4 hours in milliseconds. */
-export const DEFAULT_CODE_LIFE_MS = 4 * 60 * 60 * 1000;
-
-/**
- * Parse a human-readable code life string (e.g. "4h", "2d", "3w") to milliseconds.
- * Returns DEFAULT_CODE_LIFE_MS when the string is invalid.
- */
-export function parseCodeLifeToMs(codeLife: string): number {
-  const match = codeLife.match(/^(\d+)([hdw])$/);
-  if (!match) return DEFAULT_CODE_LIFE_MS;
-  const amount = parseInt(match[1], 10);
-  const unit = match[2];
-  if (unit === "h") return amount * 60 * 60 * 1000;
-  if (unit === "d") return amount * 24 * 60 * 60 * 1000;
-  if (unit === "w") return amount * 7 * 24 * 60 * 60 * 1000;
-  return DEFAULT_CODE_LIFE_MS;
-}
-
-/**
- * Look up the configured code life for a department and convert it to milliseconds.
- * Falls back to DEFAULT_CODE_LIFE_MS when the department has no setting or is not found.
- */
-export async function getDepartmentCodeLifeMs(departmentId: string | undefined): Promise<number> {
-  if (!departmentId) return DEFAULT_CODE_LIFE_MS;
-  try {
-    const { userDepartmentService } = await import("@/api/userDepartment/userDepartmentService.js");
-    const result = await userDepartmentService.findById(departmentId);
-    if (result.success && result.responseObject?.externalAccessCodeLife) {
-      return parseCodeLifeToMs(result.responseObject.externalAccessCodeLife);
-    }
-  } catch {
-    // fall through to default
-  }
-  return DEFAULT_CODE_LIFE_MS;
 }
 
 class CodeService {
@@ -219,6 +193,29 @@ class CodeService {
     }
   }
 
+  async renewCode(code: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const renewedCode = await this.codeRepository.renewCode(code);
+      if (typeof renewedCode === "string") {
+        if (renewedCode === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        }
+        if (renewedCode === "Code is not active") {
+          return ServiceResponse.failure("Code is not active", null, StatusCodes.CONFLICT);
+        }
+      }
+
+      if (renewedCode && typeof renewedCode === "object") {
+        return ServiceResponse.success("Code renewed successfully", renewedCode);
+      }
+
+      return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      logger.error({ error }, "Error renewing code");
+      return ServiceResponse.failure("An error occurred while renewing the code.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async addCodes(numberOfCodes: string): Promise<ServiceResponse<Code[] | null>> {
     try {
       const numCodes = Number.parseInt(numberOfCodes, 10);
@@ -313,6 +310,10 @@ class CodeService {
       }
       if (!codeDocument.activatedOn) {
         return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);
+      }
+
+      if (isCodeExpired(codeDocument)) {
+        return ServiceResponse.failure("Code is expired", false, StatusCodes.BAD_REQUEST);
       }
 
       const consultation = await resolveActiveConsultationForCode(codeDocument);

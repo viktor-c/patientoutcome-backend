@@ -23,6 +23,7 @@ import {
   DeleteCodeSchema,
   ExternalCodeSchema,
   GetCodeSchema,
+  RenewCodeSchema,
 } from "./codeModel";
 
 // Initialize OpenAPI registry
@@ -162,6 +163,23 @@ codeRegistry.registerPath({
   ]),
 });
 formAccessCodeRouter.put("/deactivate/:code", validateRequest(GetCodeSchema), codeController.deactivateCode);
+
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/renew/{code}",
+  tags: ["Code"],
+  operationId: "renewCode",
+  summary: "Renew code validity",
+  description: "Extend the validity of an already activated code by the configured department default duration.",
+  request: { params: RenewCodeSchema.shape.params },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code renewed successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not active", statusCode: 409 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.put("/renew/:code", validateRequest(RenewCodeSchema), codeController.renewCode);
 
 // Route to add new codes
 codeRegistry.registerPath({
