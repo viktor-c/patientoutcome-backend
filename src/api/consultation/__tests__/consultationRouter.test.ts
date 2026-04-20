@@ -189,4 +189,75 @@ describe("Patient Case Consultation API", () => {
 
     await agent.delete(`/consultation/${createResponse.body.responseObject._id}`);
   });
+
+  it("should normalize blueprint placeholder dateAndTime=0 to current time", async () => {
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
+
+    const beforeCreation = new Date();
+    const createResponse = await agent.post(`/consultation/case/${caseId}`).send({
+      patientCaseId: caseId,
+      dateAndTime: 0, // Blueprint placeholder for "now"
+      reasonForConsultation: ["planned"],
+      notes: [],
+      images: [],
+      visitedBy: [],
+      formTemplates: [],
+    });
+    const afterCreation = new Date();
+
+    expect(createResponse.status).toBe(StatusCodes.CREATED);
+    expect(createResponse.body.responseObject).toBeDefined();
+    expect(createResponse.body.responseObject._id).toBeDefined();
+
+    const consultationDateAndTime = new Date(createResponse.body.responseObject.dateAndTime).getTime();
+    const beforeMs = beforeCreation.getTime();
+    const afterMs = afterCreation.getTime();
+
+    // Verify that dateAndTime was set to a time between before and after creation
+    expect(consultationDateAndTime).toBeGreaterThanOrEqual(beforeMs);
+    expect(consultationDateAndTime).toBeLessThanOrEqual(afterMs);
+
+    // Cleanup
+    await agent.delete(`/consultation/${createResponse.body.responseObject._id}`);
+  });
+
+  it("should create and activate a new form access code when formAccessCode='new-access-code'", async () => {
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
+
+    // First, ensure we have at least one available code
+    const codeResponse = await agent.post("/form-access-code/addCodes/1");
+    expect(codeResponse.status).toBe(StatusCodes.CREATED);
+
+    const createResponse = await agent.post(`/consultation/case/${caseId}`).send({
+      patientCaseId: caseId,
+      dateAndTime: new Date().toISOString(),
+      reasonForConsultation: ["planned"],
+      notes: [],
+      images: [],
+      visitedBy: [],
+      formTemplates: [],
+      formAccessCode: "new-access-code", // Blueprint placeholder for new code
+    });
+
+    if (createResponse.status !== StatusCodes.CREATED) {
+      console.error("Create consultation failed:", createResponse.body);
+    }
+
+    expect(createResponse.status).toBe(StatusCodes.CREATED);
+    expect(createResponse.body.responseObject).toBeDefined();
+    expect(createResponse.body.responseObject._id).toBeDefined();
+
+    const consultationId = createResponse.body.responseObject._id;
+    const formAccessCodeId = createResponse.body.responseObject.formAccessCode;
+
+    // Verify code exists and is linked to this consultation
+    expect(formAccessCodeId).toBeDefined();
+
+    const consultationFetch = await agent.get(`/consultation/${consultationId}`);
+    expect(consultationFetch.status).toBe(StatusCodes.OK);
+    expect(consultationFetch.body.responseObject.formAccessCode).toBeDefined();
+
+    // Cleanup
+    await agent.delete(`/consultation/${consultationId}`);
+  });
 });

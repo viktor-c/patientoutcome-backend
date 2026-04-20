@@ -51,7 +51,9 @@ export class SurgeryRepository {
 
       newSurgery.createdAt = new Date();
       newSurgery.updatedAt = new Date();
-      return newSurgery.save();
+      const savedSurgery = await newSurgery.save();
+      await savedSurgery.populate(["surgeons"]);
+      return savedSurgery.toObject() as Surgery;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -60,7 +62,7 @@ export class SurgeryRepository {
   async updateSurgeryById(surgeryId: string, surgeryData: Partial<Surgery>): Promise<Surgery | null> {
     try {
       surgeryData.updatedAt = new Date();
-      return await SurgeryModel.findByIdAndUpdate(surgeryId, surgeryData, { new: true });
+      return await SurgeryModel.findByIdAndUpdate(surgeryId, surgeryData, { new: true }).populate(["surgeons"]);
     } catch (error) {
       return Promise.reject(error);
     }

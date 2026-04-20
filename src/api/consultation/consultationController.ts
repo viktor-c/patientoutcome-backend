@@ -158,22 +158,28 @@ class ConsultationController {
     }
 
     // Validate and replace formAccessCode with code ID if provided
+    // Note: "new-access-code" is a special sentinel value that tells the service to create and activate a new code
     if (consultationData.formAccessCode) {
-      const codeResponse = await codeService.getCode(consultationData.formAccessCode);
-      if (!codeResponse.success || !codeResponse.responseObject) {
-        return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
-      }
+      if (consultationData.formAccessCode === "new-access-code") {
+        // Pass through the sentinel value without validation
+        // The service will handle code creation and activation
+      } else {
+        const codeResponse = await codeService.getCode(consultationData.formAccessCode);
+        if (!codeResponse.success || !codeResponse.responseObject) {
+          return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
+        }
 
-      const code = codeResponse.responseObject;
-      if (code.activatedOn) {
-        return handleServiceResponse(
-          ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
-          res,
-        );
-      }
+        const code = codeResponse.responseObject;
+        if (code.activatedOn) {
+          return handleServiceResponse(
+            ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
+            res,
+          );
+        }
 
-      // Replace the code string with the code's ID
-      consultationData.formAccessCode = code._id?.toString();
+        // Replace the code string with the code's ID
+        consultationData.formAccessCode = code._id?.toString();
+      }
     }
 
     // If consultation has notes and createdBy is empty, use the logged-in user's ID
@@ -243,22 +249,28 @@ class ConsultationController {
     }
 
     // Validate and replace formAccessCode with code ID if provided
+    // Note: "new-access-code" is a special sentinel value that tells the service to create and activate a new code
     if (consultationData.formAccessCode) {
-      const codeResponse = await codeService.getCode(consultationData.formAccessCode);
-      if (!codeResponse.success || !codeResponse.responseObject) {
-        return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
-      }
+      if (consultationData.formAccessCode === "new-access-code") {
+        // Pass through the sentinel value without validation
+        // The service will handle code creation and activation
+      } else {
+        const codeResponse = await codeService.getCode(consultationData.formAccessCode);
+        if (!codeResponse.success || !codeResponse.responseObject) {
+          return handleServiceResponse(ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND), res);
+        }
 
-      const code = codeResponse.responseObject;
-      if (code.activatedOn) {
-        return handleServiceResponse(
-          ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
-          res,
-        );
-      }
+        const code = codeResponse.responseObject;
+        if (code.activatedOn) {
+          return handleServiceResponse(
+            ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT),
+            res,
+          );
+        }
 
-      // Replace the code string with the code's ID
-      consultationData.formAccessCode = code._id?.toString();
+        // Replace the code string with the code's ID
+        consultationData.formAccessCode = code._id?.toString();
+      }
     }
 
     // If consultation has notes and createdBy is empty, use the logged-in user's ID

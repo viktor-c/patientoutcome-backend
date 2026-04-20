@@ -145,6 +145,68 @@ export class ConsultationService {
     return activeConsultations[0]?.consultation || null;
   }
 
+  private normalizeBlueprintDateAndTime(dateAndTime: unknown): Date {
+    if (dateAndTime === 0 || dateAndTime === "0") {
+      return new Date();
+    }
+
+    if (dateAndTime instanceof Date) {
+      if (dateAndTime.getTime() === 0) {
+        return new Date();
+      }
+      return dateAndTime;
+    }
+
+    return new Date(dateAndTime as string | number | Date);
+  }
+
+  private async activateFormAccessCodeForConsultation(
+    formAccessCode: string,
+    consultationId: string,
+  ): Promise<string | null> {
+    if (!formAccessCode || !formAccessCode.trim()) {
+      return null;
+    }
+
+    if (formAccessCode === "new-access-code") {
+      try {
+        const createdCodes = await this.codeRepository.createMultipleCodes(1);
+        const codeToUse = createdCodes?.[0];
+        logger.info(
+          { createdCode: codeToUse?.code, hasCode: !!codeToUse?.code },
+          "New code created for new-access-code activation",
+        );
+
+        if (!codeToUse?.code) {
+          logger.error("Code to use is null or missing code string", { codeToUse });
+          return "Failed to create form access code";
+        }
+
+        logger.info({ codeString: codeToUse.code }, "Attempting to activate code");
+        const activatedCode = await this.codeRepository.activateCode(codeToUse.code, consultationId);
+        logger.info(
+          { activatedCode, isError: typeof activatedCode === "string" },
+          "Code activation result",
+        );
+        return typeof activatedCode === "string" ? activatedCode : null;
+      } catch (error) {
+        logger.error({ error }, "Error creating or activating new access code");
+        return "Failed to create form access code";
+      }
+    }
+
+    const code = await this.codeRepository.findById(formAccessCode.toString());
+    if (!code) {
+      return "Code not found";
+    }
+    if (code.activatedOn) {
+      return "Code is already active";
+    }
+
+    const activatedCode = await this.codeRepository.activateCode(code.code, consultationId);
+    return typeof activatedCode === "string" ? activatedCode : null;
+  }
+
   /**
    *
    * @param caseId
@@ -153,9 +215,18 @@ export class ConsultationService {
    */
   async createConsultation(caseId: string, data: CreateConsultation): Promise<ServiceResponse<Consultation | null>> {
     try {
-      // Step 1: Create consultation with empty proms array to satisfy validation
+      const { formAccessCode, ...restData } = data;
+      logger.info(
+        { formAccessCode, hasFormAccessCode: !!formAccessCode },
+        "Creating consultation with formAccessCode",
+      );
+      const normalizedDateAndTime = this.normalizeBlueprintDateAndTime(restData.dateAndTime);
+
+      // Step 1: Create consultation with empty proms array to satisfy validation.
+      // formAccessCode is linked only after consultation creation through activation.
       const consultationData = {
-        ...data,
+        ...restData,
+        dateAndTime: normalizedDateAndTime,
         proms: [], // Initialize with empty array
       };
 
@@ -171,20 +242,19 @@ export class ConsultationService {
         return ServiceResponse.failure("Failed to get consultation ID", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
 
-      //after creating the consultation, we can check if the code is valid
-      if (data.formAccessCode) {
-        // Find code by the code ID (not by code string)
-        const code = await this.codeRepository.findById(data.formAccessCode.toString());
-        if (!code) {
-          return ServiceResponse.failure("Code not found", null, StatusCodes.BAD_REQUEST);
-        }
-        if (code.activatedOn) {
-          return ServiceResponse.failure("Code is already active", null, StatusCodes.CONFLICT);
-        }
-        // Pass the code string to activateCode
-        const activatedCode = await this.codeRepository.activateCode(code.code, newConsultation._id.toString());
-        if (typeof activatedCode === "string") {
-          return ServiceResponse.failure(activatedCode, null, StatusCodes.BAD_REQUEST);
+      if (formAccessCode) {
+        logger.info(
+          { formAccessCode, consultationId: newConsultation._id },
+          "Calling activateFormAccessCodeForConsultation",
+        );
+        const activationError = await this.activateFormAccessCodeForConsultation(
+          formAccessCode.toString(),
+          newConsultation._id.toString(),
+        );
+        if (activationError) {
+          const statusCode =
+            activationError === "Code is already active" ? StatusCodes.CONFLICT : StatusCodes.BAD_REQUEST;
+          return ServiceResponse.failure(activationError, null, statusCode);
         }
       }
 

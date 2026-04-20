@@ -25,6 +25,7 @@
 ### Data Source
 
 The BfArM ClaML 2.0 XML files are stored in `src/ICD-OPS/`:
+
 - **ICD-10-GM 2026**: `icd10gm2026syst-claml/Klassifikationsdateien/icd10gm2026syst_claml_20250912.xml` (~12,600 entries)
 - **OPS 2026**: `ops2026syst-claml/Klassifikationsdateien/ops2026syst_claml_20251017.xml` (~19,900 entries)
 
@@ -182,7 +183,7 @@ The `IcdOpsSearchField` component is integrated into the following forms:
 | Form | ICD-10 Fields | OPS Fields |
 |------|--------------|------------|
 | `PatientCaseCreateEditForm.vue` | mainDiagnosisICD10, otherDiagnosisICD10 | — |
-| `CreateEditSurgeryDialog.vue` | diagnosisICD10 | oPSCodes |
+| `CreateEditSurgeryDialog.vue` | diagnosisICD10 | OPSCodes |
 | `CaseBlueprints.vue` (Admin) | mainDiagnosisICD10, otherDiagnosisICD10 | — |
 | `SurgeryBlueprints.vue` (Admin) | diagnosisICD10 | opsCodes |
 
@@ -214,6 +215,7 @@ The current approach of **parsing XML at startup into in-memory arrays** is the 
 | Pre-parsed JSON | Faster startup (~100ms) | Needs build step, still in-memory |
 
 The in-memory approach is recommended because:
+
 1. **~32,500 entries** is small – the arrays use ~20-30 MB of RAM
 2. Search speed (array filter) is sub-5ms which is excellent
 3. No additional database dependencies
@@ -238,7 +240,7 @@ npx vitest run src/services/__tests__/icdopsService.spec.ts \
 
 ## Updating Data for Future Years
 
-1. Download the new ClaML ZIP files from BfArM (https://www.bfarm.de/)
+1. Download the new ClaML ZIP files from BfArM (<https://www.bfarm.de/>)
 2. Replace the folders under `src/ICD-OPS/`
 3. Update the file path constants in `src/api/icdops/icdopsClamlParser.ts`
 4. Update `DATA_VERSION` in `src/api/icdops/icdopsService.ts`
