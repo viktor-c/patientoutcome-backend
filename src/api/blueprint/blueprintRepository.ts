@@ -275,7 +275,7 @@ export class BlueprintRepository {
       content: {
         patientCaseId: "", // id of the parent patient case
         dateAndTime: "+6W", //Date object for consultation scheduling
-        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        reasonForConsultation: ["followup"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
         notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
@@ -341,7 +341,7 @@ export class BlueprintRepository {
       content: {
         patientCaseId: "", // id of the parent patient case
         dateAndTime: "+12W", //Date object for consultation scheduling
-        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        reasonForConsultation: ["followup"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
         notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
@@ -366,7 +366,7 @@ export class BlueprintRepository {
       content: {
         patientCaseId: "", // id of the parent patient case
         dateAndTime: "+6M", //Date object for consultation scheduling
-        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        reasonForConsultation: ["followup"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
         notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
@@ -391,7 +391,7 @@ export class BlueprintRepository {
       content: {
         patientCaseId: "", // id of the parent patient case
         dateAndTime: "+12M", //Date object for consultation scheduling
-        reasonForConsultation: ["planned"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        reasonForConsultation: ["followup"], //Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
         notes: [] as Array<typeof NoteSchema>, //Array of note objects with dateCreated, createdBy, note
         visitedBy: [] as Array<string>, //Array of User ObjectId references for clinicians involved
         formAccessCode: "" as string | undefined, //Optional FormAccessCode ObjectId reference
