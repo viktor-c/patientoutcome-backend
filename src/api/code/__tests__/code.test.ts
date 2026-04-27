@@ -275,7 +275,8 @@ describe("Code API Endpoints", () => {
   });
 
   describe("Case-level code assignment", () => {
-    const patientCaseId = consultationRepository.mockConsultations[2].patientCaseId?.toString();
+    // Use a patient case that does not already have an active case-level code in the seeded mock data.
+    const patientCaseId = consultationRepository.mockConsultations[6].patientCaseId?.toString();
 
     it("should activate a code for a patient case", async () => {
       const createCodeResponse = await agent.post("/form-access-code/addCodes/1");

@@ -92,7 +92,7 @@ export class StatisticsService {
           }[] = [];
 
           let consultationTitle = "Consultation";
-          let createdAt = consultation.dateAndTime;
+          const consultationDate = consultation.dateAndTime;
           let completedAt: Date | null = null;
           let completionTimeSeconds: number | null = null;
 
@@ -145,17 +145,13 @@ export class StatisticsService {
                   }
                 }
 
-                // Use form creation date if available
-                if (form.createdAt) {
-                  createdAt = form.createdAt;
-                }
               } else {
                 // If form missing or has no patientFormData, log and push a placeholder entry
                 logger.warn(`Form with ID ${promId} not found or has no patientFormData.`);
                 scoringEntries.push({
                   title: form?.title || "Unknown Form",
                   scoring: { rawFormData: {}, subscales: {}, totalScore: null },
-                  createdAt: consultation.dateAndTime,
+                  createdAt: consultationDate,
                   completedAt: null,
                   completionTimeSeconds: null,
                   formTemplateId: form?.formTemplateId ? form.formTemplateId.toString() : null,
@@ -170,7 +166,7 @@ export class StatisticsService {
             caseId: consultation.patientCaseId,
             consultationId: consultation._id,
             title: consultationTitle,
-            date: createdAt,
+            date: consultationDate,
             proms: scoringEntries.length > 0 ? scoringEntries : [],
             completedAt,
             completionTimeSeconds,
@@ -211,10 +207,10 @@ export class StatisticsService {
 
       const { consultations } = statsResponse.responseObject;
 
-      // Create real-time data (based on the first prom date) but do not attempt to map prom titles
+      // Create real-time data from the consultation-level visit date.
       // The frontend will process individual prom scoring and titles.
       const realTimeData: ScoreDataPoint[] = consultations.map((consultation, index) => ({
-        date: consultation.proms && consultation.proms.length > 0 ? consultation.proms[0].createdAt : new Date(),
+        date: consultation.date,
         dateIndex: index,
         // leave prom-specific fields empty; frontend will derive them from consultation.proms
         aofasScore: null,

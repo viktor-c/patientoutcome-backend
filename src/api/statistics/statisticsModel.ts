@@ -21,6 +21,8 @@ export const ConsultationWithScoresSchema = z.object({
   _id: zId("Consultation"),
   caseId: zId("PatientCase"),
   consultationId: zId("Consultation"), // Same as _id, kept for clarity
+  title: z.string(),
+  date: dateSchema,
   proms: z.array(
     z.object({
       scoring: ScoringDataSchema,
@@ -30,7 +32,9 @@ export const ConsultationWithScoresSchema = z.object({
       completedAt: dateSchema.nullable().optional(),
       completionTimeSeconds: z.number().nullable().optional(),
     })
-  )
+  ),
+  completedAt: dateSchema.nullable().optional(),
+  completionTimeSeconds: z.number().nullable().optional(),
 });
 
 /**

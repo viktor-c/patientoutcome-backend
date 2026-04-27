@@ -178,7 +178,7 @@ export class ConsultationService {
         );
 
         if (!codeToUse?.code) {
-          logger.error("Code to use is null or missing code string", { codeToUse });
+          logger.error({ codeToUse }, "Code to use is null or missing code string");
           return "Failed to create form access code";
         }
 
