@@ -70,7 +70,7 @@ export class CodeRepository {
    * @returns {Promise<Code[]>}
    */
   async findAll() {
-    return await codeModel.find();
+    return await codeModel.find().populate('consultationId');
   }
 
   /*
@@ -283,6 +283,66 @@ export class CodeRepository {
 
     const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
     return codeToReturnWithoutId || "Code not found";
+  }
+
+  async setCodeActivationStart(codeString: string, activatedOn: Date): Promise<Code | string> {
+    const existingCode = await codeModel.findOne({ code: codeString });
+    if (!existingCode) {
+      return "Code not found";
+    }
+
+    if (!existingCode.consultationId && !existingCode.patientCaseId) {
+      return "Code is not linked";
+    }
+
+    const departmentId = await this.resolveDepartmentIdForCode(existingCode);
+    const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
+
+    existingCode.activatedOn = activatedOn;
+    existingCode.expiresOn = new Date(activatedOn.getTime() + codeLifeMs);
+    await existingCode.save();
+
+    const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
+    return codeToReturnWithoutId || "Code not found";
+  }
+
+  private async resolveDepartmentIdForCode(code: Code): Promise<string | undefined> {
+    if (code.consultationId) {
+      const consultation = await consultationModel
+        .findById(code.consultationId)
+        .populate({ path: "patientCaseId", populate: { path: "patient" } })
+        .lean();
+
+      const patientCase = consultation?.patientCaseId as
+        | { patient?: { departments?: Array<string | { _id?: string; id?: string }> } }
+        | undefined;
+      const firstDepartment = patientCase?.patient?.departments?.[0];
+      if (typeof firstDepartment === "string") {
+        return firstDepartment;
+      }
+      if (firstDepartment && typeof firstDepartment === "object") {
+        return firstDepartment._id || firstDepartment.id;
+      }
+    }
+
+    if (code.patientCaseId) {
+      const patientCase = await PatientCaseModel.findById(code.patientCaseId)
+        .populate("patient")
+        .lean();
+
+      const patient = (patientCase as Record<string, unknown> | null | undefined)?.patient as
+        | { departments?: Array<string | { _id?: string; id?: string }> }
+        | undefined;
+      const firstDepartment = patient?.departments?.[0];
+      if (typeof firstDepartment === "string") {
+        return firstDepartment;
+      }
+      if (firstDepartment && typeof firstDepartment === "object") {
+        return firstDepartment._id || firstDepartment.id;
+      }
+    }
+
+    return undefined;
   }
 
   /*

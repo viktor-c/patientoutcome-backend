@@ -24,6 +24,7 @@ import {
   ExternalCodeSchema,
   GetCodeSchema,
   RenewCodeSchema,
+  SetCodeActivationStartSchema,
 } from "./codeModel";
 
 // Initialize OpenAPI registry
@@ -180,6 +181,36 @@ codeRegistry.registerPath({
   ]),
 });
 formAccessCodeRouter.put("/renew/:code", validateRequest(RenewCodeSchema), codeController.renewCode);
+
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/activation-start/{code}",
+  tags: ["Code"],
+  operationId: "setCodeActivationStart",
+  summary: "Set code activation start",
+  description: "Set when a code starts being valid and recalculate expiry from department code-life settings.",
+  request: {
+    params: SetCodeActivationStartSchema.shape.params,
+    body: {
+      content: {
+        "application/json": {
+          schema: SetCodeActivationStartSchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code activation start updated successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not linked", statusCode: 409 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.put(
+  "/activation-start/:code",
+  validateRequest(SetCodeActivationStartSchema),
+  codeController.setCodeActivationStart,
+);
 
 // Route to add new codes
 codeRegistry.registerPath({

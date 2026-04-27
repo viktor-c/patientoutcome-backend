@@ -78,6 +78,13 @@ export const RenewCodeSchema = z.object({
   params: z.object({ code: z.string() }),
 });
 
+export const SetCodeActivationStartSchema = z.object({
+  params: z.object({ code: z.string() }),
+  body: z.object({
+    activatedOn: z.coerce.date(),
+  }),
+});
+
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
   params: z.object({

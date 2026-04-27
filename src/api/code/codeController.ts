@@ -49,6 +49,13 @@ class CodeController {
     const serviceResponse = await codeService.renewCode(code);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  public setCodeActivationStart: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const { activatedOn } = req.body as { activatedOn: string | Date };
+    const serviceResponse = await codeService.setCodeActivationStart(code, new Date(activatedOn));
+    return handleServiceResponse(serviceResponse, res);
+  };
   /**
    * Generate new form access codes
    * @route POST /form-access-code/generate/:numberOfCodes

@@ -216,6 +216,33 @@ class CodeService {
     }
   }
 
+  async setCodeActivationStart(code: string, activatedOn: Date): Promise<ServiceResponse<Code | null>> {
+    try {
+      const updatedCode = await this.codeRepository.setCodeActivationStart(code, activatedOn);
+      if (typeof updatedCode === "string") {
+        if (updatedCode === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        }
+        if (updatedCode === "Code is not linked") {
+          return ServiceResponse.failure("Code is not linked", null, StatusCodes.CONFLICT);
+        }
+      }
+
+      if (updatedCode && typeof updatedCode === "object") {
+        return ServiceResponse.success("Code activation start updated successfully", updatedCode);
+      }
+
+      return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      logger.error({ error }, "Error updating code activation start");
+      return ServiceResponse.failure(
+        "An error occurred while updating the code activation start.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async addCodes(numberOfCodes: string): Promise<ServiceResponse<Code[] | null>> {
     try {
       const numCodes = Number.parseInt(numberOfCodes, 10);

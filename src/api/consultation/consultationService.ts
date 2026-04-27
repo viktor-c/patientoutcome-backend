@@ -101,6 +101,18 @@ export class ConsultationService {
       return consultation;
     }
 
+    // Only attach the code if it actually belongs to this consultation.
+    // A case can have multiple consultations; the code's consultationId is the authoritative owner.
+    const consultationId =
+      typeof consultation._id === "string"
+        ? consultation._id
+        : consultation._id?.toString?.() ?? undefined;
+    const codeOwnerConsultationId =
+      activeCaseCode.consultationId?.toString?.() ?? undefined;
+    if (!consultationId || !codeOwnerConsultationId || consultationId !== codeOwnerConsultationId) {
+      return consultation;
+    }
+
     return {
       ...(consultation as unknown as Record<string, unknown>),
       formAccessCode: activeCaseCode,
