@@ -1,6 +1,6 @@
 {
   "name": "patientoutcome-backend",
-  "version": "0.3.0",
+  "version": "0.6.0",
   "description": "Backend for patient outcome app.",
   "author": "Victor Cighir",
   "repository": "edwinhern/express-typescript-2024",
