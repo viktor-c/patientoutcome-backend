@@ -223,7 +223,7 @@ codeRegistry.registerPath({
   request: { params: ResetConsultationFormsByCodeSchema.shape.params },
   responses: createApiResponses([
     {
-      schema: z.object({ modifiedCount: z.number() }),
+      schema: z.object({ recreatedCount: z.number() }),
       description: "Consultation forms reset successfully",
       statusCode: 200,
     },

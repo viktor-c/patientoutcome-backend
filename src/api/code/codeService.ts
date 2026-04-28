@@ -4,8 +4,11 @@ import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
 import { buildConsultationAccessWindow } from "@/api/consultation/consultationAccessWindow";
 import { FormModel } from "@/api/form/formModel";
+import { FormRepository } from "@/api/form/formRepository";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
+
+const formRepository = new FormRepository();
 export { DEFAULT_CODE_LIFE_MS, parseCodeLifeToMs } from "./codeLifeUtils";
 
 function isCodeExpired(codeDocument: Code): boolean {
@@ -362,7 +365,7 @@ class CodeService {
     }
   }
 
-  async resetConsultationFormsByCode(code: string): Promise<ServiceResponse<{ modifiedCount: number } | null>> {
+  async resetConsultationFormsByCode(code: string): Promise<ServiceResponse<{ recreatedCount: number } | null>> {
     try {
       const codeDocument = await this.codeRepository.findByCode(code);
       if (!codeDocument) {
@@ -374,22 +377,39 @@ class CodeService {
       }
 
       const consultationId = codeDocument.consultationId.toString();
-      const updateResult = await FormModel.updateMany(
-        { consultationId, deletedAt: null },
-        {
-          $set: {
-            patientFormData: null,
-            formStartTime: null,
-            formEndTime: null,
-            completionTimeSeconds: null,
-            updatedAt: new Date(),
-          },
-        },
-      );
 
-      return ServiceResponse.success("Consultation forms reset successfully", {
-        modifiedCount: updateResult.modifiedCount,
-      });
+      // Find all active forms for this consultation and remember their template IDs and caseId
+      const existingForms = await FormModel.find({ consultationId, deletedAt: null }).lean();
+
+      if (existingForms.length === 0) {
+        return ServiceResponse.success("No forms found for this consultation", { recreatedCount: 0 });
+      }
+
+      // Collect unique (caseId, formTemplateId) pairs to recreate
+      type FormSeed = { caseId: string; formTemplateId: string };
+      const toRecreate: FormSeed[] = existingForms
+        .filter((f) => f.formTemplateId)
+        .map((f) => ({
+          caseId: f.caseId?.toString() ?? "",
+          formTemplateId: f.formTemplateId?.toString() ?? "",
+        }))
+        .filter((f) => f.caseId && f.formTemplateId);
+
+      // Hard-delete the old form documents
+      await FormModel.deleteMany({ consultationId, deletedAt: null });
+
+      // Recreate each form fresh from its template
+      let recreatedCount = 0;
+      for (const seed of toRecreate) {
+        try {
+          await formRepository.createFormByTemplateId(seed.caseId, consultationId, seed.formTemplateId);
+          recreatedCount++;
+        } catch (err) {
+          logger.error({ err, consultationId, ...seed }, "Failed to recreate form during consultation reset");
+        }
+      }
+
+      return ServiceResponse.success("Consultation forms reset successfully", { recreatedCount });
     } catch (error) {
       logger.error({ error }, "Error resetting consultation forms by code");
       return ServiceResponse.failure(
