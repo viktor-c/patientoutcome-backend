@@ -122,13 +122,13 @@ export class CodeRepository {
     }
     // if the code has a consultationId, remove the formAccessCode from the consultation
     if (code.consultationId) {
+      const consultationDoc = code.consultationId as unknown as { formAccessCode?: unknown; save: () => Promise<unknown> };
       //@ts-ignore
-      code.consultationId.formAccessCode = undefined;
+      consultationDoc.formAccessCode = undefined;
       code.consultationId = undefined;
       code.patientCaseId = undefined;
       // should be saved, so that the formAccessCode is removed from the consultation
-      //@ts-ignore
-      await code.consultationId.save();
+      await consultationDoc.save();
     }
     return await codeModel.deleteOne({ code: codeString });
   }
@@ -167,7 +167,14 @@ export class CodeRepository {
 
       // code should exist, because we just checked earlier
       code.activatedOn = new Date();
-      code.expiresOn = undefined;
+      // Prefer the consultation access end timestamp for expiry; fallback to department-configured code life.
+      if (consultation.consultationAccessActiveUntil) {
+        code.expiresOn = new Date(consultation.consultationAccessActiveUntil);
+      } else {
+        const departmentId = await this.resolveDepartmentIdForPatientCase(consultation.patientCaseId?.toString());
+        const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
+        code.expiresOn = new Date(Date.now() + codeLifeMs);
+      }
       code.consultationId = consultationId;
       code.patientCaseId = consultation.patientCaseId?.toString();
       await code.save();
@@ -209,7 +216,9 @@ export class CodeRepository {
       }
 
       code.activatedOn = new Date();
-      code.expiresOn = undefined;
+      const departmentId = await this.resolveDepartmentIdForPatientCase(patientCaseId);
+      const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
+      code.expiresOn = new Date(Date.now() + codeLifeMs);
       code.consultationId = undefined;
       code.patientCaseId = patientCaseId;
       await code.save();
@@ -340,6 +349,29 @@ export class CodeRepository {
       if (firstDepartment && typeof firstDepartment === "object") {
         return firstDepartment._id || firstDepartment.id;
       }
+    }
+
+    return undefined;
+  }
+
+  private async resolveDepartmentIdForPatientCase(patientCaseId?: string): Promise<string | undefined> {
+    if (!patientCaseId) {
+      return undefined;
+    }
+
+    const patientCase = await PatientCaseModel.findById(patientCaseId)
+      .populate("patient")
+      .lean();
+
+    const patient = (patientCase as Record<string, unknown> | null | undefined)?.patient as
+      | { departments?: Array<string | { _id?: string; id?: string }> }
+      | undefined;
+    const firstDepartment = patient?.departments?.[0];
+    if (typeof firstDepartment === "string") {
+      return firstDepartment;
+    }
+    if (firstDepartment && typeof firstDepartment === "object") {
+      return firstDepartment._id || firstDepartment.id;
     }
 
     return undefined;

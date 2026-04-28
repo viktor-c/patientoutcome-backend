@@ -206,7 +206,8 @@ export class FormTemplateRepository {
 
   /**
    * Seed department-formtemplate mappings
-   * Maps all form templates to the "Orthopädie und Unfallchirurgie" department
+   * Maps all form templates to ALL existing departments
+   * This ensures that users from any department can access all available form templates
    */
   async seedDepartmentMappings(allowInProduction: boolean = false): Promise<void> {
     try {
@@ -215,36 +216,59 @@ export class FormTemplateRepository {
         throw new Error("Department mapping seeding is not available in production environment");
       }
 
-      // Default department ID from userDepartmentRepository mock data
-      const defaultDepartmentId = "675000000000000000000001"; // Orthopädie und Unfallchirurgie
-
       // Get all form template IDs from mock data
       const formTemplateIds = this._mockFormTemplateData
         .map(t => t._id)
         .filter((id): id is string => id !== undefined);
 
-      // Check if mapping already exists
-      const existingMapping = await DepartmentFormTemplateModel.findOne({
-        departmentId: defaultDepartmentId
-      });
-
-      if (existingMapping) {
-        logger.info({ departmentId: defaultDepartmentId }, "Department mapping already exists, skipping");
+      if (formTemplateIds.length === 0) {
+        logger.warn("No form templates found to seed department mappings");
         return;
       }
 
-      // Create mapping with all form templates
-      const mapping = await DepartmentFormTemplateModel.create({
-        departmentId: defaultDepartmentId,
-        formTemplateIds: formTemplateIds,
-        createdBy: "675000000000000000000100", // admin user from mock data
-        updatedBy: "675000000000000000000100",
-      });
+      // Get all departments from database
+      const userDepartmentModel = mongoose.model("UserDepartment");
+      const allDepartments = (await userDepartmentModel.find().lean()) as Array<{ _id: any; name?: string }>;
+
+      if (!allDepartments || allDepartments.length === 0) {
+        logger.warn("No departments found in database, skipping department mapping seeding");
+        return;
+      }
+
+      const adminUserId = "675000000000000000000100"; // admin user from mock data
+
+      // Map each department to all form templates
+      for (const department of allDepartments) {
+        const departmentId = (department._id as any).toString();
+
+        // Check if mapping already exists
+        const existingMapping = await DepartmentFormTemplateModel.findOne({
+          departmentId
+        });
+
+        if (existingMapping) {
+          logger.debug({ departmentId }, "Department mapping already exists, skipping");
+          continue;
+        }
+
+        // Create mapping with all form templates for this department
+        await DepartmentFormTemplateModel.create({
+          departmentId: new mongoose.Types.ObjectId(departmentId),
+          formTemplateIds: formTemplateIds.map(id => new mongoose.Types.ObjectId(id)),
+          createdBy: new mongoose.Types.ObjectId(adminUserId),
+        });
+
+        logger.info({
+          departmentId,
+          departmentName: department.name,
+          templatesCount: formTemplateIds.length
+        }, "Department-formtemplate mapping created");
+      }
 
       logger.info({
-        departmentId: defaultDepartmentId,
+        totalDepartments: allDepartments.length,
         templatesCount: formTemplateIds.length
-      }, "Department-formtemplate mapping seeded successfully");
+      }, "All department-formtemplate mappings seeded successfully");
     } catch (error) {
       logger.error({ error }, "Error seeding department-formtemplate mappings");
       return Promise.reject(error);

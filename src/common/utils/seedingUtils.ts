@@ -37,6 +37,21 @@ export async function isSeedingAllowed(
   forceSeeding = false,
   userRoles?: string[],
 ): Promise<{ allowed: boolean; reason?: string }> {
+  /*
+   * ============================================================================
+   * WARNING - EXCEPTION FLOW FOR /seed/department-formtemplate-mappings
+   * ============================================================================
+   * This function represents the DEFAULT seeding policy.
+   *
+   * The endpoint /seed/department-formtemplate-mappings has a deliberate exception
+   * in seedingMiddleware: admin users are allowed to pass middleware for that path
+   * even when this function returns allowed=false (for example in production when
+   * forceSeeding is not set).
+   *
+   * Keep the middleware exception and the route-level admin guard aligned.
+   * Do not remove one without reviewing the other.
+   * ============================================================================
+   */
   // Always allow in development or test environments
   if (env.NODE_ENV === "development" || env.NODE_ENV === "test") {
     return { allowed: true };
@@ -105,6 +120,15 @@ export function isMockDataAccessAllowed(): boolean {
 export const seedingMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const forceSeeding = req.query.forceSeeding === "true";
   const userRoles = req.session?.roles || [];
+
+  const isDepartmentMappingPath = req.path === "/department-formtemplate-mappings";
+  const isAdminUser = userRoles.includes("admin");
+
+  // Explicit exception: allow admin users to reach the department mapping route
+  // even if generic production seeding policy would deny.
+  if (isDepartmentMappingPath && isAdminUser) {
+    return next();
+  }
 
   const { allowed, reason } = await isSeedingAllowed(forceSeeding, userRoles);
 

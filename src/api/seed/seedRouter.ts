@@ -40,6 +40,10 @@ const userRegistrationRepository = new UserRegistrationRepository();
 // const consultationRepository = new ConsultationRepository();
 const clinicalStudyRepository = new ClinicalStudyRepository();
 
+function hasAdminRole(req: Request): boolean {
+  return Boolean(req.session?.roles?.includes("admin"));
+}
+
 // Middleware to check if seeding is allowed (dev/test, ALLOW_SEED=true, or setup mode)
 seedRouter.use(seedingMiddleware);
 
@@ -124,8 +128,29 @@ seedRouter.get("/formTemplate", async (_req: Request, res: Response) => {
  * seed database with department-formtemplate mappings
  * @route GET /seed/department-formtemplate-mappings
  */
-seedRouter.get("/department-formtemplate-mappings", async (_req: Request, res: Response) => {
+seedRouter.get("/department-formtemplate-mappings", async (req: Request, res: Response) => {
   try {
+    /*
+     * ============================================================================
+     * WARNING - EXCEPTION FLOW FOR THIS ROUTE
+     * ============================================================================
+     * seedingMiddleware contains an explicit admin exception for this exact path.
+     * That exception allows admin users to reach this handler even when the generic
+     * isSeedingAllowed() policy would otherwise return allowed=false.
+     *
+     * This route MUST keep its own admin-role check as a second safety barrier.
+     * If middleware behavior changes, this route-level guard is still required.
+     * ============================================================================
+     */
+    if (!hasAdminRole(req)) {
+      const serviceResponse = ServiceResponse.failure(
+        "Only admin users can seed department-formtemplate mappings",
+        null,
+        StatusCodes.FORBIDDEN,
+      );
+      return handleServiceResponse(serviceResponse, res);
+    }
+
     await formTemplateRepository.seedDepartmentMappings();
     const serviceResponse = ServiceResponse.success("Department-formtemplate mappings seeded successfully", null);
     return handleServiceResponse(serviceResponse, res);

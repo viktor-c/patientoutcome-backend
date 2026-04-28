@@ -175,7 +175,7 @@ describe("Code API Endpoints", () => {
 
       expect(activateResponse.status).toBe(StatusCodes.OK);
       expect(activateResponse.body.responseObject.activatedOn).toBeDefined();
-      expect(activateResponse.body.responseObject.expiresOn).toBeUndefined();
+      expect(activateResponse.body.responseObject.expiresOn).toBeDefined();
       expect(activateResponse.body.responseObject.consultationId).toEqual(consultation._id);
       expect(activateResponse.body.responseObject.code).toEqual(codeToActivate.code);
       expect(activateResponse.body.responseObject._id).toBeUndefined(); // _id should not be returned

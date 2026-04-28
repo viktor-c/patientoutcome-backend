@@ -23,6 +23,7 @@ import {
   DeleteCodeSchema,
   ExternalCodeSchema,
   GetCodeSchema,
+  ResetConsultationFormsByCodeSchema,
   RenewCodeSchema,
   SetCodeActivationStartSchema,
 } from "./codeModel";
@@ -210,6 +211,31 @@ formAccessCodeRouter.put(
   "/activation-start/:code",
   validateRequest(SetCodeActivationStartSchema),
   codeController.setCodeActivationStart,
+);
+
+codeRegistry.registerPath({
+  method: "post",
+  path: "/form-access-code/reset-consultation/{code}",
+  tags: ["Code"],
+  operationId: "resetConsultationFormsByCode",
+  summary: "Reset consultation forms by code",
+  description: "Reset all forms of the consultation linked to the given form-access code.",
+  request: { params: ResetConsultationFormsByCodeSchema.shape.params },
+  responses: createApiResponses([
+    {
+      schema: z.object({ modifiedCount: z.number() }),
+      description: "Consultation forms reset successfully",
+      statusCode: 200,
+    },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not linked", statusCode: 409 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.post(
+  "/reset-consultation/:code",
+  validateRequest(ResetConsultationFormsByCodeSchema),
+  codeController.resetConsultationFormsByCode,
 );
 
 // Route to add new codes

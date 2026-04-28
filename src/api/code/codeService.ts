@@ -2,8 +2,8 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { logger } from "@/common/utils/logger";
 import { StatusCodes } from "http-status-codes";
-import { string } from "zod/v4";
 import { buildConsultationAccessWindow } from "@/api/consultation/consultationAccessWindow";
+import { FormModel } from "@/api/form/formModel";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
 export { DEFAULT_CODE_LIFE_MS, parseCodeLifeToMs } from "./codeLifeUtils";
@@ -357,6 +357,44 @@ class CodeService {
       return ServiceResponse.failure(
         "An error occurred while checking the external code.",
         false,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async resetConsultationFormsByCode(code: string): Promise<ServiceResponse<{ modifiedCount: number } | null>> {
+    try {
+      const codeDocument = await this.codeRepository.findByCode(code);
+      if (!codeDocument) {
+        return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      if (!codeDocument.consultationId) {
+        return ServiceResponse.failure("Code is not linked to a consultation", null, StatusCodes.CONFLICT);
+      }
+
+      const consultationId = codeDocument.consultationId.toString();
+      const updateResult = await FormModel.updateMany(
+        { consultationId, deletedAt: null },
+        {
+          $set: {
+            patientFormData: null,
+            formStartTime: null,
+            formEndTime: null,
+            completionTimeSeconds: null,
+            updatedAt: new Date(),
+          },
+        },
+      );
+
+      return ServiceResponse.success("Consultation forms reset successfully", {
+        modifiedCount: updateResult.modifiedCount,
+      });
+    } catch (error) {
+      logger.error({ error }, "Error resetting consultation forms by code");
+      return ServiceResponse.failure(
+        "An error occurred while resetting consultation forms.",
+        null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }

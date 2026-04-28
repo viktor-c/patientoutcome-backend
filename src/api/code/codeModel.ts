@@ -78,6 +78,10 @@ export const RenewCodeSchema = z.object({
   params: z.object({ code: z.string() }),
 });
 
+export const ResetConsultationFormsByCodeSchema = z.object({
+  params: z.object({ code: z.string() }),
+});
+
 export const SetCodeActivationStartSchema = z.object({
   params: z.object({ code: z.string() }),
   body: z.object({

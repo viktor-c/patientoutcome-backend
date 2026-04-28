@@ -20,6 +20,7 @@ describe("FormTemplate Access Control & Department Mappings", () => {
   const secondDepartmentId = "675000000000000000000002"; // Radiology
   let formTemplateIds: string[] = [];
   let adminAgent: TestAgent;
+  let doctorAgent: TestAgent;
 
   beforeAll(async () => {
     try {
@@ -28,6 +29,7 @@ describe("FormTemplate Access Control & Department Mappings", () => {
       
       // Login as admin to perform privileged operations
       adminAgent = await loginUserAgent("admin");
+      doctorAgent = await loginUserAgent("doctor");
       
       // Seed departments
       await request(app).get("/seed/departments");
@@ -39,7 +41,7 @@ describe("FormTemplate Access Control & Department Mappings", () => {
       }
 
       // Seed department mappings
-      const mappingRes = await request(app).get("/seed/department-formtemplate-mappings");
+      const mappingRes = await adminAgent.get("/seed/department-formtemplate-mappings");
       if (mappingRes.status !== 200) {
         throw new Error("Failed to seed department-formtemplate mappings");
       }
@@ -113,6 +115,18 @@ describe("FormTemplate Access Control & Department Mappings", () => {
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body.responseObject)).toBe(true);
       expect(response.body.responseObject).toHaveLength(0);
+    });
+  });
+
+  describe("Seed Endpoint Access Control", () => {
+    it("should allow admin to seed department-formtemplate mappings", async () => {
+      const response = await adminAgent.get("/seed/department-formtemplate-mappings");
+      expect(response.status).toBe(200);
+    });
+
+    it("should deny non-admin users for department-formtemplate mappings seeding", async () => {
+      const response = await doctorAgent.get("/seed/department-formtemplate-mappings");
+      expect(response.status).toBe(403);
     });
   });
 
