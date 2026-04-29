@@ -151,7 +151,7 @@ seedRouter.get("/department-formtemplate-mappings", async (req: Request, res: Re
       return handleServiceResponse(serviceResponse, res);
     }
 
-    await formTemplateRepository.seedDepartmentMappings();
+    await formTemplateRepository.seedDepartmentMappings(false, req.session.userId);
     const serviceResponse = ServiceResponse.success("Department-formtemplate mappings seeded successfully", null);
     return handleServiceResponse(serviceResponse, res);
   } catch (error) {
