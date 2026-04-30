@@ -400,14 +400,20 @@ class CodeService {
 
       // Recreate each form fresh from its template
       let recreatedCount = 0;
+      const recreatedFormIds: string[] = [];
       for (const seed of toRecreate) {
         try {
-          await formRepository.createFormByTemplateId(seed.caseId, consultationId, seed.formTemplateId);
+          const recreatedForm = await formRepository.createFormByTemplateId(seed.caseId, consultationId, seed.formTemplateId);
+          if (recreatedForm?._id) {
+            recreatedFormIds.push(recreatedForm._id.toString());
+          }
           recreatedCount++;
         } catch (err) {
           logger.error({ err, consultationId, ...seed }, "Failed to recreate form during consultation reset");
         }
       }
+
+      await consultationRepository.updateConsultation(consultationId, { proms: recreatedFormIds });
 
       return ServiceResponse.success("Consultation forms reset successfully", { recreatedCount });
     } catch (error) {

@@ -1,3 +1,4 @@
+import { FormRepository } from "../formRepository";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -37,8 +38,6 @@ vi.mock("@/api/surgery/surgeryModel", () => ({
     find: surgeryFindMock,
   },
 }));
-
-const { FormRepository } = await import("../formRepository");
 
 describe("FormRepository.getFormById", () => {
   beforeEach(() => {

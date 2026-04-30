@@ -1,5 +1,7 @@
 import { codeRepository } from "@/api/code/codeRepository";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
+import { consultationModel } from "@/api/consultation/consultationModel";
+import { FormModel } from "@/api/form/formModel";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 import { loginUserAgent } from "@/utils/unitTesting";
@@ -26,6 +28,10 @@ describe("Code API Endpoints", () => {
     const resConsultations = await agent.get("/seed/consultation");
     if (resConsultations.status !== StatusCodes.OK) {
       throw new Error("Failed to seed consultations");
+    }
+    const resForms = await agent.get("/seed/forms");
+    if (resForms.status !== StatusCodes.OK) {
+      throw new Error("Failed to seed forms");
     }
   });
 
@@ -303,6 +309,36 @@ describe("Code API Endpoints", () => {
       expect(response.body.success).toBeTruthy();
       expect(response.body.responseObject.patientCaseId).toEqual(patientCaseId);
       expect(response.body.responseObject.activatedOn).toBeDefined();
+    });
+  });
+
+  describe("Reset consultation forms by code", () => {
+    it("should recreate forms and update consultation prom references", async () => {
+      const code = codeRepository.codeMockData[0].code;
+      const consultationId = codeRepository.codeMockData[0].consultationId?.toString();
+
+      expect(consultationId).toBeTruthy();
+
+      const consultationBeforeReset = await consultationModel.findById(consultationId).lean();
+      expect(consultationBeforeReset?.proms.length).toBeGreaterThan(0);
+
+      const oldPromIds = (consultationBeforeReset?.proms ?? []).map((promId) => promId.toString());
+
+      const response = await agent.post(`/form-access-code/reset-consultation/${code}`);
+
+      expect(response.statusCode).toBe(StatusCodes.OK);
+      expect(response.body.success).toBeTruthy();
+      expect(response.body.responseObject.recreatedCount).toBe(oldPromIds.length);
+
+      const consultationAfterReset = await consultationModel.findById(consultationId).lean();
+      const newPromIds = (consultationAfterReset?.proms ?? []).map((promId) => promId.toString());
+
+      expect(newPromIds).toHaveLength(oldPromIds.length);
+      expect(newPromIds.every((promId) => !oldPromIds.includes(promId))).toBe(true);
+
+      const recreatedForms = await FormModel.find({ consultationId, deletedAt: null }).lean();
+      expect(recreatedForms).toHaveLength(oldPromIds.length);
+      expect(recreatedForms.map((form) => form._id.toString()).sort()).toEqual([...newPromIds].sort());
     });
   });
 });
