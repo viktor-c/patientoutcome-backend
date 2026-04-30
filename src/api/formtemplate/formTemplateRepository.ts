@@ -206,10 +206,11 @@ export class FormTemplateRepository {
 
   /**
    * Seed department-formtemplate mappings
-   * Maps all form templates to ALL existing departments
-   * This ensures that users from any department can access all available form templates
+   * Rebuild department-formtemplate mappings from scratch.
+   * Maps all form templates to ALL existing departments so users from any department
+   * can access all available form templates.
    */
-  async seedDepartmentMappings(allowInProduction: boolean = false): Promise<void> {
+  async seedDepartmentMappings(allowInProduction: boolean = false, userId?: string): Promise<void> {
     try {
       if (env.NODE_ENV === "production" && !allowInProduction) {
         logger.error("Attempted to seed department mappings in production environment");
@@ -235,27 +236,20 @@ export class FormTemplateRepository {
         return;
       }
 
-      const adminUserId = "675000000000000000000100"; // admin user from mock data
+      const createdByUserId = userId || "675000000000000000000100";
+
+      const deleteResult = await DepartmentFormTemplateModel.deleteMany({});
+      logger.info({ deletedCount: deleteResult.deletedCount }, "Existing department-formtemplate mappings removed before reseeding");
 
       // Map each department to all form templates
       for (const department of allDepartments) {
         const departmentId = (department._id as any).toString();
 
-        // Check if mapping already exists
-        const existingMapping = await DepartmentFormTemplateModel.findOne({
-          departmentId
-        });
-
-        if (existingMapping) {
-          logger.debug({ departmentId }, "Department mapping already exists, skipping");
-          continue;
-        }
-
         // Create mapping with all form templates for this department
         await DepartmentFormTemplateModel.create({
           departmentId: new mongoose.Types.ObjectId(departmentId),
           formTemplateIds: formTemplateIds.map(id => new mongoose.Types.ObjectId(id)),
-          createdBy: new mongoose.Types.ObjectId(adminUserId),
+          createdBy: new mongoose.Types.ObjectId(createdByUserId),
         });
 
         logger.info({
@@ -334,6 +328,12 @@ export class FormTemplateRepository {
       title: "AOFAS Lesser Toes",
       description: "American Orthopaedic Foot & Ankle Society - Lesser Toes (MTP-IP) Score",
       accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e8b",
+      title: "elsner-feedback",
+      description: "Subjective postoperative expectation feedback chart",
+      accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
   ];
 

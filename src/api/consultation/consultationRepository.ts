@@ -1,4 +1,5 @@
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
+import { SurgeryModel } from "@/api/surgery/surgeryModel";
 import { userRepository } from "@/api/user/userRepository";
 import { logger } from "@/common/utils/logger";
 import { faker, fakerDA } from "@faker-js/faker";
@@ -7,6 +8,36 @@ import { type Consultation, type CreateConsultation, consultationModel } from ".
 
 // export class not instance
 export class ConsultationRepository {
+  private async attachSurgeriesToConsultation<T extends Consultation | null>(consultation: T): Promise<T> {
+    if (!consultation || !consultation.patientCaseId || typeof consultation.patientCaseId !== "object") {
+      return consultation;
+    }
+
+    const patientCase = consultation.patientCaseId as unknown as Record<string, unknown>;
+    const patientCaseId =
+      typeof patientCase._id === "string"
+        ? patientCase._id
+        : patientCase._id?.toString?.() ?? null;
+
+    if (!patientCaseId) {
+      return consultation;
+    }
+
+    const surgeries = await SurgeryModel.find({ patientCase: patientCaseId }).populate(["surgeons"]).lean();
+
+    return {
+      ...(consultation as Record<string, unknown>),
+      patientCaseId: {
+        ...patientCase,
+        surgeries,
+      },
+    } as unknown as T;
+  }
+
+  private async attachSurgeriesToConsultations<T extends Consultation[]>(consultations: T): Promise<T> {
+    return Promise.all(consultations.map((consultation) => this.attachSurgeriesToConsultation(consultation))) as Promise<T>;
+  }
+
   async createConsultation(caseId: string, data: CreateConsultation): Promise<Consultation> {
     const patientCase = await PatientCaseModel.findById(caseId);
     if (!patientCase) {
@@ -23,7 +54,7 @@ export class ConsultationRepository {
    * @returns consultation object
    */
   async getConsultationById(consultationId: string): Promise<Consultation | null> {
-    return consultationModel
+    const consultation = await consultationModel
       .findById(consultationId)
       .populate([
         { path: "proms", match: { deletedAt: null } },
@@ -33,6 +64,8 @@ export class ConsultationRepository {
         { path: "formAccessCode" },
       ])
       .lean();
+
+      return this.attachSurgeriesToConsultation(consultation);
   }
 
   /**
@@ -44,7 +77,7 @@ export class ConsultationRepository {
     const from = new Date(fromDate).setHours(0, 0, 0, 0);
     const to = new Date(toDate).setHours(23, 59, 59, 999);
 
-    return consultationModel
+    const consultations = await consultationModel
       .find({ dateAndTime: { $gte: from, $lt: to } })
       .populate([
         { path: "proms", match: { deletedAt: null } },
@@ -55,6 +88,8 @@ export class ConsultationRepository {
       ])
       .select("-__v")
       .lean();
+
+      return this.attachSurgeriesToConsultations(consultations);
   }
   /**
    * @param formAccessCode use the form access code to get the consultation, this is the id of the consultation
@@ -63,7 +98,7 @@ export class ConsultationRepository {
    */
   async getConsultationByFormAccessCode(formAccessCode: string): Promise<Consultation | null> {
     // formaccessCode is the internal code of the consultation or _id
-    return consultationModel
+    const consultation = await consultationModel
       .findById(formAccessCode)
       .populate([
         { path: "proms", match: { deletedAt: null } },
@@ -72,6 +107,8 @@ export class ConsultationRepository {
         { path: "kioskId" },
       ])
       .lean();
+
+      return this.attachSurgeriesToConsultation(consultation);
   }
 
   /**
@@ -82,7 +119,7 @@ export class ConsultationRepository {
    * sides get out of sync).
    */
   async getConsultationByKioskId(kioskUserId: string): Promise<Consultation | null> {
-    return consultationModel
+    const consultation = await consultationModel
       .findOne({ kioskId: kioskUserId })
       .populate([
         { path: "proms", match: { deletedAt: null } },
@@ -92,6 +129,8 @@ export class ConsultationRepository {
         { path: "formAccessCode" },
       ])
       .lean();
+
+      return this.attachSurgeriesToConsultation(consultation);
   }
 
   /**
@@ -155,7 +194,7 @@ export class ConsultationRepository {
         { path: "formAccessCode" },
       ])
       .lean();
-    return cons;
+    return this.attachSurgeriesToConsultations(cons);
   }
 
   public _mockConsultations: Consultation[] = [];

@@ -1,5 +1,6 @@
 import { type Form, FormModel } from "@/api/form/formModel";
 import { FormTemplate, FormAccessLevel, FormTemplateModel, type CustomFormData, type SubscaleScore, type FormQuestions } from "@/api/formtemplate/formTemplateModel";
+import { SurgeryModel } from "@/api/surgery/surgeryModel";
 import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
 import { logger } from "@/common/utils/logger";
 import { ScoringData } from "@/types/scoring";
@@ -8,6 +9,32 @@ import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
 export class FormRepository {
+  private async attachSurgeriesToForm<T extends Form | null>(form: T): Promise<T> {
+    if (!form || !form.caseId || typeof form.caseId !== "object") {
+      return form;
+    }
+
+    const patientCase = form.caseId as unknown as Record<string, unknown>;
+    const patientCaseId =
+      typeof patientCase._id === "string"
+        ? patientCase._id
+        : patientCase._id?.toString?.() ?? null;
+
+    if (!patientCaseId) {
+      return form;
+    }
+
+    const surgeries = await SurgeryModel.find({ patientCase: patientCaseId }).populate(["surgeons"]).lean();
+
+    return {
+      ...(form as Record<string, unknown>),
+      caseId: {
+        ...patientCase,
+        surgeries,
+      },
+    } as unknown as T;
+  }
+
   async getAllForms(): Promise<Form[]> {
     return FormModel.find({ deletedAt: null }).lean() as Promise<Form[]>;
   }
@@ -23,7 +50,8 @@ export class FormRepository {
 
   async getFormById(id: string): Promise<Form | null> {
     // populate caseId, consultationId, formTemplateId
-    return FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean() as Promise<Form | null>;
+    const form = await FormModel.findOne({ _id: id, deletedAt: null }).populate("caseId consultationId formTemplateId").lean() as Form | null;
+    return this.attachSurgeriesToForm(form);
   }
 
   async createForm(data: Form): Promise<Form> {
