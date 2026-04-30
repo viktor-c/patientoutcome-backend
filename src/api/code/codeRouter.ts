@@ -264,7 +264,7 @@ codeRegistry.registerPath({
   description: "Delete a code by its code.",
   request: { params: DeleteCodeSchema },
   responses: createApiResponses([
-    { schema: z.object({ message: z.string() }), description: "Code deleted successfully", statusCode: 200 },
+    { schema: z.null(), description: "Code deleted successfully", statusCode: 204 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
   ]),
 });
