@@ -102,17 +102,29 @@ async function calculateRelativeCreatedAtDate(
       return null;
     }
 
-    // Get the patient case
     const patientCase = await PatientCaseModel.findById(consultation.patientCaseId).lean() as any;
-    if (!patientCase || !patientCase.surgeries || patientCase.surgeries.length === 0) {
+    if (!patientCase) {
+      logger.debug({ patientCaseId: consultation.patientCaseId }, "Patient case not found for relative date calculation");
+      return null;
+    }
+
+    const surgeries = await SurgeryModel.find({ patientCase: consultation.patientCaseId }).sort({ surgeryDate: 1 }).lean() as any[];
+    if (surgeries.length === 0) {
       logger.debug({ patientCaseId: consultation.patientCaseId }, "No surgeries found for relative date calculation");
       return null;
     }
 
-    // Get the first surgery date
-    const surgery = await SurgeryModel.findById(patientCase.surgeries[0]).lean() as any;
+    const consultationTime = new Date(String(consultation.dateAndTime ?? ""));
+    const consultationTimestamp = Number.isNaN(consultationTime.getTime()) ? null : consultationTime.getTime();
+    const surgery = consultationTimestamp == null
+      ? surgeries[surgeries.length - 1]
+      : [...surgeries].reverse().find((entry) => {
+          const surgeryTimestamp = new Date(String(entry?.surgeryDate ?? "")).getTime();
+          return !Number.isNaN(surgeryTimestamp) && surgeryTimestamp <= consultationTimestamp;
+        }) ?? surgeries[surgeries.length - 1];
+
     if (!surgery || !surgery.surgeryDate) {
-      logger.debug({ surgeryId: patientCase.surgeries[0] }, "Surgery date not found for relative date calculation");
+      logger.debug({ patientCaseId: consultation.patientCaseId }, "Surgery date not found for relative date calculation");
       return null;
     }
 
