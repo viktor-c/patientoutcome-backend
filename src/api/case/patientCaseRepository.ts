@@ -367,7 +367,7 @@ export class PatientCaseRepository {
     {
       _id: "677da5d8cb4569ad1c65515f",
       externalId: "84612",
-      createdAt: faker.date.past().toISOString(),
+      createdAt: faker.date.recent({ days: 60, refDate: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000) }).toISOString(),
       patient: "6771d9d410ede2552b7bba40",
       mainDiagnosis: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),
       mainDiagnosisICD10: faker.helpers.arrayElements(this.icd10Codes, { min: 1, max: 3 }),

@@ -264,6 +264,11 @@ export class SurgeryRepository {
     { id: 4, type: "local" },
   ];
 
+  private selectedCaseSurgeryDate = faker.date.recent({
+    days: 40,
+    refDate: new Date(Date.now() - 170 * 24 * 60 * 60 * 1000),
+  });
+
   private _mockSurgeries = [
     {
       _id: "677da5d8cb4569ad1c655260",
@@ -273,7 +278,7 @@ export class SurgeryRepository {
       therapy: "Chevron osteotomy with bunionectomy",
       OPSCodes: ["5-788.5a"],
       side: "left" as const,
-      surgeryDate: faker.date.past({ years: 1 }).toISOString(),
+      surgeryDate: this.selectedCaseSurgeryDate.toISOString(),
       surgeryTime: 90,
       tourniquet: 60,
       anaesthesiaType: faker.helpers.arrayElement(this.anaesthesiaTypes),
@@ -282,15 +287,15 @@ export class SurgeryRepository {
       additionalData: [
         {
           _id: new mongoose.Types.ObjectId().toString(),
-          dateCreated: new Date().toISOString(),
+          dateCreated: new Date(this.selectedCaseSurgeryDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
           createdBy: "676336bea497301f6eff8c90",
           note: "Surgery completed successfully with no complications",
         },
       ],
       surgeons: ["676336bea497301f6eff8c91"],
       patientCase: "677da5d8cb4569ad1c65515f",
-      createdAt: faker.date.past().toISOString(),
-      updatedAt: faker.date.past().toISOString(),
+      createdAt: new Date(this.selectedCaseSurgeryDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(this.selectedCaseSurgeryDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
     },
     {
       _id: "677da5d8cb4569ad1c655261",
