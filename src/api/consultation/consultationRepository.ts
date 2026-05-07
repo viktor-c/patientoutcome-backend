@@ -8,6 +8,15 @@ import { type Consultation, type CreateConsultation, consultationModel } from ".
 
 // export class not instance
 export class ConsultationRepository {
+  private selectedCaseSurgeryDate = faker.date.recent({
+    days: 40,
+    refDate: new Date(Date.now() - 170 * 24 * 60 * 60 * 1000),
+  });
+
+  private selectedCaseFollowupDate(weeksAfterSurgery: number): Date {
+    return new Date(this.selectedCaseSurgeryDate.getTime() + weeksAfterSurgery * 7 * 24 * 60 * 60 * 1000);
+  }
+
   private async attachSurgeriesToConsultation<T extends Consultation | null>(consultation: T): Promise<T> {
     if (!consultation || !consultation.patientCaseId || typeof consultation.patientCaseId !== "object") {
       return consultation;
@@ -345,6 +354,132 @@ export class ConsultationRepository {
         kioskId: "676336bea497301f6eff8c96",
         images: [],
         visitedBy: [userRepository.mockUsers?.[3]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a8",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(1),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c1",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(1),
+              to: new Date(this.selectedCaseFollowupDate(1).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[0]?._id || "",
+            note: "Post-op week 1. Relative to baseline: +10",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d60", "6832337395b15e2d7e223e01", "6832337395b15e2d7e223e02", "6832337395b15e2d7e223e03"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8a9",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(2),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c2",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(2),
+              to: new Date(this.selectedCaseFollowupDate(2).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[1]?._id || "",
+            note: "Post-op week 2. Relative to baseline: +3",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d61", "6832337395b15e2d7e223e04", "6832337395b15e2d7e223e05", "6832337395b15e2d7e223e06"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8aa",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(6),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c3",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(6),
+              to: new Date(this.selectedCaseFollowupDate(6).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[0]?._id || "",
+            note: "Post-op week 6. Relative to baseline: -8",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d62", "6832337395b15e2d7e223e07", "6832337395b15e2d7e223e08", "6832337395b15e2d7e223e09"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8ad",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(9),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c6",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(9),
+              to: new Date(this.selectedCaseFollowupDate(9).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[1]?._id || "",
+            note: "Post-op week 9. Relative to baseline: -5",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d65", "6832337395b15e2d7e223e0a", "6832337395b15e2d7e223e0b", "6832337395b15e2d7e223e0c"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8ab",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(12),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c4",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(12),
+              to: new Date(this.selectedCaseFollowupDate(12).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[1]?._id || "",
+            note: "Post-op week 12. Relative to baseline: -2",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d63", "6832337395b15e2d7e223e0d", "6832337395b15e2d7e223e0e", "6832337395b15e2d7e223e0f"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[1]?._id || ""],
+      },
+      {
+        _id: "60d5ec49f1b2c12d88f1e8ac",
+        __v: 0,
+        patientCaseId: "677da5d8cb4569ad1c65515f",
+        dateAndTime: this.selectedCaseFollowupDate(16),
+        reasonForConsultation: ["followup"],
+        notes: [
+          {
+            _id: "60d5ec49f1b2c12d88f1e8c5",
+            dateCreated: faker.date.between({
+              from: this.selectedCaseFollowupDate(16),
+              to: new Date(this.selectedCaseFollowupDate(16).getTime() + 2 * 60 * 60 * 1000),
+            }),
+            createdBy: userRepository.mockUsers?.[0]?._id || "",
+            note: "Post-op week 16. Relative to baseline: +5",
+          },
+        ],
+        proms: ["6832337395b15e2d7e223d64", "6832337395b15e2d7e223e10", "6832337395b15e2d7e223e11", "6832337395b15e2d7e223e12"],
+        images: [],
+        visitedBy: [userRepository.mockUsers?.[0]?._id || ""],
       },
     ];
   }

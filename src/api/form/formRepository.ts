@@ -248,7 +248,23 @@ export class FormRepository {
         };
       };
 
-      // EFAS Form 1
+      const createScoredPatientFormData = (
+        formData: CustomFormData,
+        rawScore: number,
+        normalizedScore: number,
+        name: string,
+      ) => {
+        return {
+          rawFormData: formData,
+          subscales: undefined,
+          totalScore: { name, rawScore, normalizedScore, isComplete: true },
+          fillStatus: "complete" as const,
+          completedAt: new Date(),
+          beginFill: new Date(),
+        };
+      };
+
+      // EFAS Form 1 (pre-surgery baseline)
       const efasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
@@ -256,7 +272,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
-        patientFormData: createMockPatientFormData(efasFormData1),
+        patientFormData: createScoredPatientFormData(efasFormData1, 40, 40, "EFAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
@@ -265,14 +281,14 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // VAS Form 1
+      // VAS Form 1 (pre-surgery baseline)
       const vasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d53",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        patientFormData: createMockPatientFormData(vasFormData1),
+        patientFormData: createScoredPatientFormData(vasFormData1, 7, 70, "VAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
@@ -281,7 +297,7 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // AOFAS Form 1
+      // AOFAS Form 1 (pre-surgery baseline)
       const aofasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
@@ -289,7 +305,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
-        patientFormData: createMockPatientFormData(aofasFormData1),
+        patientFormData: createScoredPatientFormData(aofasFormData1, 45, 45, "AOFAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
@@ -300,14 +316,14 @@ export class FormRepository {
 
       // forms for the second consultation
 
-      // VAS Form 2
+      // VAS Form 2 (pre-surgery baseline)
       const vasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e86"];
       this.mockForms.push({
         _id: "6832337195b15e2d7e223d52",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
-        patientFormData: createMockPatientFormData(vasFormData2),
+        patientFormData: createScoredPatientFormData(vasFormData2, 7, 72, "VAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[3].title,
@@ -316,7 +332,7 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // EFAS Form 2
+      // EFAS Form 2 (pre-surgery baseline)
       const efasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
       this.mockForms.push({
@@ -324,7 +340,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
-        patientFormData: createMockPatientFormData(efasFormData2),
+        patientFormData: createScoredPatientFormData(efasFormData2, 38, 38, "EFAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[0].title,
@@ -333,7 +349,7 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // AOFAS Form 2
+      // AOFAS Form 2 (pre-surgery baseline)
       const aofasFormData2 = mockFormDataSamples["67b4e612d0feb4ad99ae2e84"];
 
       this.mockForms.push({
@@ -341,7 +357,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
-        patientFormData: createMockPatientFormData(aofasFormData2),
+        patientFormData: createScoredPatientFormData(aofasFormData2, 42, 42, "AOFAS"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[1].title,
@@ -350,14 +366,14 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // MOXFQ Form 1
+      // MOXFQ Form 1 (pre-surgery baseline)
       const moxfqFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e85"];
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d57",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        patientFormData: createMockPatientFormData(moxfqFormData1),
+        patientFormData: createScoredPatientFormData(moxfqFormData1, 68, 68, "MOXFQ"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,
@@ -366,13 +382,13 @@ export class FormRepository {
         currentVersion: 0
       });
 
-      // MOXFQ Form 2
+      // MOXFQ Form 2 (pre-surgery baseline)
       this.mockForms.push({
         _id: "6832337595b15e2d7e223d58",
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
-        patientFormData: createMockPatientFormData(moxfqFormData1),
+        patientFormData: createScoredPatientFormData(moxfqFormData1, 70, 70, "MOXFQ"),
         createdAt: new Date(),
         updatedAt: undefined,
         title: formTemplateRepository.mockFormTemplateData[2].title,
@@ -380,6 +396,221 @@ export class FormRepository {
         accessLevel: FormAccessLevel.PATIENT,
         currentVersion: 0
       });
+
+      const elsnerTemplate = formTemplateRepository.mockFormTemplateData.find(
+        (template) => template._id === "67b4e612d0feb4ad99ae2e8b",
+      );
+      
+      const elsnerFollowupWeek1 = {
+        elsnerFeedback: {
+          currentWeek: 1,
+          selectedExpectation: 20,
+          pointsJson: JSON.stringify([{ week: 1, expectation: 20 }]),
+          surgeryDate: null,
+        },
+      };
+      const elsnerFollowupWeek2 = {
+        elsnerFeedback: {
+          currentWeek: 2,
+          selectedExpectation: 25,
+          pointsJson: JSON.stringify([{ week: 2, expectation: 25 }]),
+          surgeryDate: null,
+        },
+      };
+      const elsnerFollowupWeek6 = {
+        elsnerFeedback: {
+          currentWeek: 6,
+          selectedExpectation: 40,
+          pointsJson: JSON.stringify([{ week: 6, expectation: 40 }]),
+          surgeryDate: null,
+        },
+      };
+      const elsnerFollowupWeek9 = {
+        elsnerFeedback: {
+          currentWeek: 9,
+          selectedExpectation: 65,
+          pointsJson: JSON.stringify([{ week: 9, expectation: 65 }]),
+          surgeryDate: null,
+        },
+      };
+      const elsnerFollowupWeek12 = {
+        elsnerFeedback: {
+          currentWeek: 12,
+          selectedExpectation: 110,
+          pointsJson: JSON.stringify([{ week: 12, expectation: 110 }]),
+          surgeryDate: null,
+        },
+      };
+      const elsnerFollowupWeek16 = {
+        elsnerFeedback: {
+          currentWeek: 16,
+          selectedExpectation: 180,
+          pointsJson: JSON.stringify([{ week: 16, expectation: 180 }]),
+          surgeryDate: null,
+        },
+      };
+
+      // Additional Elsner subjective feedback forms for selected case follow-up timeline (1, 2, 6, 12, 16 weeks)
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d60",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a8",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek1),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d61",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8a9",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek2),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d62",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8aa",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek6),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d65",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8ad",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek9),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d63",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8ab",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek12),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      this.mockForms.push({
+        _id: "6832337395b15e2d7e223d64",
+        caseId: "677da5d8cb4569ad1c65515f",
+        consultationId: "60d5ec49f1b2c12d88f1e8ac",
+        formTemplateId: "67b4e612d0feb4ad99ae2e8b",
+        patientFormData: createMockPatientFormData(elsnerFollowupWeek16),
+        createdAt: new Date(),
+        updatedAt: undefined,
+        title: elsnerTemplate?.title || "elsner-feedback",
+        description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
+        accessLevel: FormAccessLevel.PATIENT,
+        currentVersion: 0,
+      });
+
+      // EFAS, AOFAS, MOXFQ scored forms for follow-up consultations (weeks 1, 2, 6, 9, 12, 16)
+      // Scores show a realistic post-surgery recovery curve:
+      //   AOFAS (higher=better): 62, 65, 72, 75, 80, 85
+      //   EFAS  (higher=better): 55, 58, 65, 68, 74, 80
+      //   MOXFQ normalizedScore (lower=better plotted): 45, 42, 35, 32, 25, 18
+      const followupScores = [
+        { consultationId: "60d5ec49f1b2c12d88f1e8a8", sfx: "e01", aofas: 62, efas: 55, moxfq: 45 }, // wk1
+        { consultationId: "60d5ec49f1b2c12d88f1e8a9", sfx: "e04", aofas: 65, efas: 58, moxfq: 42 }, // wk2
+        { consultationId: "60d5ec49f1b2c12d88f1e8aa", sfx: "e07", aofas: 72, efas: 65, moxfq: 35 }, // wk6
+        { consultationId: "60d5ec49f1b2c12d88f1e8ad", sfx: "e0a", aofas: 75, efas: 68, moxfq: 32 }, // wk9
+        { consultationId: "60d5ec49f1b2c12d88f1e8ab", sfx: "e0d", aofas: 80, efas: 74, moxfq: 25 }, // wk12
+        { consultationId: "60d5ec49f1b2c12d88f1e8ac", sfx: "e10", aofas: 85, efas: 80, moxfq: 18 }, // wk16
+      ] as const;
+
+      for (const s of followupScores) {
+        const prefix = "6832337395b15e2d7e223";
+        // EFAS
+        this.mockForms.push({
+          _id: `${prefix}${s.sfx}`,
+          caseId: "677da5d8cb4569ad1c65515f",
+          consultationId: s.consultationId,
+          formTemplateId: "67b4e612d0feb4ad99ae2e83",
+          patientFormData: createScoredPatientFormData(
+            mockFormDataSamples["67b4e612d0feb4ad99ae2e83"],
+            s.efas,
+            s.efas,
+            "EFAS",
+          ),
+          createdAt: new Date(),
+          updatedAt: undefined,
+          title: formTemplateRepository.mockFormTemplateData[0].title,
+          description: formTemplateRepository.mockFormTemplateData[0].description,
+          accessLevel: FormAccessLevel.PATIENT,
+          currentVersion: 0,
+        });
+        // AOFAS (sfx + 1)
+        const sfxAofas = s.sfx.replace(/[0-9a-f]+$/, (n) => (parseInt(n, 16) + 1).toString(16).padStart(n.length, '0'));
+        this.mockForms.push({
+          _id: `${prefix}${sfxAofas}`,
+          caseId: "677da5d8cb4569ad1c65515f",
+          consultationId: s.consultationId,
+          formTemplateId: "67b4e612d0feb4ad99ae2e84",
+          patientFormData: createScoredPatientFormData(
+            mockFormDataSamples["67b4e612d0feb4ad99ae2e84"],
+            s.aofas,
+            s.aofas,
+            "AOFAS",
+          ),
+          createdAt: new Date(),
+          updatedAt: undefined,
+          title: formTemplateRepository.mockFormTemplateData[1].title,
+          description: formTemplateRepository.mockFormTemplateData[1].description,
+          accessLevel: FormAccessLevel.PATIENT,
+          currentVersion: 0,
+        });
+        // MOXFQ (sfx + 2)
+        const sfxMoxfq = s.sfx.replace(/[0-9a-f]+$/, (n) => (parseInt(n, 16) + 2).toString(16).padStart(n.length, '0'));
+        this.mockForms.push({
+          _id: `${prefix}${sfxMoxfq}`,
+          caseId: "677da5d8cb4569ad1c65515f",
+          consultationId: s.consultationId,
+          formTemplateId: "67b4e612d0feb4ad99ae2e85",
+          patientFormData: createScoredPatientFormData(
+            mockFormDataSamples["67b4e612d0feb4ad99ae2e85"],
+            s.moxfq,
+            s.moxfq,
+            "MOXFQ",
+          ),
+          createdAt: new Date(),
+          updatedAt: undefined,
+          title: formTemplateRepository.mockFormTemplateData[2].title,
+          description: formTemplateRepository.mockFormTemplateData[2].description,
+          accessLevel: FormAccessLevel.PATIENT,
+          currentVersion: 0,
+        });
+      }
 
       // EFAS Form for Consultation a3
       this.mockForms.push({
