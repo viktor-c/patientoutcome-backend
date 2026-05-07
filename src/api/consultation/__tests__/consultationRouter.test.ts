@@ -71,9 +71,16 @@ describe("Patient Case Consultation API", () => {
     expect(response.body.message).toBe("Consultations retrieved successfully");
     expect(Array.isArray(response.body.responseObject)).toBe(true);
 
-    const areEqual = response.body.responseObject.every((consultation: Consultation, index: number) =>
-      consultationService.compareConsultations(consultation, consultationRepository.mockConsultations[index]),
+    const mockConsultationsForCase = consultationRepository.mockConsultations.filter(
+      (c) => c.patientCaseId?.toString() === caseId.toString(),
     );
+
+    const areEqual = response.body.responseObject.every((consultation: Consultation) => {
+      const mockConsultation = mockConsultationsForCase.find(
+        (m) => m._id?.toString() === consultation._id?.toString(),
+      );
+      return mockConsultation ? consultationService.compareConsultations(consultation, mockConsultation) : false;
+    });
     expect(areEqual).toBe(true);
   });
 
