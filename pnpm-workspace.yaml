@@ -1,7 +1,2 @@
-ignoredBuiltDependencies:
-  - bcrypt
-  - esbuild
-
-onlyBuiltDependencies:
-  - cpu-features
-  - ssh2
+packages:
+  - '.'
