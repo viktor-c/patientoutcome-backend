@@ -264,6 +264,17 @@ export class FormRepository {
         };
       };
 
+      const createCompletedPatientFormDataWithoutScore = (formData: CustomFormData) => {
+        return {
+          rawFormData: formData,
+          subscales: undefined,
+          totalScore: undefined,
+          fillStatus: "complete" as const,
+          completedAt: new Date(),
+          beginFill: new Date(),
+        };
+      };
+
       // EFAS Form 1 (pre-surgery baseline)
       const efasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
@@ -456,7 +467,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a8",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek1),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek1),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
@@ -470,7 +481,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8a9",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek2),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek2),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
@@ -484,7 +495,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8aa",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek6),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek6),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
@@ -498,7 +509,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8ad",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek9),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek9),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
@@ -512,7 +523,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8ab",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek12),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek12),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
@@ -526,7 +537,7 @@ export class FormRepository {
         caseId: "677da5d8cb4569ad1c65515f",
         consultationId: "60d5ec49f1b2c12d88f1e8ac",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
-        patientFormData: createMockPatientFormData(elsnerFollowupWeek16),
+        patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek16),
         createdAt: new Date(),
         updatedAt: undefined,
         title: elsnerTemplate?.title || "elsner-feedback",
