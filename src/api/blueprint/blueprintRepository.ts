@@ -410,6 +410,34 @@ export class BlueprintRepository {
       },
       tags: ["consultation", "clinical", "documentation", "patient-care"],
     },
+    // MICA Surgery consultation template - consultation on the day of surgery
+    {
+      _id: "68c08903290365a33d085fd2",
+      createdOn: faker.date.recent(), // Random date within the past year
+      createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
+      blueprintFor: "consultation",
+      title: "MICA Surgery",
+      description: "Consultation on the day of surgery (MICA procedure)",
+      timeDelta: "now",
+      content: {
+        patientCaseId: "", // id of the parent patient case
+        dateAndTime: "now", // Consultation date is today
+        reasonForConsultation: ["planned"], // Array of enums: ['planned', 'unplanned', 'emergency', 'pain', 'followup']
+        notes: [] as Array<typeof NoteSchema>, // Array of note objects with dateCreated, createdBy, note
+        visitedBy: [] as Array<string>, // Array of User ObjectId references for clinicians involved
+        formAccessCode: "new-access-code" as string | undefined, // Optional FormAccessCode ObjectId reference
+        kioskId: "" as string | undefined, // Optional User ObjectId reference for kiosk assignments
+        // Default forms: EFAS, VAS, elsner-feedback, MOXFQ, AOFAS Forefoot
+        formTemplates: [
+          "67b4e612d0feb4ad99ae2e83", // EFAS
+          "67b4e612d0feb4ad99ae2e86", // VAS
+          "67b4e612d0feb4ad99ae2e8b", // elsner-feedback
+          "67b4e612d0feb4ad99ae2e85", // MOXFQ
+          "67b4e612d0feb4ad99ae2e84", // AOFAS Forefoot
+        ],
+      },
+      tags: ["consultation", "clinical", "documentation", "patient-care", "surgery"],
+    },
   ];
 
   /**
