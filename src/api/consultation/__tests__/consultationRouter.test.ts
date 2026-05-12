@@ -9,6 +9,7 @@ import type { Consultation } from "@/api/consultation/consultationModel";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { codeRepository, patientCaseRepository, patientRepository, userRepository } from "@/api/seed/seedRouter";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { codeModel } from "@/api/code/codeModel";
 import { consultationService } from "../consultationService";
 
 describe("Patient Case Consultation API", () => {
@@ -265,6 +266,50 @@ describe("Patient Case Consultation API", () => {
     expect(consultationFetch.body.responseObject.formAccessCode).toBeDefined();
 
     // Cleanup
+    await agent.delete(`/consultation/${consultationId}`);
+  });
+
+  it("should set form-access-code activation start to consultation access window start for far-future consultations", async () => {
+    const caseId = patientCaseRepository.mockPatientCases[0]._id;
+
+    const consultationDate = new Date();
+    consultationDate.setFullYear(consultationDate.getFullYear() + 1);
+
+    const createResponse = await agent.post(`/consultation/case/${caseId}`).send({
+      patientCaseId: caseId,
+      dateAndTime: consultationDate.toISOString(),
+      reasonForConsultation: ["planned"],
+      notes: [],
+      images: [],
+      visitedBy: [],
+      formTemplates: [],
+      formAccessCode: "new-access-code",
+    });
+
+    expect(createResponse.status).toBe(StatusCodes.CREATED);
+    const consultationId = createResponse.body.responseObject._id;
+
+    const consultationFetch = await agent.get(`/consultation/${consultationId}`);
+    expect(consultationFetch.status).toBe(StatusCodes.OK);
+    const activeFrom = consultationFetch.body.responseObject.consultationAccessWindow?.activeFrom;
+    const activeUntil = consultationFetch.body.responseObject.consultationAccessWindow?.activeUntil;
+    expect(activeFrom).toBeDefined();
+    expect(activeUntil).toBeDefined();
+    expect(new Date(activeFrom).getTime()).toBeGreaterThan(Date.now());
+
+    const codeDocument = await codeModel.findOne({ consultationId }).lean();
+    expect(codeDocument).toBeDefined();
+    expect(new Date(codeDocument?.activatedOn as string | Date).toISOString()).toBe(
+      new Date(activeFrom).toISOString(),
+    );
+    expect(new Date(codeDocument?.expiresOn as string | Date).toISOString()).toBe(
+      new Date(activeUntil).toISOString(),
+    );
+
+    // Before activation start, validation must reject external access.
+    const codeValidationResponse = await agent.get(`/form-access-code/validate/${codeDocument?.code}`);
+    expect(codeValidationResponse.status).toBe(StatusCodes.BAD_REQUEST);
+
     await agent.delete(`/consultation/${consultationId}`);
   });
 });

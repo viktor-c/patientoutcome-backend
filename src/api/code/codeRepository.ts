@@ -1,9 +1,65 @@
 import { logger } from "@/common/utils/logger";
 import { PatientCaseModel } from "../case/patientCaseModel";
 import dayjs from "dayjs";
+import { addDays, endOfDay, startOfDay } from "date-fns";
 import { consultationModel } from "../consultation/consultationModel";
+import {
+  DEFAULT_CONSULTATION_ACCESS_DAYS_AFTER,
+  DEFAULT_CONSULTATION_ACCESS_DAYS_BEFORE,
+} from "../consultation/consultationAccessWindow";
 import { type Code, codeModel } from "./codeModel";
 import { getDepartmentCodeLifeMs } from "./codeLifeUtils";
+
+function normalizeNonNegativeInteger(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    return fallback;
+  }
+
+  return value;
+}
+
+function resolveConsultationActivationWindow(consultation: {
+  dateAndTime?: unknown;
+  consultationAccessDaysBefore?: unknown;
+  consultationAccessDaysAfter?: unknown;
+  consultationAccessActiveFrom?: unknown;
+  consultationAccessActiveUntil?: unknown;
+}): { activeFrom: Date; activeUntil: Date } | null {
+  const storedActiveFrom = consultation.consultationAccessActiveFrom
+    ? new Date(consultation.consultationAccessActiveFrom as string | Date)
+    : null;
+  const storedActiveUntil = consultation.consultationAccessActiveUntil
+    ? new Date(consultation.consultationAccessActiveUntil as string | Date)
+    : null;
+
+  if (
+    storedActiveFrom &&
+    storedActiveUntil &&
+    !Number.isNaN(storedActiveFrom.getTime()) &&
+    !Number.isNaN(storedActiveUntil.getTime())
+  ) {
+    return { activeFrom: storedActiveFrom, activeUntil: storedActiveUntil };
+  }
+
+  const consultationDate = new Date(consultation.dateAndTime as string | Date);
+  if (Number.isNaN(consultationDate.getTime())) {
+    return null;
+  }
+
+  const daysBefore = normalizeNonNegativeInteger(
+    consultation.consultationAccessDaysBefore,
+    DEFAULT_CONSULTATION_ACCESS_DAYS_BEFORE,
+  );
+  const daysAfter = normalizeNonNegativeInteger(
+    consultation.consultationAccessDaysAfter,
+    DEFAULT_CONSULTATION_ACCESS_DAYS_AFTER,
+  );
+
+  return {
+    activeFrom: startOfDay(addDays(consultationDate, -daysBefore)),
+    activeUntil: endOfDay(addDays(consultationDate, daysAfter)),
+  };
+}
 
 export class CodeRepository {
   private _codeMockData: Code[] = [
@@ -165,11 +221,11 @@ export class CodeRepository {
         return Promise.resolve("Code already activated");
       }
 
-      // code should exist, because we just checked earlier
-      code.activatedOn = new Date();
-      // Prefer the consultation access end timestamp for expiry; fallback to department-configured code life.
-      if (consultation.consultationAccessActiveUntil) {
-        code.expiresOn = new Date(consultation.consultationAccessActiveUntil);
+      // Align code validity with consultation external access window for future consultations.
+      const consultationWindow = resolveConsultationActivationWindow(consultation);
+      code.activatedOn = consultationWindow?.activeFrom ?? new Date();
+      if (consultationWindow?.activeUntil) {
+        code.expiresOn = consultationWindow.activeUntil;
       } else {
         const departmentId = await this.resolveDepartmentIdForPatientCase(consultation.patientCaseId?.toString());
         const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
@@ -234,11 +290,12 @@ export class CodeRepository {
   }
 
   async getActiveCodeByPatientCaseId(patientCaseId: string): Promise<Code | null> {
+    const now = new Date();
     return codeModel
       .findOne({
         patientCaseId,
-        activatedOn: { $exists: true, $ne: null },
-        $or: [{ expiresOn: { $exists: false } }, { expiresOn: null }, { expiresOn: { $gt: new Date() } }],
+        activatedOn: { $exists: true, $ne: null, $lte: now },
+        $or: [{ expiresOn: { $exists: false } }, { expiresOn: null }, { expiresOn: { $gt: now } }],
       })
       .lean();
   }

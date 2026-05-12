@@ -416,8 +416,8 @@ export class BlueprintRepository {
       createdOn: faker.date.recent(), // Random date within the past year
       createdBy: "676336bea497301f6eff8c8f", // Mock doctor user ID
       blueprintFor: "consultation",
-      title: "MICA Surgery",
-      description: "Consultation on the day of surgery (MICA procedure)",
+      title: "MICA Konsultation heute",
+      description: "MICA Konsultation heute",
       timeDelta: "now",
       content: {
         patientCaseId: "", // id of the parent patient case
