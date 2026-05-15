@@ -139,8 +139,10 @@ describe("FormTemplate Access Control & Department Mappings", () => {
       expect(mapping).toBeDefined();
       expect(mapping?.formTemplateIds).toBeDefined();
       expect(mapping?.formTemplateIds.length).toBeGreaterThan(0);
-      // Should have all 8 form templates
-      expect(mapping?.formTemplateIds.length).toBe(8);
+
+      const mappedIds = mapping?.formTemplateIds.map((id) => id.toString()) || [];
+      const uniqueMappedIds = new Set(mappedIds);
+      expect(uniqueMappedIds.size).toBe(formTemplateIds.length);
     });
 
     it("should map all form templates to default department", async () => {

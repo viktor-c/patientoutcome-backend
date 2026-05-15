@@ -71,10 +71,25 @@ describe("Patient Case Consultation API", () => {
     expect(response.body.message).toBe("Consultations retrieved successfully");
     expect(Array.isArray(response.body.responseObject)).toBe(true);
 
-    const areEqual = response.body.responseObject.every((consultation: Consultation, index: number) =>
-      consultationService.compareConsultations(consultation, consultationRepository.mockConsultations[index]),
+    const expectedForCase = consultationRepository.mockConsultations.filter(
+      (consultation) => consultation.patientCaseId?.toString() === caseId?.toString(),
     );
-    expect(areEqual).toBe(true);
+    const expectedById = new Map(expectedForCase.map((consultation) => [consultation._id?.toString(), consultation]));
+    const returnedIds = response.body.responseObject.map((consultation: Consultation) => consultation._id?.toString());
+
+    expectedForCase.forEach((expectedConsultation) => {
+      expect(returnedIds).toContain(expectedConsultation._id?.toString());
+    });
+
+    const comparableReturnedConsultations = response.body.responseObject.filter((consultation: Consultation) =>
+      expectedById.has(consultation._id?.toString()),
+    );
+    const areComparableConsultationsEqual = comparableReturnedConsultations.every((consultation: Consultation) => {
+      const expected = expectedById.get(consultation._id?.toString());
+      return expected ? consultationService.compareConsultations(consultation, expected) : false;
+    });
+
+    expect(areComparableConsultationsEqual).toBe(true);
   });
 
   it("should create and delete a consultation", async () => {

@@ -17,6 +17,12 @@ describe("Form Versioning API", () => {
 
   beforeAll(async () => {
     try {
+      // Reset users so role logins always use the expected default test password.
+      const resetUsersRes = await request(app).get("/seed/users/reset");
+      if (resetUsersRes.status !== 200) {
+        throw new Error("Failed to reset users");
+      }
+
       // Login as different roles
       adminAgent = await loginUserAgent("admin");
       doctorAgent = await loginUserAgent("doctor");
