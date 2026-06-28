@@ -112,6 +112,33 @@ export class PatientCaseRepository {
   }
 
   /**
+   * Return only the `_id` strings of ALL cases for a patient (including soft-deleted ones).
+   * Used to gather IDs before cascade-deleting child records.
+   */
+  async getCaseIdsByPatientId(patientId: string): Promise<string[]> {
+    try {
+      const docs = await PatientCaseModel.find({ patient: patientId }).select("_id").lean();
+      return docs.map((d: any) => d._id.toString());
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Hard-delete all cases (regardless of soft-delete status) for the given patient.
+   * Must only be called AFTER child consultations and forms have already been removed.
+   * @returns Number of cases deleted
+   */
+  async hardDeleteCasesByPatientId(patientId: string): Promise<number> {
+    try {
+      const result = await PatientCaseModel.deleteMany({ patient: patientId });
+      return result.deletedCount ?? 0;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  /**
    * Soft delete a patient case
    * @param patientId - Patient ID
    * @param caseId - Case ID

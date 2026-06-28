@@ -188,6 +188,30 @@ export class ConsultationRepository {
   }
 
   /**
+   * Return only the `_id` strings of all consultations belonging to the given case IDs.
+   * Lightweight — does not populate any relations.
+   */
+  async getIdsByCaseIds(caseIds: string[]): Promise<string[]> {
+    if (!caseIds.length) return [];
+    const docs = await consultationModel
+      .find({ patientCaseId: { $in: caseIds } })
+      .select("_id")
+      .lean();
+    return docs.map((d: any) => d._id.toString());
+  }
+
+  /**
+   * Hard-delete all consultations belonging to the given case IDs.
+   * Used during cascade patient deletion.
+   * @returns Number of consultations deleted
+   */
+  async hardDeleteConsultationsByCaseIds(caseIds: string[]): Promise<number> {
+    if (!caseIds.length) return 0;
+    const result = await consultationModel.deleteMany({ patientCaseId: { $in: caseIds } });
+    return result.deletedCount ?? 0;
+  }
+
+  /**
    *
    * @param caseId
    * @returns

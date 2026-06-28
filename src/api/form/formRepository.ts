@@ -94,6 +94,30 @@ export class FormRepository {
   }
 
   /**
+   * Hard-delete all forms belonging to the given consultation IDs.
+   * Used during cascade patient/case deletion to physically remove form documents.
+   * @param consultationIds - Array of consultation IDs whose forms should be removed
+   * @returns Number of forms deleted
+   */
+  async hardDeleteFormsByConsultationIds(consultationIds: string[]): Promise<number> {
+    if (!consultationIds.length) return 0;
+    const result = await FormModel.deleteMany({ consultationId: { $in: consultationIds } });
+    return result.deletedCount ?? 0;
+  }
+
+  /**
+   * Hard-delete all forms linked to the given case IDs (regardless of consultation link).
+   * Catches forms that are attached to a case but not to any specific consultation.
+   * @param caseIds - Array of case IDs whose forms should be removed
+   * @returns Number of forms deleted
+   */
+  async hardDeleteFormsByCaseIds(caseIds: string[]): Promise<number> {
+    if (!caseIds.length) return 0;
+    const result = await FormModel.deleteMany({ caseId: { $in: caseIds } });
+    return result.deletedCount ?? 0;
+  }
+
+  /**
    * Soft delete a form by setting deletedAt timestamp
    * @param id - Form ID
    * @param deletedBy - User ID who deleted the form

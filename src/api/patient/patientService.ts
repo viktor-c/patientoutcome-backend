@@ -5,9 +5,9 @@ import type { Patient, PatientWithCounts } from "./patientModel";
 import { PatientRepository, type PaginatedResult, type PaginationOptions } from "./patientRepository";
 import { UserRepository } from "@/api/user/userRepository";
 import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
-import { patientCaseService } from "@/api/case/patientCaseService";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { formRepository } from "@/api/form/formRepository";
+import { codeRepository } from "@/api/code/codeRepository";
 
 export class PatientService {
   private patientRepository: PatientRepository;
@@ -180,72 +180,86 @@ export class PatientService {
     }
   }
 
+  /**
+   * Cascade-delete a patient and all their associated data.
+   *
+   * Deletion order (child-first to avoid orphans):
+   *   1. Forms          – hard-deleted by consultation ID
+   *   2. Access codes   – consultationId reference nulled out
+   *   3. Consultations  – hard-deleted by case ID
+   *   4. Cases          – hard-deleted by patient ID
+   *   5. Patient        – soft-deleted so it remains visible in the audit log
+   *
+   * The `options` parameter is kept for backwards-compatibility with the
+   * frontend but is no longer used; the cascade always runs in full.
+   */
   async softDeletePatient(
     id: string,
-    options: { deleteCases?: boolean; deleteConsultations?: boolean; deleteForms?: boolean } = {},
+    _options: { deleteCases?: boolean; deleteConsultations?: boolean; deleteForms?: boolean } = {},
   ): Promise<ServiceResponse<Patient | null>> {
     try {
-      const shouldDeleteCases = options.deleteCases ?? false;
-      const shouldDeleteConsultations = options.deleteConsultations ?? false;
-      const shouldDeleteForms = options.deleteForms ?? false;
-
-      if (shouldDeleteCases || shouldDeleteConsultations || shouldDeleteForms) {
-        const cases = await this.patientCaseRepository.getAllPatientCases(id);
-
-        for (const patientCase of cases) {
-          const caseId = patientCase._id?.toString();
-          if (!caseId) continue;
-
-          if (shouldDeleteCases) {
-            await patientCaseService.softDeletePatientCaseById(id, caseId, {
-              deleteConsultations: shouldDeleteConsultations,
-              deleteForms: shouldDeleteForms,
-            });
-            continue;
-          }
-
-          if (shouldDeleteConsultations || shouldDeleteForms) {
-            const consultations = await consultationRepository.getAllConsultations(caseId);
-
-            for (const consultation of consultations) {
-              const consultationId = consultation._id?.toString();
-              if (!consultationId) continue;
-
-              if (shouldDeleteConsultations) {
-                if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
-                  await Promise.all(
-                    consultation.proms.map((formId) =>
-                      formRepository.softDeleteForm(formId.toString(), "system", "Consultation was deleted"),
-                    ),
-                  );
-                }
-                await consultationRepository.deleteConsultation(consultationId);
-              } else if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
-                await Promise.all(
-                  consultation.proms.map((formId) =>
-                    formRepository.softDeleteForm(formId.toString(), "system", "Parent patient was soft deleted"),
-                  ),
-                );
-              }
-            }
-          }
-        }
+      // ── 1. Validate ID ──────────────────────────────────────────────────
+      if (!id || id.length !== 24) {
+        return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
       }
 
-      const softDeletedPatient = await this.patientRepository.softDeleteByIdAsync(id);
-      if (!softDeletedPatient) {
+      const patient = await this.patientRepository.findByIdAsync(id);
+      if (!patient) {
         return ServiceResponse.failure("Patient not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success("Patient soft deleted successfully", softDeletedPatient);
+
+      // ── 2. Collect case IDs (all cases, including any previously soft-deleted) ──
+      const caseIds = await this.patientCaseRepository.getCaseIdsByPatientId(id);
+      logger.info({ patientId: id, caseCount: caseIds.length }, "Cascade deleting patient – cases found");
+
+      if (caseIds.length > 0) {
+        // ── 3. Collect consultation IDs for all cases ──────────────────────
+        const consultationIds = await consultationRepository.getIdsByCaseIds(caseIds);
+        logger.info(
+          { patientId: id, consultationCount: consultationIds.length },
+          "Cascade deleting patient – consultations found",
+        );
+
+        if (consultationIds.length > 0) {
+          // ── 4. Hard-delete forms linked to those consultations ───────────
+          const formsDeleted = await formRepository.hardDeleteFormsByConsultationIds(consultationIds);
+          logger.info({ patientId: id, formsDeleted }, "Cascade deleting patient – forms removed by consultationId");
+
+          // ── 5. Detach access codes from consultations being deleted ──────
+          await codeRepository.detachConsultationIds(consultationIds);
+          logger.info({ patientId: id }, "Cascade deleting patient – code references cleared");
+
+          // ── 6. Hard-delete consultations ─────────────────────────────────
+          const consultationsDeleted = await consultationRepository.hardDeleteConsultationsByCaseIds(caseIds);
+          logger.info({ patientId: id, consultationsDeleted }, "Cascade deleting patient – consultations removed");
+        }
+
+        // ── 7a. Hard-delete any forms directly attached to the cases (no consultationId) ──
+        const remainingFormsDeleted = await formRepository.hardDeleteFormsByCaseIds(caseIds);
+        logger.info({ patientId: id, remainingFormsDeleted }, "Cascade deleting patient – case-level forms removed");
+
+        // ── 7b. Hard-delete cases ─────────────────────────────────────────
+        const casesDeleted = await this.patientCaseRepository.hardDeleteCasesByPatientId(id);
+        logger.info({ patientId: id, casesDeleted }, "Cascade deleting patient – cases removed");
+      }
+
+      // ── 8. Soft-delete the patient for the audit log ─────────────────
+      const softDeletedPatient = await this.patientRepository.softDeleteByIdAsync(id);
+      if (!softDeletedPatient) {
+        // Extremely unlikely – the patient existed at step 1
+        return ServiceResponse.failure("Patient not found after cascade delete", null, StatusCodes.NOT_FOUND);
+      }
+
+      logger.info({ patientId: id }, "Patient cascade deleted successfully");
+      return ServiceResponse.success("Patient deleted successfully", softDeletedPatient);
     } catch (ex) {
-      const errorMessage = `Error soft deleting patient with id ${id}: ${(ex as Error).message}`;
+      const errorMessage = `Error deleting patient with id ${id}: ${(ex as Error).message}`;
       logger.error(errorMessage);
       if (((ex as Error).message as string).includes("Cast to ObjectId failed for value")) {
-        logger.error(`Invalid ID: ${id}`);
         return ServiceResponse.failure("Invalid ID", null, StatusCodes.BAD_REQUEST);
       }
       return ServiceResponse.failure(
-        "An error occurred while soft deleting the patient.",
+        "An error occurred while deleting the patient.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

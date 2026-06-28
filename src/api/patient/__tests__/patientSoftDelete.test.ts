@@ -4,6 +4,9 @@ import request from "supertest";
 import type { Patient } from "@/api/patient/patientModel";
 import type { PaginatedResult } from "@/api/patient/patientRepository";
 import { patientRepository } from "@/api/seed/seedRouter";
+import { PatientCaseModel } from "@/api/case/patientCaseModel";
+import { consultationModel } from "@/api/consultation/consultationModel";
+import { FormModel } from "@/api/form/formModel";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
 
@@ -44,7 +47,7 @@ describe("Patient Soft Delete API Endpoints", () => {
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
-      expect(responseBody.message).toContain("soft deleted successfully");
+      expect(responseBody.message).toContain("deleted successfully");
       expect(responseBody.responseObject).toBeDefined();
       expect(responseBody.responseObject?.deletedAt).toBeDefined();
       expect(responseBody.responseObject?.deletedAt).not.toBeNull();
@@ -299,6 +302,92 @@ describe("Patient Soft Delete API Endpoints", () => {
         (p: Patient) => p._id?.toString() === testPatientId
       );
       expect(deletedPatient).toBeUndefined();
+    });
+  });
+
+  // ── Cascade delete (soft-delete endpoint with full child removal) ────────────
+  describe("POST /patient/:id/soft-delete – cascade hard-delete of children", () => {
+    /**
+     * Patient[0]  (6771d9d410ede2552b7bba40)
+     *   └── Case  (677da5d8cb4569ad1c65515f)
+     *         └── Consultations  (60d5ec49f1b2c12d88f1e8a1, …several more linked in mock data)
+     *               └── Forms
+     *
+     * These IDs come straight from the seeded mock data and are stable across runs.
+     */
+    const PATIENT_WITH_DATA_ID = "6771d9d410ede2552b7bba40";
+    const CASE_ID              = "677da5d8cb4569ad1c65515f";
+
+    beforeAll(async () => {
+      // Seed all related data in the correct order (parent before child).
+      // Route names must match the exact paths registered in seedRouter.ts.
+      await request(app).get("/seed/patients");
+      await request(app).get("/seed/patientCase");   // singular – matches seedRouter
+      await request(app).get("/seed/consultation");  // singular – matches seedRouter
+      await request(app).get("/seed/forms");
+    });
+
+    it("should return 200 and soft-delete the patient record", async () => {
+      const response = await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+      const body: ServiceResponse<Patient> = response.body;
+
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(body.success).toBe(true);
+      expect(body.responseObject?.deletedAt).toBeTruthy();
+    });
+
+    it("patient is no longer visible via GET /patient/:id after deletion", async () => {
+      await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+
+      const response = await request(app).get(`/patient/${PATIENT_WITH_DATA_ID}`);
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+    });
+
+    it("patient appears in the deleted-items list after deletion", async () => {
+      await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+
+      const response = await request(app).get("/patient/deleted");
+      const body: ServiceResponse<PaginatedResult<Patient>> = response.body;
+      const found = body.responseObject?.patients.find(
+        (p) => p._id?.toString() === PATIENT_WITH_DATA_ID,
+      );
+      expect(found).toBeDefined();
+      expect(found?.deletedAt).toBeTruthy();
+    });
+
+    it("cases belonging to the patient are hard-deleted from the database", async () => {
+      await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+
+      const remaining = await PatientCaseModel.find({ patient: PATIENT_WITH_DATA_ID }).lean();
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("consultations belonging to the patient's cases are hard-deleted", async () => {
+      await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+
+      const remaining = await consultationModel
+        .find({ patientCaseId: CASE_ID })
+        .lean();
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("forms linked to the patient's consultations are hard-deleted", async () => {
+      await request(app).post(`/patient/${PATIENT_WITH_DATA_ID}/soft-delete`);
+
+      const remaining = await FormModel
+        .find({ caseId: CASE_ID })
+        .lean();
+      expect(remaining).toHaveLength(0);
+    });
+
+    it("returns 404 for a non-existent patient ID", async () => {
+      const response = await request(app).post("/patient/507f1f77bcf86cd799439099/soft-delete");
+      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
+    });
+
+    it("returns 400 for an invalid patient ID format", async () => {
+      const response = await request(app).post("/patient/not-an-id/soft-delete");
+      expect(response.statusCode).toEqual(StatusCodes.BAD_REQUEST);
     });
   });
 });

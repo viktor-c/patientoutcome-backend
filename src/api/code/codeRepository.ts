@@ -189,6 +189,20 @@ export class CodeRepository {
     return await codeModel.deleteOne({ code: codeString });
   }
 
+  /**
+   * Detach (null out) the `consultationId` on any access codes that reference
+   * one of the provided consultation IDs. Called before consultations are
+   * hard-deleted during a patient cascade delete so that codes are left in a
+   * valid (unlinked) state rather than pointing at missing documents.
+   */
+  async detachConsultationIds(consultationIds: string[]): Promise<void> {
+    if (!consultationIds.length) return;
+    await codeModel.updateMany(
+      { consultationId: { $in: consultationIds } },
+      { $unset: { consultationId: "" } },
+    );
+  }
+
   async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
