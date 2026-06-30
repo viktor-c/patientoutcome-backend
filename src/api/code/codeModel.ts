@@ -101,13 +101,12 @@ export const SetCodeActivationStartSchema = z.object({
 
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
-  params: z.object({
+  body: z.object({
     numberOfCodes: z.preprocess(
       Number,
       z.number().min(1, "At least 1 code must be created").max(10, "No more than 10 codes can be created"),
     ),
   }),
-  // body: CodeSchema.omit({ _id: true, activatedOn: true, expiresOn: true }),
 });
 
 // Input validation for 'DELETE code/:code' endpoint
