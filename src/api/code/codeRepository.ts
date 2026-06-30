@@ -135,8 +135,11 @@ export class CodeRepository {
    */
   async getAllAvailableCodes(): Promise<Code[]> {
     try {
-      // Find codes where activatedOn is either null or undefined
-      return codeModel.find({ $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] }).lean();
+      // Find codes where activatedOn is either null or undefined, and not archived
+      return codeModel.find({ 
+        $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }],
+        $or: [{ archivedOn: null }, { archivedOn: { $exists: false } }]
+      }).lean();
     } catch (error) {
       return Promise.reject(error);
     }
@@ -518,6 +521,79 @@ export class CodeRepository {
    */
   public get codeMockData(): Code[] {
     return this._codeMockData;
+  }
+
+  /**
+   * Archive a code instead of deleting it.
+   * Archived codes cannot be used but can be restored later.
+   * @param codeString - The code to archive
+   * @param userId - The user ID performing the archival
+   * @returns The archived code or an error string
+   */
+  async archiveCode(codeString: string, userId?: string): Promise<Code | string> {
+    try {
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return "Code not found";
+      }
+
+      if (code.archivedOn) {
+        return "Code is already archived";
+      }
+
+      code.archivedOn = new Date();
+      if (userId) {
+        code.archivedBy = userId;
+      }
+      await code.save();
+
+      logger.info({ codeId: code._id, code: codeString, archivedBy: userId }, "Code archived successfully");
+      
+      const archivedCode = await codeModel.findById(code._id).select("-_id -__v").lean();
+      return archivedCode || "Code not found";
+    } catch (error) {
+      logger.error({ error, code: codeString }, "Error archiving code");
+      return Promise.reject("An error occurred while archiving the code.");
+    }
+  }
+
+  /**
+   * Restore an archived code, making it usable again.
+   * @param codeString - The code to restore
+   * @returns The restored code or an error string
+   */
+  async restoreCode(codeString: string): Promise<Code | string> {
+    try {
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return "Code not found";
+      }
+
+      if (!code.archivedOn) {
+        return "Code is not archived";
+      }
+
+      code.archivedOn = undefined;
+      code.archivedBy = undefined;
+      await code.save();
+
+      logger.info({ codeId: code._id, code: codeString }, "Code restored successfully");
+      
+      const restoredCode = await codeModel.findById(code._id).select("-_id -__v").lean();
+      return restoredCode || "Code not found";
+    } catch (error) {
+      logger.error({ error, code: codeString }, "Error restoring code");
+      return Promise.reject("An error occurred while restoring the code.");
+    }
+  }
+
+  /**
+   * Get all codes for a patient case, including archived ones
+   * @param patientCaseId - The patient case ID
+   * @returns Array of codes
+   */
+  async getCodesByPatientCaseId(patientCaseId: string): Promise<Code[]> {
+    return codeModel.find({ patientCaseId }).lean();
   }
 }
 

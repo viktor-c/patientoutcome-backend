@@ -164,6 +164,63 @@ class CodeController {
     const serviceResponse = await codeService.validateCode(code);
     return handleServiceResponse(serviceResponse, res);
   }
+
+  /**
+   * Archive a form access code
+   * @route PUT /form-access-code/:code/archive
+   * @param {Request} req - Express request with code in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with archived code
+   * @description Archives a code instead of deleting it. Archived codes can be restored later.
+   */
+  public archiveCode: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const userId = req.session?.userId; // Get user ID from session if available
+    const serviceResponse = await codeService.archiveCode(code, userId);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Restore an archived form access code
+   * @route PUT /form-access-code/:code/restore
+   * @param {Request} req - Express request with code in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with restored code
+   * @description Restores an archived code, making it usable again
+   */
+  public restoreCode: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const serviceResponse = await codeService.restoreCode(code);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Get access logs for a code
+   * @route GET /form-access-code/:code/access-logs
+   * @param {Request} req - Express request with code in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with array of access logs
+   * @description Retrieves all access logs for a specific code
+   */
+  public getCodeAccessLogs: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const serviceResponse = await codeService.getCodeAccessLogs(code);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Get access statistics for a code
+   * @route GET /form-access-code/:code/statistics
+   * @param {Request} req - Express request with code in params
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with access statistics
+   * @description Retrieves usage statistics for a specific code
+   */
+  public getCodeAccessStatistics: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const serviceResponse = await codeService.getCodeAccessStatistics(code);
+    return handleServiceResponse(serviceResponse, res);
+  };
 }
 
 export const codeController = new CodeController();

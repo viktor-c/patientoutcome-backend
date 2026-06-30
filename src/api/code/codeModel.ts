@@ -58,6 +58,11 @@ export const CodeSchema = z.object({
    * */
   consultationId: zId("Consultation").optional(),
   patientCaseId: zId("PatientCase").optional(),
+  /*
+   * Archival fields - codes are archived instead of deleted
+   */
+  archivedOn: z.date().optional(),
+  archivedBy: zId("User").optional(),
 });
 
 // Infer TypeScript type from the schema
@@ -111,5 +116,20 @@ export const CreateCodeSchema = z.object({
 
 // Input validation for 'DELETE code/:code' endpoint
 export const DeleteCodeSchema = z.object({ code: z.string() });
+
+// Input validation for 'PUT code/:code/archive' endpoint
+export const ArchiveCodeSchema = z.object({
+  params: z.object({ code: z.string() }),
+});
+
+// Input validation for 'PUT code/:code/restore' endpoint
+export const RestoreCodeSchema = z.object({
+  params: z.object({ code: z.string() }),
+});
+
+// Input validation for getting case access logs
+export const GetCodeAccessLogsSchema = z.object({
+  params: z.object({ code: z.string() }),
+});
 
 export const ExternalCodeSchema = z.object({ params: z.object({ code: z.string() }) });

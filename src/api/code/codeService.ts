@@ -7,8 +7,11 @@ import { FormModel } from "@/api/form/formModel";
 import { FormRepository } from "@/api/form/formRepository";
 import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
+import { CodeAccessLogRepository } from "./codeAccessLogRepository";
+import type { CodeAccessLog, FormCompletionLog } from "./codeAccessLogModel";
 
 const formRepository = new FormRepository();
+const codeAccessLogRepository = new CodeAccessLogRepository();
 export { DEFAULT_CODE_LIFE_MS, parseCodeLifeToMs } from "./codeLifeUtils";
 
 function isCodeExpired(codeDocument: Code): boolean {
@@ -44,23 +47,79 @@ async function resolveActiveConsultationForCode(codeDocument: Code) {
     return null;
   }
 
-  const now = new Date().getTime();
+  // Get current date (without time component for comparison)
+  const now = new Date();
+  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const nowTime = now.getTime();
+
+  // Build list of consultations with their access windows and completion status
   const withActiveWindow = await Promise.all(
-    consultations.map(async (consultation) => ({
-      consultation,
-      accessWindow: await buildConsultationAccessWindow(consultation),
-    })),
+    consultations.map(async (consultation) => {
+      const accessWindow = await buildConsultationAccessWindow(consultation);
+      
+      // Check if consultation has unfilled forms
+      let hasUnfilledForms = false;
+      if (Array.isArray(consultation.proms) && consultation.proms.length > 0) {
+        // Load the forms to check if they're filled
+        const forms = await FormModel.find({ 
+          _id: { $in: consultation.proms },
+          deletedAt: null 
+        }).lean();
+        
+        // A consultation is considered unfilled if it has at least one form without patient data
+        hasUnfilledForms = forms.some(form => !form.patientFormData);
+      } else {
+        // If no forms exist yet, consider it unfilled
+        hasUnfilledForms = true;
+      }
+      
+      return {
+        consultation,
+        accessWindow,
+        hasUnfilledForms,
+      };
+    }),
   );
 
-  const activeConsultations = withActiveWindow
-    .filter((entry) => entry.accessWindow?.isActive)
-    .sort((left, right) => {
-      const leftDate = new Date(left.consultation.dateAndTime || 0).getTime();
-      const rightDate = new Date(right.consultation.dateAndTime || 0).getTime();
-      return Math.abs(leftDate - now) - Math.abs(rightDate - now);
-    });
+  // Filter to only active consultations with unfilled forms
+  const activeUnfilledConsultations = withActiveWindow.filter(
+    (entry) => entry.accessWindow?.isActive && entry.hasUnfilledForms
+  );
 
-  return activeConsultations[0]?.consultation || null;
+  if (activeUnfilledConsultations.length === 0) {
+    return null;
+  }
+
+  // Sort by nearest date (ignoring time), preferring past over future when equally distant
+  const sorted = activeUnfilledConsultations.sort((left, right) => {
+    const leftDate = new Date(left.consultation.dateAndTime || 0);
+    const rightDate = new Date(right.consultation.dateAndTime || 0);
+    
+    // Convert to date-only for comparison (ignoring time)
+    const leftDateOnly = new Date(leftDate.getFullYear(), leftDate.getMonth(), leftDate.getDate());
+    const rightDateOnly = new Date(rightDate.getFullYear(), rightDate.getMonth(), rightDate.getDate());
+    
+    const leftDistance = Math.abs(leftDateOnly.getTime() - nowDateOnly.getTime());
+    const rightDistance = Math.abs(rightDateOnly.getTime() - nowDateOnly.getTime());
+    
+    // If distances are equal, prefer the one in the past
+    if (leftDistance === rightDistance) {
+      // Negative value means past, positive means future
+      const leftIsPast = leftDateOnly.getTime() <= nowDateOnly.getTime();
+      const rightIsPast = rightDateOnly.getTime() <= nowDateOnly.getTime();
+      
+      if (leftIsPast && !rightIsPast) return -1; // Left is past, prefer it
+      if (!leftIsPast && rightIsPast) return 1;  // Right is past, prefer it
+      
+      // Both in past or both in future, use actual time to break tie
+      return leftDate.getTime() - rightDate.getTime();
+    }
+    
+    // Different distances, use the nearest one
+    return leftDistance - rightDistance;
+  });
+
+  return sorted[0]?.consultation || null;
 }
 
 class CodeService {
@@ -343,6 +402,12 @@ class CodeService {
       if (!codeDocument) {
         return ServiceResponse.failure("Code not found", false, StatusCodes.NOT_FOUND);
       }
+      
+      // Check if code is archived
+      if (codeDocument.archivedOn) {
+        return ServiceResponse.failure("Code has been archived and is no longer valid", false, StatusCodes.FORBIDDEN);
+      }
+      
       if (!codeDocument.activatedOn) {
         return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);
       }
@@ -425,6 +490,177 @@ class CodeService {
       logger.error({ error }, "Error resetting consultation forms by code");
       return ServiceResponse.failure(
         "An error occurred while resetting consultation forms.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Archive a code instead of deleting it
+   */
+  async archiveCode(code: string, userId?: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const result = await this.codeRepository.archiveCode(code, userId);
+      
+      if (typeof result === "string") {
+        if (result === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        }
+        if (result === "Code is already archived") {
+          return ServiceResponse.failure("Code is already archived", null, StatusCodes.CONFLICT);
+        }
+        return ServiceResponse.failure(result, null, StatusCodes.BAD_REQUEST);
+      }
+      
+      return ServiceResponse.success("Code archived successfully", result);
+    } catch (error) {
+      logger.error({ error, code }, "Error archiving code");
+      return ServiceResponse.failure(
+        "An error occurred while archiving the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Restore an archived code
+   */
+  async restoreCode(code: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const result = await this.codeRepository.restoreCode(code);
+      
+      if (typeof result === "string") {
+        if (result === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        }
+        if (result === "Code is not archived") {
+          return ServiceResponse.failure("Code is not archived", null, StatusCodes.CONFLICT);
+        }
+        return ServiceResponse.failure(result, null, StatusCodes.BAD_REQUEST);
+      }
+      
+      return ServiceResponse.success("Code restored successfully", result);
+    } catch (error) {
+      logger.error({ error, code }, "Error restoring code");
+      return ServiceResponse.failure(
+        "An error occurred while restoring the code.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get access logs for a specific code
+   */
+  async getCodeAccessLogs(code: string): Promise<ServiceResponse<CodeAccessLog[]>> {
+    try {
+      const logs = await codeAccessLogRepository.getAccessLogsByCode(code);
+      return ServiceResponse.success("Access logs retrieved successfully", logs);
+    } catch (error) {
+      logger.error({ error, code }, "Error retrieving access logs");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving access logs.",
+        [],
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get access statistics for a code
+   */
+  async getCodeAccessStatistics(code: string): Promise<ServiceResponse<{
+    totalAccesses: number;
+    successfulSessions: number;
+    totalFormsCompleted: number;
+    averageSessionDuration: number;
+    lastAccessedAt?: Date;
+  }>> {
+    try {
+      const stats = await codeAccessLogRepository.getCodeAccessStatistics(code);
+      return ServiceResponse.success("Access statistics retrieved successfully", stats);
+    } catch (error) {
+      logger.error({ error, code }, "Error retrieving access statistics");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving access statistics.",
+        {
+          totalAccesses: 0,
+          successfulSessions: 0,
+          totalFormsCompleted: 0,
+          averageSessionDuration: 0,
+        },
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Create an access log when a code is used
+   */
+  async createCodeAccessLog(data: {
+    codeId: string;
+    code: string;
+    patientCaseId: string;
+    consultationId?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<ServiceResponse<CodeAccessLog | null>> {
+    try {
+      const accessLog = await codeAccessLogRepository.createAccessLog(data);
+      return ServiceResponse.success("Access log created successfully", accessLog);
+    } catch (error) {
+      logger.error({ error, data }, "Error creating access log");
+      return ServiceResponse.failure(
+        "An error occurred while creating access log.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Add form completion to an access log
+   */
+  async addFormCompletionToAccessLog(
+    accessLogId: string,
+    formCompletion: FormCompletionLog
+  ): Promise<ServiceResponse<CodeAccessLog | null>> {
+    try {
+      const updatedLog = await codeAccessLogRepository.addFormCompletion(accessLogId, formCompletion);
+      if (!updatedLog) {
+        return ServiceResponse.failure("Access log not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Form completion added successfully", updatedLog);
+    } catch (error) {
+      logger.error({ error, accessLogId, formCompletion }, "Error adding form completion");
+      return ServiceResponse.failure(
+        "An error occurred while adding form completion.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Complete an access session
+   */
+  async completeAccessSession(
+    accessLogId: string,
+    successful = true
+  ): Promise<ServiceResponse<CodeAccessLog | null>> {
+    try {
+      const completedLog = await codeAccessLogRepository.completeSession(accessLogId, successful);
+      if (!completedLog) {
+        return ServiceResponse.failure("Access log not found", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success("Session completed successfully", completedLog);
+    } catch (error) {
+      logger.error({ error, accessLogId }, "Error completing session");
+      return ServiceResponse.failure(
+        "An error occurred while completing session.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );
