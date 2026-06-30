@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { emailTemplateService } from "@/common/services/emailTemplateService";
 import { feedbackEnv } from "@/common/utils/feedbackEnvConfig";
 import { logger } from "@/common/utils/logger";
+import { captchaService } from "../captcha/captchaService";
 import nodemailer from "nodemailer";
 
 interface FeedbackData {
@@ -20,8 +21,8 @@ interface SendResult {
 
 interface CaptchaChallenge {
   id: string;
-  question: string;
-  answer: number;
+  encryptedCaptchaId: string;
+  captchaText?: string;
   expiresAt: number;
 }
 
@@ -55,31 +56,38 @@ class FeedbackService {
 
   /**
    * Generate a new captcha challenge
-   * Returns the challenge ID and question (not the answer!)
+   * Returns the challenge ID and SVG image (not the answer).
    */
-  generateCaptcha(): { captchaId: string; question: string } {
-    // Generate random numbers for simple math
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-
-    // Generate a unique ID for this challenge
-    const captchaId = crypto.randomBytes(16).toString("hex");
+  generateCaptcha(): { captchaId: string; captchaSvg: string; captchaText?: string } {
+    const captcha = captchaService.generate();
+    // Generate a unique challenge id separate from the encrypted captcha payload.
+    const challengeId = crypto.randomBytes(16).toString("hex");
 
     const challenge: CaptchaChallenge = {
-      id: captchaId,
-      question: `${num1} + ${num2}`,
-      answer: num1 + num2,
+      id: challengeId,
+      encryptedCaptchaId: captcha.id,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes expiry
     };
 
-    this.captchaChallenges.set(captchaId, challenge);
+    if (process.env.NODE_ENV === "test") {
+      challenge.captchaText = captcha.text;
+    }
 
-    logger.debug({ captchaId, question: challenge.question }, "feedbackService: Generated new captcha");
+    this.captchaChallenges.set(challengeId, challenge);
 
-    return {
-      captchaId,
-      question: challenge.question,
+    logger.debug({ challengeId }, "feedbackService: Generated new captcha");
+
+    const response: { captchaId: string; captchaSvg: string; captchaText?: string } = {
+      captchaId: challengeId,
+      captchaSvg: captcha.svg,
     };
+
+    // Expose plaintext only in tests so API tests can submit a valid answer deterministically.
+    if (process.env.NODE_ENV === "test") {
+      response.captchaText = challenge.captchaText;
+    }
+
+    return response;
   }
 
   /**
@@ -103,15 +111,10 @@ class FeedbackService {
       return false;
     }
 
-    // Check the answer
-    const userAnswer = Number.parseInt(answer, 10);
-    const isValid = !Number.isNaN(userAnswer) && userAnswer === challenge.answer;
+    const isValid = captchaService.verify(challenge.encryptedCaptchaId, answer);
 
     if (!isValid) {
-      logger.warn(
-        { captchaId, expected: challenge.answer, got: userAnswer },
-        "feedbackService: Invalid captcha answer",
-      );
+      logger.warn({ captchaId }, "feedbackService: Invalid captcha answer");
     }
 
     return isValid;

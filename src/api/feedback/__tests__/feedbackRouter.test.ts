@@ -12,12 +12,7 @@ describe("Feedback API Tests", () => {
     const captchaResponse = await request(app).get("/feedback/captcha");
     if (captchaResponse.status === StatusCodes.OK) {
       captchaId = captchaResponse.body.responseObject.captchaId;
-      // Extract answer from question (e.g., "What is 5 + 3?")
-      const question = captchaResponse.body.responseObject.question;
-      const match = question.match(/(\d+)\s*\+\s*(\d+)/);
-      if (match) {
-        captchaAnswer = (parseInt(match[1]) + parseInt(match[2])).toString();
-      }
+      captchaAnswer = captchaResponse.body.responseObject.captchaText;
     }
   });
 
@@ -28,9 +23,9 @@ describe("Feedback API Tests", () => {
       expect(response.status).toBe(StatusCodes.OK);
       expect(response.body.responseObject).toBeDefined();
       expect(response.body.responseObject.captchaId).toBeDefined();
-      expect(response.body.responseObject.question).toBeDefined();
+      expect(response.body.responseObject.captchaSvg).toBeDefined();
       expect(typeof response.body.responseObject.captchaId).toBe("string");
-      expect(typeof response.body.responseObject.question).toBe("string");
+      expect(typeof response.body.responseObject.captchaSvg).toBe("string");
     });
 
     it("should generate unique captcha IDs", async () => {
@@ -42,11 +37,11 @@ describe("Feedback API Tests", () => {
       );
     });
 
-    it("should generate valid math questions", async () => {
+    it("should generate svg captcha markup", async () => {
       const response = await request(app).get("/feedback/captcha");
 
-      const question = response.body.responseObject.question;
-      expect(question).toMatch(/What is \d+ \+ \d+\?/);
+      const captchaSvg = response.body.responseObject.captchaSvg;
+      expect(captchaSvg).toContain("<svg");
     });
 
     it("should not require authentication", async () => {
@@ -297,9 +292,7 @@ describe("Feedback API Tests", () => {
         // Get fresh captcha
         const captchaResp = await request(app).get("/feedback/captcha");
         const freshCaptchaId = captchaResp.body.responseObject.captchaId;
-        const question = captchaResp.body.responseObject.question;
-        const match = question.match(/(\d+)\s*\+\s*(\d+)/);
-        const answer = match ? (parseInt(match[1]) + parseInt(match[2])).toString() : "0";
+        const answer = captchaResp.body.responseObject.captchaText;
 
         const response = await request(app)
           .post("/feedback")
@@ -345,9 +338,7 @@ describe("Feedback API Tests", () => {
 
       const submissions = captchas.map((captchaResp) => {
         const captchaId = captchaResp.body.responseObject.captchaId;
-        const question = captchaResp.body.responseObject.question;
-        const match = question.match(/(\d+)\s*\+\s*(\d+)/);
-        const answer = match ? (parseInt(match[1]) + parseInt(match[2])).toString() : "0";
+        const answer = captchaResp.body.responseObject.captchaText;
 
         return request(app)
           .post("/feedback")
@@ -376,7 +367,7 @@ describe("Feedback API Tests", () => {
 
       // Should be reasonably long and random
       expect(captchaId.length).toBeGreaterThan(10);
-      expect(captchaId).toMatch(/^[a-zA-Z0-9-_]+$/);
+      expect(captchaId).toMatch(/^[a-f0-9]+$/);
     });
 
     it("should not accept invalid captcha ID format", async () => {

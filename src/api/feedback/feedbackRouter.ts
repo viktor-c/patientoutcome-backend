@@ -22,7 +22,7 @@ export const feedbackRouter: Router = express.Router();
 // Schema for captcha response
 const captchaResponseSchema = z.object({
   captchaId: z.string(),
-  question: z.string(),
+  captchaSvg: z.string(),
 });
 
 // Schema for feedback request
