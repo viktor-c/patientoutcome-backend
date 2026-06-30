@@ -1,0 +1,11 @@
+Form completed
+
+A patient has fully completed the questionnaire "{{formTemplateName}}".
+
+Open case: {{caseUrl}}
+
+Case ID: {{caseId}}
+Consultation ID: {{consultationId}}
+
+---
+Patient Outcome — This email was generated automatically.

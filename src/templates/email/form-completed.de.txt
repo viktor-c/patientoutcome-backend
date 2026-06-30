@@ -1,0 +1,11 @@
+Fragebogen ausgefüllt
+
+Ein Patient hat den Fragebogen "{{formTemplateName}}" vollständig ausgefüllt.
+
+Fall öffnen: {{caseUrl}}
+
+Fall-ID: {{caseId}}
+Konsultations-ID: {{consultationId}}
+
+---
+Patient Outcome — Diese E-Mail wurde automatisch generiert.

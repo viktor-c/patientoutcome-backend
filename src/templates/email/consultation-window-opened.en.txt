@@ -1,0 +1,11 @@
+Your questionnaire is now available
+
+Your questionnaire is now available to fill out.
+
+Please complete it before {{closingDate}}.
+
+Open the app and enter your access code:
+{{codeUrl}}
+
+---
+Patient Outcome — This email was generated automatically.

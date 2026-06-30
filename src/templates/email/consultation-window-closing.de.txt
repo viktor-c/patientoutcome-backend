@@ -1,0 +1,9 @@
+Fragebogen läuft bald ab
+
+Bitte denken Sie daran: Ihr Fragebogen läuft am {{closingDate}} ab.
+
+Öffnen Sie die Anwendung und geben Sie Ihren Zugangscode ein, um ihn rechtzeitig auszufüllen:
+{{codeUrl}}
+
+---
+Patient Outcome — Diese E-Mail wurde automatisch generiert.

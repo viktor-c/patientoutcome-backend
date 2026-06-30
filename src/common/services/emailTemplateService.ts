@@ -87,6 +87,18 @@ class EmailTemplateService {
         en: "Thank you for your feedback - Patient Outcome",
         de: "Vielen Dank für Ihr Feedback - Patient Outcome",
       },
+      "form-completed": {
+        en: "A patient has completed a questionnaire - Patient Outcome",
+        de: "Ein Patient hat einen Fragebogen ausgefüllt - Patient Outcome",
+      },
+      "consultation-window-opened": {
+        en: "Your questionnaire is now available - Patient Outcome",
+        de: "Ihr Fragebogen ist jetzt verfügbar - Patient Outcome",
+      },
+      "consultation-window-closing": {
+        en: "Reminder: your questionnaire is expiring soon - Patient Outcome",
+        de: "Erinnerung: Ihr Fragebogen läuft bald ab - Patient Outcome",
+      },
     };
 
     return subjects[templateName]?.[locale] || subjects[templateName]?.en || "Patient Outcome";
