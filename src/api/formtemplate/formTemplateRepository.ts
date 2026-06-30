@@ -335,6 +335,18 @@ export class FormTemplateRepository {
       description: "Subjective postoperative expectation feedback chart",
       accessLevel: FormAccessLevel.PATIENT, // PROM - patient fills it out
     },
+    {
+      _id: "67b4e612d0feb4ad99ae2e8c",
+      title: "Constant Score",
+      description: "Constant-Murley Shoulder Score - Clinical assessment of shoulder function",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
+    },
+    {
+      _id: "67b4e612d0feb4ad99ae2e8d",
+      title: "Rowe Score",
+      description: "Rowe Shoulder Instability Score - Assessment of shoulder stability after dislocation",
+      accessLevel: FormAccessLevel.AUTHENTICATED, // Clinical outcome - clinician fills it out
+    },
   ];
 
   private getMockFormTemplateData(allowInProduction: boolean = false): FormTemplate[] {
