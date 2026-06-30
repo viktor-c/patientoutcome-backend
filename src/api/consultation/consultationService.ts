@@ -240,6 +240,7 @@ export class ConsultationService {
         ...restData,
         dateAndTime: normalizedDateAndTime,
         proms: [], // Initialize with empty array
+        reason: restData.reasonForConsultation || ['planned'],
       };
 
       await this.ensureConsultationWindowFields(caseId, consultationData);

@@ -140,8 +140,17 @@ export class SurgeryRepository {
 
   async searchSurgeriesByExternalId(searchQuery: string): Promise<Surgery[]> {
     try {
+      // Import security utilities
+      const { sanitizeSearchQuery } = await import("@/utils/securityUtils");
+      
+      // Sanitize search query to prevent NoSQL injection and ReDoS attacks
+      const sanitized = sanitizeSearchQuery(searchQuery);
+      if (!sanitized) {
+        return []; // Return empty array for invalid queries
+      }
+      
       return SurgeryModel.find({
-        externalId: { $regex: searchQuery, $options: "i" },
+        externalId: { $regex: sanitized, $options: "i" },
       }).lean() as unknown as Promise<Surgery[]>;
     } catch (error) {
       return Promise.reject(error);

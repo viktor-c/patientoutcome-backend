@@ -154,7 +154,10 @@ export class CodeRepository {
     return codeModel.create(code);
   }
 
-  async createMultipleCodes(numberOfCodes: number): Promise<Code[]> {
+  async createMultipleCodes(
+    numberOfCodes: number,
+    consultationDate?: Date
+  ): Promise<Code[]> {
     const codes: Code[] = [];
     for (let i = 0; i < numberOfCodes; i++) {
       const randomCode = generateRandomString(3) + generateRandomNumber(2);
@@ -165,6 +168,17 @@ export class CodeRepository {
         consultationId: undefined,
         patientCaseId: undefined,
       };
+
+      if (consultationDate) {
+        const window = resolveConsultationActivationWindow({
+          dateAndTime: consultationDate,
+        });
+        if (window) {
+          code.validFrom = window.activeFrom;
+          code.validUntil = window.activeUntil;
+        }
+      }
+
       codes.push(code);
     }
     return await codeModel.insertMany(codes);

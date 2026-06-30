@@ -160,8 +160,17 @@ export class PatientRepository {
    */
   async searchByExternalIdAsync(searchQuery: string, departmentIds?: string[]): Promise<Patient[]> {
     try {
+      // Import security utilities
+      const { sanitizeSearchQuery } = await import("@/utils/securityUtils");
+      
+      // Sanitize search query to prevent NoSQL injection and ReDoS attacks
+      const sanitized = sanitizeSearchQuery(searchQuery);
+      if (!sanitized) {
+        return []; // Return empty array for invalid queries
+      }
+      
       // Partial match using regex - case insensitive, exclude deleted
-      const regex = new RegExp(searchQuery, "i");
+      const regex = new RegExp(sanitized, "i");
       const query = this.addDepartmentFilter(
         { externalPatientId: { $elemMatch: { $regex: regex } }, deletedAt: null },
         departmentIds,

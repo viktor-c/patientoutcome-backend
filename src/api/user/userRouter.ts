@@ -7,6 +7,7 @@
  */
 
 import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
+import { authRateLimiter, sensitiveOperationRateLimiter } from "@/common/middleware/authRateLimiter";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
@@ -98,7 +99,7 @@ userRegistry.registerPath({
   ]),
 });
 
-userRouter.post("/login", AclMiddleware("user-login"), validateRequest(LoginSchema), userController.loginUser);
+userRouter.post("/login", authRateLimiter, AclMiddleware("user-login"), validateRequest(LoginSchema), userController.loginUser);
 
 // Role Switch Schema
 const RoleSwitchSchema = z.object({
@@ -141,7 +142,7 @@ userRegistry.registerPath({
   ]),
 });
 
-userRouter.post("/role-switch", AclMiddleware("user-login"), validateRequest(RoleSwitchSchema), userController.roleSwitchUser);
+userRouter.post("/role-switch", sensitiveOperationRateLimiter, AclMiddleware("user-login"), validateRequest(RoleSwitchSchema), userController.roleSwitchUser);
 
 // Register the path for logout
 userRegistry.registerPath({

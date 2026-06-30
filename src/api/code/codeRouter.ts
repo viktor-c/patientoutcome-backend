@@ -241,18 +241,26 @@ formAccessCodeRouter.post(
 // Route to add new codes
 codeRegistry.registerPath({
   method: "post",
-  path: "/form-access-code/addCodes/{numberOfCodes}",
+  path: "/form-access-code/addCodes",
   tags: ["Code"],
   operationId: "addCodes",
   summary: "Get new form access codes",
   description: "The backend creates a number of new codes and returns them",
-  request: { params: CreateCodeSchema.shape.params },
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: CreateCodeSchema.shape.body,
+        },
+      },
+    },
+  },
   responses: createApiResponses([
     { schema: z.array(CodeWithConsultationSchema), description: "Code created successfully", statusCode: 201 },
     { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
   ]),
 });
-formAccessCodeRouter.post("/addCodes/:numberOfCodes", validateRequest(CreateCodeSchema), codeController.addCodes);
+formAccessCodeRouter.post("/addCodes", validateRequest(CreateCodeSchema), codeController.addCodes);
 
 // Route to delete a code by code, can be code or internal code
 codeRegistry.registerPath({

@@ -171,29 +171,54 @@ class UserController {
         // do not allow login
         return handleServiceResponse(ServiceResponse.failure("Invalid user ID", null, StatusCodes.UNAUTHORIZED), res);
       } else {
-        req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
-          ? serviceResponse.responseObject._id.toString()
-          : undefined; // Store userId in the session
+        // Regenerate session ID to prevent session fixation attacks
+        return new Promise<Response>((resolve) => {
+          req.session.regenerate((err) => {
+            if (err) {
+              logger.error({ err }, "Failed to regenerate session");
+              return resolve(handleServiceResponse(
+                ServiceResponse.failure("Session error", null, StatusCodes.INTERNAL_SERVER_ERROR),
+                res
+              ));
+            }
+
+            // Set session data after regeneration
+            req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
+              ? serviceResponse.responseObject._id.toString()
+              : undefined; // Store userId in the session
+            req.session.roles = serviceResponse.responseObject.roles; // Store user roles in the session
+            req.session.permissions = serviceResponse.responseObject.permissions; // Store user permissions in the session
+            req.session.lastLogin = new Date(); // Store last login time
+            req.session.loggedIn = true; // Mark the user as logged in
+            req.session.username = username;
+            // Store user departments as string array in session
+            req.session.department = (serviceResponse.responseObject.department || []).map((dept) => dept.toString());
+
+            // Log the activity
+            activityLogService.log({
+              username,
+              action: "User logged in",
+              type: "login",
+              details: `Roles: ${serviceResponse.responseObject.roles.join(", ")}`,
+            });
+
+            //@ts-ignore-next-line
+            serviceResponse.responseObject._id = undefined;
+            
+            // Save the session and send response
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                logger.error({ err: saveErr }, "Failed to save session");
+                return resolve(handleServiceResponse(
+                  ServiceResponse.failure("Session error", null, StatusCodes.INTERNAL_SERVER_ERROR),
+                  res
+                ));
+              }
+              return resolve(handleServiceResponse(serviceResponse, res));
+            });
+          });
+        });
       }
-      req.session.roles = serviceResponse.responseObject.roles; // Store user roles in the session
-      req.session.permissions = serviceResponse.responseObject.permissions; // Store user permissions in the session
-      req.session.lastLogin = new Date(); // Store last login time
-      req.session.loggedIn = true; // Mark the user as logged in
-      req.session.username = username;
-      // Store user departments as string array in session
-      req.session.department = (serviceResponse.responseObject.department || []).map((dept) => dept.toString());
-
-      // Log the activity
-      activityLogService.log({
-        username,
-        action: "User logged in",
-        type: "login",
-        details: `Roles: ${serviceResponse.responseObject.roles.join(", ")}`,
-      });
-
-      //@ts-ignore-next-line
-      serviceResponse.responseObject._id = undefined;
-      await req.session.save(); // Save the session
     }
     return handleServiceResponse(serviceResponse, res);
   };

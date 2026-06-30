@@ -8,8 +8,17 @@ import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 export class PatientCaseRepository {
   async searchCasesByExternalId(searchCasesById: string): Promise<PatientCase[]> {
     try {
+      // Import security utilities
+      const { sanitizeSearchQuery } = await import("@/utils/securityUtils");
+      
+      // Sanitize search query to prevent NoSQL injection and ReDoS attacks
+      const sanitized = sanitizeSearchQuery(searchCasesById);
+      if (!sanitized) {
+        return []; // Return empty array for invalid queries
+      }
+      
       return PatientCaseModel.find({
-        externalId: { $regex: searchCasesById, $options: "i" },
+        externalId: { $regex: sanitized, $options: "i" },
         deletedAt: null,
       })
         .select("_id externalId")

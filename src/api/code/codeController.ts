@@ -71,8 +71,11 @@ class CodeController {
    * @description Generates specified number of new unique access codes
    */
   public addCodes: RequestHandler = async (req: Request, res: Response) => {
-    const { numberOfCodes } = req.params;
-    const serviceResponse = await codeService.addCodes(numberOfCodes);
+    const { numberOfCodes, consultationDate } = req.body as { numberOfCodes: number, consultationDate?: string };
+    const serviceResponse = await codeService.addCodes(
+      numberOfCodes,
+      consultationDate ? new Date(consultationDate) : undefined
+    );
     return handleServiceResponse(serviceResponse, res);
   };
   /**

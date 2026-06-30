@@ -246,16 +246,21 @@ class CodeService {
     }
   }
 
-  async addCodes(numberOfCodes: string): Promise<ServiceResponse<Code[] | null>> {
+  async addCodes(
+    numberOfCodes: number,
+    consultationDate?: Date
+  ): Promise<ServiceResponse<Code[] | null>> {
     try {
-      const numCodes = Number.parseInt(numberOfCodes, 10);
       // this should not happen, because zod already validates the input
       // but we keep it here just in case
       // to ensure that we do not try to create an invalid number of codes
-      if (Number.isNaN(numCodes) || numCodes <= 0 || numCodes > 10) {
+      if (Number.isNaN(numberOfCodes) || numberOfCodes <= 0 || numberOfCodes > 10) {
         return ServiceResponse.failure("Invalid number of codes specified", null, StatusCodes.BAD_REQUEST);
       }
-      const codes = await this.codeRepository.createMultipleCodes(numCodes);
+      const codes = await this.codeRepository.createMultipleCodes(
+        numberOfCodes,
+        consultationDate
+      );
       if (codes.length === 0) {
         return ServiceResponse.failure("No codes were created", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }

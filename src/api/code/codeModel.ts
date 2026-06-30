@@ -44,6 +44,16 @@ export const CodeSchema = z.object({
    */
   expiresOn: z.date().optional(),
   /*
+   * this date will be set when the code is created
+   * validFrom can be reset.
+   */
+  validFrom: z.date().optional(),
+  /*
+   * this date will be set when the code is created
+   * validUntil can be reset.
+   */
+  validUntil: z.date().optional(),
+  /*
    * this string will be used to access the consultation data
    * */
   consultationId: zId("Consultation").optional(),

@@ -272,9 +272,9 @@ export class UserService {
       if (!user._id) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);
       }
-      const hashedPassword = await hashPassword(password);
+      
       logger.debug({ username }, "UserService.ts: Logging in user with username");
-      logger.debug({ hashedPassword }, "UserService.ts: Hashed password");
+      
       const isPasswordValid = await comparePasswords(password, user.password);
       if (!isPasswordValid) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);
