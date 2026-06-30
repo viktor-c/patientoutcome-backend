@@ -137,8 +137,10 @@ export class CodeRepository {
     try {
       // Find codes where activatedOn is either null or undefined, and not archived
       return codeModel.find({ 
-        $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }],
-        $or: [{ archivedOn: null }, { archivedOn: { $exists: false } }]
+        $and: [
+          { $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] },
+          { archivedOn: { $exists: false } }
+        ]
       }).lean();
     } catch (error) {
       return Promise.reject(error);
