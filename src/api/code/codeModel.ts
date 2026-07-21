@@ -104,11 +104,19 @@ export const SetCodeActivationStartSchema = z.object({
   }),
 });
 
+export const UpdateCodeValiditySchema = z.object({
+  params: z.object({ code: z.string() }),
+  body: z.object({
+    activatedOn: z.coerce.date(),
+    expiresOn: z.coerce.date(),
+  }),
+});
+
 // Input validation for 'POST code/:numberOfCodes' endpoint
 export const CreateCodeSchema = z.object({
   body: z.object({
     numberOfCodes: z.preprocess(
-      Number,
+      (val) => (val === undefined || val === null || Number.isNaN(Number(val)) ? 1 : Number(val)),
       z.number().min(1, "At least 1 code must be created").max(10, "No more than 10 codes can be created"),
     ),
   }),

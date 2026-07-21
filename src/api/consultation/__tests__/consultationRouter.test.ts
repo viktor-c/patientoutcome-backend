@@ -94,13 +94,13 @@ describe("Patient Case Consultation API", () => {
     newConsultation._id = undefined; // Reset _id to undefined to create a new consultation
 
     // create a new form access code
-    const createCodeResponse = await agent.post("/form-access-code/addCodes/1");
+    const createCodeResponse = await agent.post("/form-access-code/addCodes").send({ numberOfCodes: 1 });
     expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
     expect(createCodeResponse.body.message).toBe("Codes created successfully");
     expect(createCodeResponse.body.responseObject).toBeDefined();
 
     // Assign the created code string to the new consultation
-    const newCode: Code = createCodeResponse.body.responseObject;
+    const newCode: Code = createCodeResponse.body.responseObject[0];
     newConsultation.formAccessCode = newCode.code;
 
     // Create a new consultation
@@ -157,7 +157,7 @@ describe("Patient Case Consultation API", () => {
     expect(caseId).toBeTruthy();
     expect(departmentId).toBeTruthy();
 
-    const codeResponse = await agent.post("/form-access-code/addCodes/1");
+    const codeResponse = await agent.post("/form-access-code/addCodes").send({ numberOfCodes: 1 });
     expect(codeResponse.status).toBe(StatusCodes.CREATED);
     const externalCode = codeResponse.body.responseObject[0]?.code as string;
 
@@ -233,7 +233,7 @@ describe("Patient Case Consultation API", () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
 
     // First, ensure we have at least one available code
-    const codeResponse = await agent.post("/form-access-code/addCodes/1");
+    const codeResponse = await agent.post("/form-access-code/addCodes").send({ numberOfCodes: 1 });
     expect(codeResponse.status).toBe(StatusCodes.CREATED);
 
     const createResponse = await agent.post(`/consultation/case/${caseId}`).send({
@@ -311,5 +311,85 @@ describe("Patient Case Consultation API", () => {
     expect(codeValidationResponse.status).toBe(StatusCodes.BAD_REQUEST);
 
     await agent.delete(`/consultation/${consultationId}`);
+  });
+
+  describe("Consultation update synchronizes code validity", () => {
+    let testCaseId: string;
+    let testConsultationId: string;
+    let testCode: string;
+
+    beforeAll(async () => {
+      testCaseId = patientCaseRepository.mockPatientCases[1]._id.toString();
+
+      // Create a new code
+      const createCodeResponse = await agent.post("/form-access-code/addCodes").send({ numberOfCodes: 1 });
+      expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
+      testCode = createCodeResponse.body.responseObject[0]?.code as string;
+
+      // Create a consultation with the code
+      const createResponse = await agent.post(`/consultation/case/${testCaseId}`).send({
+        patientCaseId: testCaseId,
+        dateAndTime: new Date("2026-08-15T10:00:00.000Z").toISOString(),
+        reasonForConsultation: ["planned"],
+        notes: [],
+        images: [],
+        visitedBy: [],
+        formTemplates: [],
+        formAccessCode: testCode,
+        consultationAccessDaysBefore: 7,
+        consultationAccessDaysAfter: 7,
+      });
+
+      expect(createResponse.status).toBe(StatusCodes.CREATED);
+      testConsultationId = createResponse.body.responseObject._id;
+    });
+
+    it("should synchronize code validity when consultation time window is updated", async () => {
+      // Update consultation with new time window
+      const newActiveFrom = new Date("2026-09-01T00:00:00.000Z");
+      const newActiveUntil = new Date("2026-09-30T23:59:59.000Z");
+
+      const updateResponse = await agent.put(`/consultation/${testConsultationId}`).send({
+        consultationAccessActiveFrom: newActiveFrom.toISOString(),
+        consultationAccessActiveUntil: newActiveUntil.toISOString(),
+      });
+
+      expect(updateResponse.status).toBe(StatusCodes.OK);
+
+      // Verify the code validity was synchronized
+      const codeDocument = await codeModel.findOne({ code: testCode }).lean();
+      expect(codeDocument).toBeDefined();
+      expect(new Date(codeDocument!.activatedOn!).toISOString()).toBe(newActiveFrom.toISOString());
+      expect(new Date(codeDocument!.expiresOn!).toISOString()).toBe(newActiveUntil.toISOString());
+    });
+
+    it("should synchronize code validity when consultation dateAndTime is updated", async () => {
+      // Update consultation dateAndTime which should recalculate the time window
+      const newDateTime = new Date("2026-10-15T14:00:00.000Z");
+
+      const updateResponse = await agent.put(`/consultation/${testConsultationId}`).send({
+        dateAndTime: newDateTime.toISOString(),
+      });
+
+      expect(updateResponse.status).toBe(StatusCodes.OK);
+
+      // Get the updated consultation to check the time window
+      const consultationFetch = await agent.get(`/consultation/${testConsultationId}`);
+      expect(consultationFetch.status).toBe(StatusCodes.OK);
+
+      const activeFrom = consultationFetch.body.responseObject.consultationAccessActiveFrom;
+      const activeUntil = consultationFetch.body.responseObject.consultationAccessActiveUntil;
+
+      // Verify the code validity matches the consultation time window
+      const codeDocument = await codeModel.findOne({ code: testCode }).lean();
+      expect(codeDocument).toBeDefined();
+      expect(new Date(codeDocument!.activatedOn!).toISOString()).toBe(new Date(activeFrom).toISOString());
+      expect(new Date(codeDocument!.expiresOn!).toISOString()).toBe(new Date(activeUntil).toISOString());
+    });
+
+    afterAll(async () => {
+      // Cleanup
+      await agent.delete(`/consultation/${testConsultationId}`);
+    });
   });
 });

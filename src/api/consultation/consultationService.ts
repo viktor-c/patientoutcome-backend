@@ -207,7 +207,7 @@ export class ConsultationService {
       }
     }
 
-    const code = await this.codeRepository.findById(formAccessCode.toString());
+    const code = await this.codeRepository.findByCode(formAccessCode.toString());
     if (!code) {
       return "Code not found";
     }
@@ -557,6 +557,38 @@ export class ConsultationService {
       } catch (error) {
         return ServiceResponse.failure("Failed to update consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
+      
+      // Synchronize linked code validity with consultation time window (if not a case code)
+      if (updatedConsultation && updatedConsultation.formAccessCode) {
+        try {
+          const code = await this.codeRepository.findById(updatedConsultation.formAccessCode.toString());
+          if (code && code.consultationId && !code.patientCaseId) {
+            // Only sync if it's a consultation code (not a case code)
+            const activeFrom = updatedConsultation.consultationAccessActiveFrom;
+            const activeUntil = updatedConsultation.consultationAccessActiveUntil;
+            
+            if (activeFrom && activeUntil) {
+              // Update code validity to match consultation time window
+              await this.codeRepository.updateCodeValidity(
+                code.code,
+                new Date(activeFrom),
+                new Date(activeUntil)
+              );
+              logger.info(
+                { consultationId: updatedConsultation._id?.toString(), code: code.code },
+                "Synchronized code validity with consultation time window"
+              );
+            }
+          }
+        } catch (error) {
+          logger.error(
+            { error, consultationId: updatedConsultation._id?.toString() },
+            "Failed to synchronize code validity with consultation time window"
+          );
+          // Don't fail the entire operation if code sync fails
+        }
+      }
+      
       // if updatedConsultation was successfully updated, delete excluded forms from forms table
       return ServiceResponse.success(
         "Consultation updated successfully",

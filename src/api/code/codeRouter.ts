@@ -29,6 +29,7 @@ import {
   RenewCodeSchema,
   RestoreCodeSchema,
   SetCodeActivationStartSchema,
+  UpdateCodeValiditySchema,
 } from "./codeModel";
 
 // Initialize OpenAPI registry
@@ -214,6 +215,36 @@ formAccessCodeRouter.put(
   "/activation-start/:code",
   validateRequest(SetCodeActivationStartSchema),
   codeController.setCodeActivationStart,
+);
+
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/validity/{code}",
+  tags: ["Code"],
+  operationId: "updateCodeValidity",
+  summary: "Update code validity period",
+  description: "Set custom activation and expiration dates for a code's validity period.",
+  request: {
+    params: UpdateCodeValiditySchema.shape.params,
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateCodeValiditySchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code validity updated successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not linked", statusCode: 409 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.put(
+  "/validity/:code",
+  validateRequest(UpdateCodeValiditySchema),
+  codeController.updateCodeValidity,
 );
 
 codeRegistry.registerPath({

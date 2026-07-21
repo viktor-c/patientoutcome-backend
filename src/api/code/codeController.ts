@@ -221,6 +221,21 @@ class CodeController {
     const serviceResponse = await codeService.getCodeAccessStatistics(code);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  /**
+   * Update code validity period
+   * @route PUT /form-access-code/validity/:code
+   * @param {Request} req - Express request with code in params and dates in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with updated code
+   * @description Updates both activation and expiration dates for a code
+   */
+  public updateCodeValidity: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const { activatedOn, expiresOn } = req.body;
+    const serviceResponse = await codeService.updateCodeValidity(code, activatedOn, expiresOn);
+    return handleServiceResponse(serviceResponse, res);
+  };
 }
 
 export const codeController = new CodeController();

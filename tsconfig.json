@@ -2,14 +2,15 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "baseUrl": ".",
+    // "baseUrl": ".", // deprecated in typescript 7.0
     "paths": {
-      "@/*": ["src/*"],
-      "@scripts/*": ["scripts/*"]
+      "@/*": ["./src/*"],
+      "@scripts/*": ["./scripts/*"]
     },
     // enable custom types directory
     "typeRoots": ["./node_modules", "./node_modules/@types", "./src/@custom_types"],
     "moduleResolution": "nodenext",
+    "rootDir": "./src",
     "outDir": "dist",
     "importsNotUsedAsValues": "remove",
     "strict": true,

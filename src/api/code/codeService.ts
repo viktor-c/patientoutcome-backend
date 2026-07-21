@@ -304,7 +304,36 @@ class CodeService {
       );
     }
   }
+  async updateCodeValidity(
+    code: string,
+    activatedOn: Date,
+    expiresOn: Date,
+  ): Promise<ServiceResponse<Code | null>> {
+    try {
+      const updatedCode = await this.codeRepository.updateCodeValidity(code, activatedOn, expiresOn);
+      if (typeof updatedCode === "string") {
+        if (updatedCode === "Code not found") {
+          return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+        }
+        if (updatedCode === "Code is not linked") {
+          return ServiceResponse.failure("Code is not linked", null, StatusCodes.CONFLICT);
+        }
+      }
 
+      if (updatedCode && typeof updatedCode === "object") {
+        return ServiceResponse.success("Code validity updated successfully", updatedCode);
+      }
+
+      return ServiceResponse.failure("Unexpected error occurred", null, StatusCodes.INTERNAL_SERVER_ERROR);
+    } catch (error) {
+      logger.error({ error }, "Error updating code validity");
+      return ServiceResponse.failure(
+        "An error occurred while updating code validity.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
   async addCodes(
     numberOfCodes: number,
     consultationDate?: Date

@@ -277,7 +277,8 @@ export class CodeRepository {
       }
       return Promise.resolve(codeToReturnWithoutId);
     } catch (error) {
-      return Promise.reject("An unknown error occurred while activating the code.");
+      logger.error({ error }, "Error activating code");
+      return Promise.resolve("An unknown error occurred while activating the code.");
     }
   }
 
@@ -400,6 +401,58 @@ export class CodeRepository {
     existingCode.activatedOn = activatedOn;
     existingCode.expiresOn = new Date(activatedOn.getTime() + codeLifeMs);
     await existingCode.save();
+
+    const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
+    return codeToReturnWithoutId || "Code not found";
+  }
+
+  async updateCodeValidity(codeString: string, activatedOn: Date, expiresOn: Date): Promise<Code | string> {
+    const existingCode = await codeModel.findOne({ code: codeString });
+    if (!existingCode) {
+      return "Code not found";
+    }
+
+    if (!existingCode.consultationId && !existingCode.patientCaseId) {
+      return "Code is not linked";
+    }
+
+    existingCode.activatedOn = activatedOn;
+    existingCode.expiresOn = expiresOn;
+    await existingCode.save();
+
+    // Synchronize consultation time window with code validity (if linked to a consultation, not a case)
+    if (existingCode.consultationId && !existingCode.patientCaseId) {
+      try {
+        const consultation = await consultationModel.findById(existingCode.consultationId);
+        if (consultation) {
+          // Update consultation's access window to match code validity
+          consultation.consultationAccessActiveFrom = activatedOn;
+          consultation.consultationAccessActiveUntil = expiresOn;
+          
+          // If consultation dateAndTime is outside the code validity window, adjust it
+          const consultationDate = consultation.dateAndTime ? new Date(consultation.dateAndTime) : null;
+          if (consultationDate) {
+            if (consultationDate < activatedOn) {
+              consultation.dateAndTime = activatedOn;
+            } else if (consultationDate > expiresOn) {
+              consultation.dateAndTime = activatedOn;
+            }
+          }
+          
+          await consultation.save();
+          logger.info(
+            { consultationId: existingCode.consultationId, code: codeString },
+            "Synchronized consultation time window with code validity"
+          );
+        }
+      } catch (error) {
+        logger.error(
+          { error, consultationId: existingCode.consultationId, code: codeString },
+          "Failed to synchronize consultation time window with code validity"
+        );
+        // Don't fail the entire operation if consultation sync fails
+      }
+    }
 
     const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
     return codeToReturnWithoutId || "Code not found";
