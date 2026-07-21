@@ -1,0 +1,9 @@
+Reminder: questionnaire expiring soon
+
+Your questionnaire expires on {{closingDate}}.
+
+Open the app and enter your access code to complete it on time:
+{{codeUrl}}
+
+---
+Patient Outcome — This email was generated automatically.

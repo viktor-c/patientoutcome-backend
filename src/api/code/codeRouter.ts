@@ -18,14 +18,18 @@ import { codeController } from "./codeController";
 import {
   ActivateCodeForCaseSchema,
   ActivateCodeSchema,
+  ArchiveCodeSchema,
   CodeSchema,
   CreateCodeSchema,
   DeleteCodeSchema,
   ExternalCodeSchema,
+  GetCodeAccessLogsSchema,
   GetCodeSchema,
   ResetConsultationFormsByCodeSchema,
   RenewCodeSchema,
+  RestoreCodeSchema,
   SetCodeActivationStartSchema,
+  UpdateCodeValiditySchema,
 } from "./codeModel";
 
 // Initialize OpenAPI registry
@@ -214,6 +218,36 @@ formAccessCodeRouter.put(
 );
 
 codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/validity/{code}",
+  tags: ["Code"],
+  operationId: "updateCodeValidity",
+  summary: "Update code validity period",
+  description: "Set custom activation and expiration dates for a code's validity period.",
+  request: {
+    params: UpdateCodeValiditySchema.shape.params,
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateCodeValiditySchema.shape.body,
+        },
+      },
+    },
+  },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code validity updated successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not linked", statusCode: 409 },
+    { schema: ValidationErrorsSchema, description: "Validation error", statusCode: 400 },
+  ]),
+});
+formAccessCodeRouter.put(
+  "/validity/:code",
+  validateRequest(UpdateCodeValiditySchema),
+  codeController.updateCodeValidity,
+);
+
+codeRegistry.registerPath({
   method: "post",
   path: "/form-access-code/reset-consultation/{code}",
   tags: ["Code"],
@@ -335,5 +369,104 @@ formAccessCodeRouter.get(
   validateRequest(z.object({ params: z.object({ id: commonValidations.id }) })),
   codeController.getCodeById,
 );
+
+// Route to archive a code
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/{code}/archive",
+  tags: ["Code"],
+  operationId: "archiveCode",
+  summary: "Archive a code",
+  description: "Archive a code instead of deleting it. Archived codes cannot be used but can be restored.",
+  request: { params: ArchiveCodeSchema.shape.params },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code archived successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is already archived", statusCode: 409 },
+  ]),
+});
+formAccessCodeRouter.put("/:code/archive", validateRequest(ArchiveCodeSchema), codeController.archiveCode);
+
+// Route to restore an archived code
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/{code}/restore",
+  tags: ["Code"],
+  operationId: "restoreCode",
+  summary: "Restore an archived code",
+  description: "Restore a previously archived code, making it usable again.",
+  request: { params: RestoreCodeSchema.shape.params },
+  responses: createApiResponses([
+    { schema: CodeResponseSchema, description: "Code restored successfully", statusCode: 200 },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Code is not archived", statusCode: 409 },
+  ]),
+});
+formAccessCodeRouter.put("/:code/restore", validateRequest(RestoreCodeSchema), codeController.restoreCode);
+
+// Route to get access logs for a code
+codeRegistry.registerPath({
+  method: "get",
+  path: "/form-access-code/{code}/access-logs",
+  tags: ["Code"],
+  operationId: "getCodeAccessLogs",
+  summary: "Get access logs for a code",
+  description: "Retrieve all access logs showing when and how a code was used.",
+  request: { params: GetCodeAccessLogsSchema.shape.params },
+  responses: createApiResponses([
+    { 
+      schema: z.array(z.object({
+        codeId: z.string(),
+        code: z.string(),
+        patientCaseId: z.string(),
+        consultationId: z.string().optional(),
+        accessedAt: z.string(),
+        sessionStartedAt: z.string(),
+        sessionEndedAt: z.string().optional(),
+        formsCompleted: z.array(z.object({
+          formId: z.string(),
+          formTemplateName: z.string(),
+          startedAt: z.string(),
+          completedAt: z.string(),
+          durationMs: z.number(),
+        })),
+        totalSessionDurationMs: z.number().optional(),
+        successful: z.boolean(),
+        ipAddress: z.string().optional(),
+        userAgent: z.string().optional(),
+      })), 
+      description: "Access logs retrieved successfully", 
+      statusCode: 200 
+    },
+    { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
+  ]),
+});
+formAccessCodeRouter.get("/:code/access-logs", validateRequest(GetCodeAccessLogsSchema), codeController.getCodeAccessLogs);
+
+// Route to get access statistics for a code
+codeRegistry.registerPath({
+  method: "get",
+  path: "/form-access-code/{code}/statistics",
+  tags: ["Code"],
+  operationId: "getCodeAccessStatistics",
+  summary: "Get access statistics for a code",
+  description: "Retrieve usage statistics for a code including total accesses, successful sessions, and average duration.",
+  request: { params: GetCodeAccessLogsSchema.shape.params },
+  responses: createApiResponses([
+    { 
+      schema: z.object({
+        totalAccesses: z.number(),
+        successfulSessions: z.number(),
+        totalFormsCompleted: z.number(),
+        averageSessionDuration: z.number(),
+        lastAccessedAt: z.string().optional(),
+      }), 
+      description: "Statistics retrieved successfully", 
+      statusCode: 200 
+    },
+    { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
+  ]),
+});
+formAccessCodeRouter.get("/:code/statistics", validateRequest(GetCodeAccessLogsSchema), codeController.getCodeAccessStatistics);
 
 export default formAccessCodeRouter;

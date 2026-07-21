@@ -1,6 +1,7 @@
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 import { initializeScheduler, shutdownScheduler } from "@/api/backup/schedulerService";
+import { initializeNotificationScheduler, shutdownNotificationScheduler } from "@/api/notification/notificationScheduler";
 
 const server = app.listen(env.PORT, async () => {
   // initialize the server
@@ -14,6 +15,13 @@ const server = app.listen(env.PORT, async () => {
   } catch (error) {
     logger.error(error, "Failed to initialize backup scheduler");
   }
+
+  // Initialize consultation window notification scheduler
+  try {
+    initializeNotificationScheduler();
+  } catch (error) {
+    logger.error(error, "Failed to initialize notification scheduler");
+  }
 });
 
 const onCloseSignal = () => {
@@ -25,6 +33,13 @@ const onCloseSignal = () => {
     logger.info("Backup scheduler shutdown complete");
   } catch (error) {
     logger.error(error, "Error shutting down backup scheduler");
+  }
+
+  // Shutdown notification scheduler
+  try {
+    shutdownNotificationScheduler();
+  } catch (error) {
+    logger.error(error, "Error shutting down notification scheduler");
   }
   
   server.close(() => {

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background-color: #2e7d32; padding: 24px 32px; color: #fff; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .content { padding: 24px 32px; color: #333; line-height: 1.6; }
+    .cta { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2e7d32; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    .footer { padding: 16px 32px; background: #f9f9f9; font-size: 12px; color: #888; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Your questionnaire is now available</h1>
+    </div>
+    <div class="content">
+      <p>Your questionnaire is now available to fill out.</p>
+      <p>Please complete it before <strong>{{closingDate}}</strong>.</p>
+      <p>Open the app and enter your access code:</p>
+      <a class="cta" href="{{codeUrl}}">Open questionnaire</a>
+    </div>
+    <div class="footer">Patient Outcome — This email was generated automatically.</div>
+  </div>
+</body>
+</html>

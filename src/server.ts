@@ -15,6 +15,7 @@ import { blueprintRouter } from "@/api/blueprint/blueprintRouter";
 import { clinicalStudyRouter } from "@/api/clinicalStudy/clinicalStudyRouter";
 import { formAccessCodeRouter } from "@/api/code/codeRouter";
 import { feedbackRouter } from "@/api/feedback/feedbackRouter";
+import { notificationRouter } from "@/api/notification/notificationRouter";
 import { formRouter } from "@/api/form/formRouter";
 import { icdopsRouter } from "@/api/icdops/icdopsRouter";
 import { icdopsService } from "@/api/icdops/icdopsService";
@@ -125,6 +126,7 @@ app.use("", formRouter);
 app.use("/form-access-code", formAccessCodeRouter);
 app.use("/kiosk", kioskRouter);
 app.use("/feedback", feedbackRouter);
+app.use("/notifications", notificationRouter);
 app.use("/icdops", icdopsRouter);
 
 // Swagger UI - only load in non-test environments to avoid schema loading issues

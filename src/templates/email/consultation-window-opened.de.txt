@@ -1,0 +1,11 @@
+Fragebogen jetzt verfügbar
+
+Ihr Fragebogen ist nun zur Bearbeitung freigegeben.
+
+Bitte füllen Sie ihn bis zum {{closingDate}} aus.
+
+Öffnen Sie die Anwendung und geben Sie Ihren Zugangscode ein:
+{{codeUrl}}
+
+---
+Patient Outcome — Diese E-Mail wurde automatisch generiert.

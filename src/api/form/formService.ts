@@ -1,5 +1,6 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { activityLogService } from "@/common/services/activityLogService";
+import { notificationService } from "@/api/notification/notificationService";
 import { logger } from "@/server";
 import { env } from "@/common/utils/envConfig";
 import { userRepository } from "@/api/user/userRepository";
@@ -543,6 +544,69 @@ export class FormService {
           type: isCompleted ? "formSubmit" : "formOpen",
           details: `Form ID: ${formId}, Status: ${fillStatus}, Template: ${existingForm.formTemplateId}`,
         });
+
+        // Notify admin/clinician recipients when a form transitions to "complete"
+        // (only fires on first completion – existingForm.formEndTime is null at this point)
+        if (isCompleted && !existingForm.formEndTime) {
+          const consultationIdStr = typeof existingForm.consultationId === "string"
+            ? existingForm.consultationId
+            : existingForm.consultationId?.toString() ?? "";
+
+          // Resolve caseId via consultation to build the deep-link
+          setImmediate(async () => {
+            try {
+              const [consultationModule, caseModule, userModule] = await Promise.all([
+                import("@/api/consultation/consultationModel.js"),
+                import("@/api/case/patientCaseModel.js"),
+                import("@/api/user/userModel.js"),
+              ]);
+
+              const consultation = await consultationModule.consultationModel
+                .findById(consultationIdStr)
+                .select("patientCaseId")
+                .lean();
+
+              if (!consultation) return;
+
+              const caseId = consultation.patientCaseId?.toString() ?? "";
+              const patientCase = await caseModule.PatientCaseModel
+                .findById(caseId)
+                .select("supervisors")
+                .lean() as { supervisors?: any[] } | null;
+
+              // Collect supervisor emails as admin recipients
+              const supervisorIds: string[] = (patientCase?.supervisors ?? []).map((s: any) =>
+                typeof s === "string" ? s : s.toString(),
+              );
+
+              let recipientEmails: string[] = [];
+              if (supervisorIds.length > 0) {
+                const supervisors = await userModule.userModel
+                  .find({ _id: { $in: supervisorIds } })
+                  .select("email")
+                  .lean() as unknown as { email?: string }[];
+                recipientEmails = supervisors
+                  .map((u) => u.email)
+                  .filter((e): e is string => Boolean(e));
+              }
+
+              await notificationService.notifyAdmins(
+                {
+                  type: "form_completed",
+                  formId,
+                  consultationId: consultationIdStr,
+                  caseId,
+                  formTemplateName: String(existingForm.formTemplateId ?? "Form"),
+                },
+                recipientEmails,
+                ["email", "push"],
+                supervisorIds,
+              );
+            } catch (notifyErr) {
+              logger.error({ notifyErr, formId }, "notificationService: failed to send form-completed notification");
+            }
+          });
+        }
       }
 
       return ServiceResponse.success("Form updated successfully", response);

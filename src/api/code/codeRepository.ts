@@ -135,8 +135,13 @@ export class CodeRepository {
    */
   async getAllAvailableCodes(): Promise<Code[]> {
     try {
-      // Find codes where activatedOn is either null or undefined
-      return codeModel.find({ $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] }).lean();
+      // Find codes where activatedOn is either null or undefined, and not archived
+      return codeModel.find({ 
+        $and: [
+          { $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] },
+          { archivedOn: { $exists: false } }
+        ]
+      }).lean();
     } catch (error) {
       return Promise.reject(error);
     }
@@ -272,7 +277,8 @@ export class CodeRepository {
       }
       return Promise.resolve(codeToReturnWithoutId);
     } catch (error) {
-      return Promise.reject("An unknown error occurred while activating the code.");
+      logger.error({ error }, "Error activating code");
+      return Promise.resolve("An unknown error occurred while activating the code.");
     }
   }
 
@@ -400,6 +406,58 @@ export class CodeRepository {
     return codeToReturnWithoutId || "Code not found";
   }
 
+  async updateCodeValidity(codeString: string, activatedOn: Date, expiresOn: Date): Promise<Code | string> {
+    const existingCode = await codeModel.findOne({ code: codeString });
+    if (!existingCode) {
+      return "Code not found";
+    }
+
+    if (!existingCode.consultationId && !existingCode.patientCaseId) {
+      return "Code is not linked";
+    }
+
+    existingCode.activatedOn = activatedOn;
+    existingCode.expiresOn = expiresOn;
+    await existingCode.save();
+
+    // Synchronize consultation time window with code validity (if linked to a consultation, not a case)
+    if (existingCode.consultationId && !existingCode.patientCaseId) {
+      try {
+        const consultation = await consultationModel.findById(existingCode.consultationId);
+        if (consultation) {
+          // Update consultation's access window to match code validity
+          consultation.consultationAccessActiveFrom = activatedOn;
+          consultation.consultationAccessActiveUntil = expiresOn;
+          
+          // If consultation dateAndTime is outside the code validity window, adjust it
+          const consultationDate = consultation.dateAndTime ? new Date(consultation.dateAndTime) : null;
+          if (consultationDate) {
+            if (consultationDate < activatedOn) {
+              consultation.dateAndTime = activatedOn;
+            } else if (consultationDate > expiresOn) {
+              consultation.dateAndTime = activatedOn;
+            }
+          }
+          
+          await consultation.save();
+          logger.info(
+            { consultationId: existingCode.consultationId, code: codeString },
+            "Synchronized consultation time window with code validity"
+          );
+        }
+      } catch (error) {
+        logger.error(
+          { error, consultationId: existingCode.consultationId, code: codeString },
+          "Failed to synchronize consultation time window with code validity"
+        );
+        // Don't fail the entire operation if consultation sync fails
+      }
+    }
+
+    const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
+    return codeToReturnWithoutId || "Code not found";
+  }
+
   private async resolveDepartmentIdForCode(code: Code): Promise<string | undefined> {
     if (code.consultationId) {
       const consultation = await consultationModel
@@ -518,6 +576,79 @@ export class CodeRepository {
    */
   public get codeMockData(): Code[] {
     return this._codeMockData;
+  }
+
+  /**
+   * Archive a code instead of deleting it.
+   * Archived codes cannot be used but can be restored later.
+   * @param codeString - The code to archive
+   * @param userId - The user ID performing the archival
+   * @returns The archived code or an error string
+   */
+  async archiveCode(codeString: string, userId?: string): Promise<Code | string> {
+    try {
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return "Code not found";
+      }
+
+      if (code.archivedOn) {
+        return "Code is already archived";
+      }
+
+      code.archivedOn = new Date();
+      if (userId) {
+        code.archivedBy = userId;
+      }
+      await code.save();
+
+      logger.info({ codeId: code._id, code: codeString, archivedBy: userId }, "Code archived successfully");
+      
+      const archivedCode = await codeModel.findById(code._id).select("-_id -__v").lean();
+      return archivedCode || "Code not found";
+    } catch (error) {
+      logger.error({ error, code: codeString }, "Error archiving code");
+      return Promise.reject("An error occurred while archiving the code.");
+    }
+  }
+
+  /**
+   * Restore an archived code, making it usable again.
+   * @param codeString - The code to restore
+   * @returns The restored code or an error string
+   */
+  async restoreCode(codeString: string): Promise<Code | string> {
+    try {
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return "Code not found";
+      }
+
+      if (!code.archivedOn) {
+        return "Code is not archived";
+      }
+
+      code.archivedOn = undefined;
+      code.archivedBy = undefined;
+      await code.save();
+
+      logger.info({ codeId: code._id, code: codeString }, "Code restored successfully");
+      
+      const restoredCode = await codeModel.findById(code._id).select("-_id -__v").lean();
+      return restoredCode || "Code not found";
+    } catch (error) {
+      logger.error({ error, code: codeString }, "Error restoring code");
+      return Promise.reject("An error occurred while restoring the code.");
+    }
+  }
+
+  /**
+   * Get all codes for a patient case, including archived ones
+   * @param patientCaseId - The patient case ID
+   * @returns Array of codes
+   */
+  async getCodesByPatientCaseId(patientCaseId: string): Promise<Code[]> {
+    return codeModel.find({ patientCaseId }).lean();
   }
 }
 
