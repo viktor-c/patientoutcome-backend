@@ -265,6 +265,35 @@ export class UserDepartmentService {
     }
   }
 
+  /**
+   * Update the case code validity setting for a department.
+   * Only the user's own departments can be updated (enforced at controller level).
+   */
+  async updateCaseCodeValiditySetting(
+    id: string,
+    patientCaseAccessCodeValidUntil: string,
+  ): Promise<ServiceResponse<UserDepartment | null>> {
+    try {
+      const department = await this.userDepartmentRepository.findByIdAsync(id);
+      if (!department) {
+        return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
+      }
+      const updated = await this.userDepartmentRepository.updateAsync(id, { patientCaseAccessCodeValidUntil });
+      if (!updated) {
+        return ServiceResponse.failure("Department not found after update", null, StatusCodes.NOT_FOUND);
+      }
+      return ServiceResponse.success<UserDepartment>("Case code validity setting updated", updated);
+    } catch (ex) {
+      const errorMessage = `Error updating case code validity setting: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(
+        "An error occurred while updating the case code validity setting.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // Deletes a department
   async delete(id: string): Promise<ServiceResponse<null>> {
     try {

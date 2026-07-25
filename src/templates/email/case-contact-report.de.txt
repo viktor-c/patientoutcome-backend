@@ -1,0 +1,33 @@
+PATIENTENZUGANGSPROBLEM GEMELDET
+
+Sehr geehrte/r Dr. {{physicianName}},
+
+⚠️ Ein Patient hat ein Problem beim Zugriff auf einen von Ihnen betreuten Fall gemeldet.
+
+---
+FALLINFORMATIONEN:
+
+Fall-ID: {{caseId}}
+Zugangscode: {{code}}
+Gemeldet am: {{submittedAt}}
+
+---
+NACHRICHT DES PATIENTEN:
+
+{{message}}
+
+---
+
+ERFORDERLICHE MASSNAHMEN:
+
+Bitte überprüfen Sie den Fall und den Status des Zugangscodes im Patient Outcome System. Der Patient kann möglicherweise aufgrund eines archivierten oder abgelaufenen Codes nicht auf seine Formulare zugreifen.
+
+Falls erforderlich, können Sie:
+• Einen archivierten Zugangscode wiederherstellen
+• Einen neuen Zugangscode für den Fall generieren
+• Den Patienten direkt kontaktieren, um das Problem zu lösen
+
+---
+
+Dies ist eine automatische Benachrichtigung des Patient Outcome Systems.
+© {{year}} Patient Outcome. Alle Rechte vorbehalten.

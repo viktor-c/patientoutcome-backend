@@ -9,6 +9,7 @@ import {
 } from "../consultation/consultationAccessWindow";
 import { type Code, codeModel } from "./codeModel";
 import { getDepartmentCodeLifeMs } from "./codeLifeUtils";
+import { getDepartmentCaseCodeValidity } from "./caseCodeValidityUtils";
 
 function normalizeNonNegativeInteger(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
@@ -222,7 +223,7 @@ export class CodeRepository {
     );
   }
 
-  async activateCode(codeString: string, consultationId: string): Promise<Code | string> {
+  async activateCode(codeString: string, consultationId: string, ignoreAccessWindow = false): Promise<Code | string> {
     try {
       const consultation = await consultationModel.findById(consultationId);
       if (!consultation) {
@@ -266,6 +267,7 @@ export class CodeRepository {
       }
       code.consultationId = consultationId;
       code.patientCaseId = consultation.patientCaseId?.toString();
+      code.ignoreAccessWindow = ignoreAccessWindow;
       await code.save();
 
       consultation.formAccessCode = code._id;
@@ -306,11 +308,25 @@ export class CodeRepository {
 
       code.activatedOn = new Date();
       const departmentId = await this.resolveDepartmentIdForPatientCase(patientCaseId);
-      const codeLifeMs = await getDepartmentCodeLifeMs(departmentId);
-      code.expiresOn = new Date(Date.now() + codeLifeMs);
+      
+      // For case-level codes, use the case code validity configuration (years, not hours like consultation codes)
+      const expiresOn = await getDepartmentCaseCodeValidity(departmentId, code.activatedOn);
+      code.expiresOn = expiresOn;
+      
       code.consultationId = undefined;
       code.patientCaseId = patientCaseId;
       await code.save();
+
+      logger.info(
+        {
+          code: code.code,
+          patientCaseId,
+          activatedOn: code.activatedOn,
+          expiresOn: code.expiresOn,
+          departmentId,
+        },
+        "Case-level code activated with long-term validity"
+      );
 
       const codeToReturnWithoutId = await codeModel.findById(code._id).select("-_id -__v").lean();
       if (!codeToReturnWithoutId) {
@@ -405,7 +421,10 @@ export class CodeRepository {
     return codeToReturnWithoutId || "Code not found";
   }
 
-  private async resolveDepartmentIdForCode(code: Code): Promise<string | undefined> {
+  /**
+   * Resolve the department ID associated with a code (for configuration lookup)
+   */
+  async resolveDepartmentIdForCode(code: Code): Promise<string | undefined> {
     if (code.consultationId) {
       const consultation = await consultationModel
         .findById(code.consultationId)
@@ -470,7 +489,7 @@ export class CodeRepository {
   /*
    * this function is used to deactivate a code, when the consultation is finished
    * it will set the activatedOn and expiresOn to undefined
-   * //TODO: if we deactivate a code too soon after it expired, it could happen that the code will be used by the use for another consultation
+   * //TODO: if we deactivate a code too soon after it expired, it could happen that the code will be used by the user for another consultation
    * //BUG: if the code is already expired, it will not be deactivated; deactivate a code only if long time has passed since the expiration;
    *  //BUG only deactivate the code if the scores were completed
    */
@@ -596,6 +615,30 @@ export class CodeRepository {
    */
   async getCodesByPatientCaseId(patientCaseId: string): Promise<Code[]> {
     return codeModel.find({ patientCaseId }).lean();
+  }
+
+  /**
+   * Update a code with partial data
+   * @param codeString - The code to update
+   * @param updates - Partial code data to update
+   * @returns Updated code or null if not found
+   */
+  async updateCode(codeString: string, updates: Partial<Code>): Promise<Code | null> {
+    try {
+      const code = await codeModel.findOne({ code: codeString });
+      if (!code) {
+        return null;
+      }
+
+      Object.assign(code, updates);
+      await code.save();
+
+      const updatedCode = await codeModel.findById(code._id).select("-_id -__v").lean();
+      return updatedCode;
+    } catch (error) {
+      logger.error({ error, code: codeString, updates }, "Error updating code");
+      throw new Error("An error occurred while updating the code.");
+    }
   }
 }
 

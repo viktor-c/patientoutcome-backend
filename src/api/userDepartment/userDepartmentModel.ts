@@ -23,6 +23,18 @@ export const UserDepartmentSchema = z.object({
     .string()
     .regex(/^\d+[hdw]$/, "Must be a positive number followed by h (hours), d (days) or w (weeks), e.g. '4h', '2d', '3w'")
     .optional(),
+  /**
+   * How long a case-level access code remains valid (codes bound to a patient case).
+   * Format: Either a relative duration or a fixed date:
+   * - Relative: "10y" (10 years from activation), "5y" (5 years)
+   * - Fixed date: "2030-12-31" (YYYY-MM-DD)
+   * If the fixed date is in the past, defaults to 10 years from activation.
+   * Defaults to 10 years when absent.
+   */
+  patientCaseAccessCodeValidUntil: z
+    .string()
+    .regex(/^(\d+y|\d{4}-\d{2}-\d{2})$/, "Must be either years (e.g. '10y', '5y') or a fixed date (YYYY-MM-DD)")
+    .optional(),
   consultationAccessDaysBefore: z.number().int().min(0).max(365).optional(),
   consultationAccessDaysAfter: z.number().int().min(0).max(365).optional(),
 });
@@ -75,6 +87,16 @@ export const UpdateConsultationAccessWindowSchema = z.object({
   body: z.object({
     consultationAccessDaysBefore: z.number().int().min(0).max(365),
     consultationAccessDaysAfter: z.number().int().min(0).max(365),
+  }),
+});
+
+// Input validation for 'PATCH userDepartment/:id/case-code-validity' endpoint (doctor+ only)
+export const UpdateCaseCodeValiditySchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+  body: z.object({
+    patientCaseAccessCodeValidUntil: z
+      .string()
+      .regex(/^(\d+y|\d{4}-\d{2}-\d{2})$/, "Must be either years (e.g. '10y', '5y') or a fixed date (YYYY-MM-DD)"),
   }),
 });
 

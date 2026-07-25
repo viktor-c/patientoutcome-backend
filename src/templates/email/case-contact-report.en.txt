@@ -1,0 +1,33 @@
+PATIENT ACCESS ISSUE REPORT
+
+Dear Dr. {{physicianName}},
+
+⚠️ A patient has reported an issue accessing a case you are supervising.
+
+---
+CASE INFORMATION:
+
+Case ID: {{caseId}}
+Access Code: {{code}}
+Reported: {{submittedAt}}
+
+---
+PATIENT MESSAGE:
+
+{{message}}
+
+---
+
+ACTION REQUIRED:
+
+Please review the case and access code status in the patient outcome system. The patient may be unable to access their forms due to an archived or expired code.
+
+If necessary, you can:
+• Restore an archived access code
+• Generate a new access code for the case
+• Contact the patient directly to resolve the issue
+
+---
+
+This is an automated notification from the Patient Outcome System.
+© {{year}} Patient Outcome. All rights reserved.

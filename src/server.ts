@@ -41,6 +41,7 @@ import { extendZod as extendZodMongoose } from "@zodyac/zod-mongoose";
 
 // Use the patientCaseRouter
 import { caseRouter } from "@/api/case/patientCaseRouter"; // Import the patientCaseRouter
+import { caseContactRouter } from "@/api/case/caseContactRouter"; // Import the caseContactRouter
 import { consultationRouter } from "@/api/consultation/consultationRouter";
 import connectMongooseDB from "./common/database";
 
@@ -112,6 +113,7 @@ app.use("/blueprints", blueprintRouter);
 app.use("/patient", patientRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("", caseRouter);
+app.use("/case/contact", caseContactRouter);
 app.use("", surgeryRouter);
 app.use("/user", userRouter);
 app.use("/userDepartment", userDepartmentRouter);

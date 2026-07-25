@@ -59,6 +59,10 @@ export const CodeSchema = z.object({
   consultationId: zId("Consultation").optional(),
   patientCaseId: zId("PatientCase").optional(),
   /*
+   * When true, allows users to fill out forms regardless of the consultation access window
+   */
+  ignoreAccessWindow: z.boolean().optional().default(false),
+  /*
    * Archival fields - codes are archived instead of deleted
    */
   archivedOn: z.date().optional(),
@@ -83,6 +87,9 @@ export const GetCodeSchema = z.object({
 // Input validation for 'PUT code/:code/consultation/:consultationId' endpoint
 export const ActivateCodeSchema = z.object({
   params: z.object({ code: z.string(), consultationId: commonValidations.id }),
+  body: z.object({
+    ignoreAccessWindow: z.boolean().optional().default(false),
+  }).optional(),
 });
 
 export const ActivateCodeForCaseSchema = z.object({

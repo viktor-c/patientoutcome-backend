@@ -309,6 +309,16 @@ consultationRegistry.registerPath({
     },
     {
       schema: z.object({ message: z.string() }),
+      description: "Validation error",
+      statusCode: 400,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Consultation is not accessible (archived or inactive)",
+      statusCode: 403,
+    },
+    {
+      schema: z.object({ message: z.string() }),
       description: "Consultation not found",
       statusCode: 404,
     },
@@ -316,11 +326,6 @@ consultationRegistry.registerPath({
       schema: z.object({ message: z.string() }),
       description: "An error occurred while retrieving the consultation.",
       statusCode: 500,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Validation error",
-      statusCode: 400,
     },
   ]),
 });

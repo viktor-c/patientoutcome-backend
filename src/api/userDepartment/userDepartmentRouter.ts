@@ -16,6 +16,7 @@ import {
   CreateUserDepartmentSchema,
   DeleteUserDepartmentSchema,
   GetUserDepartmentSchema,
+  UpdateCaseCodeValiditySchema,
   UpdateConsultationAccessWindowSchema,
   UpdateCodeLifeSchema,
   UpdateUserDepartmentSchema,
@@ -350,4 +351,52 @@ userDepartmentRouter.patch(
   AclMiddleware("userDepartment-update-consultation-access-window"),
   validateRequest(UpdateConsultationAccessWindowSchema),
   userDepartmentController.updateConsultationAccessWindow,
+);
+
+// Register case code validity update endpoint
+userDepartmentRegistry.registerPath({
+  method: "patch",
+  path: "/userDepartment/{id}/case-code-validity",
+  tags: ["UserDepartment"],
+  operationId: "updateDepartmentCaseCodeValidity",
+  description:
+    "Set validity period for case-level access codes. Can be relative (e.g. '10y') or fixed date (YYYY-MM-DD). Requires doctor role or higher and department membership.",
+  summary: "Update case code validity (doctor+)",
+  request: {
+    params: UpdateCaseCodeValiditySchema.shape.params,
+    body: {
+      content: {
+        "application/json": { schema: UpdateCaseCodeValiditySchema.shape.body },
+      },
+    },
+  },
+  responses: createApiResponses([
+    {
+      schema: UserDepartmentSchema,
+      description: "Case code validity setting updated",
+      statusCode: 200,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Department not found",
+      statusCode: 404,
+    },
+    {
+      schema: z.object({ message: z.string() }),
+      description: "Forbidden - must belong to the department or insufficient role",
+      statusCode: 403,
+    },
+    {
+      schema: ValidationErrorsSchema,
+      description: "Validation error",
+      statusCode: 400,
+    },
+  ]),
+});
+
+userDepartmentRouter.patch(
+  "/:id/case-code-validity",
+  AclMiddleware("userDepartment-update-case-code-validity"),
+  validateRequest(UpdateCaseCodeValiditySchema),
+  userDepartmentController.updateCaseCodeValiditySetting,
 );

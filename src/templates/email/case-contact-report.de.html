@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patientenzugangsproblem gemeldet</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      padding: 20px;
+    }
+    .header { 
+      background-color: #d32f2f; 
+      color: white; 
+      padding: 30px 20px; 
+      border-radius: 5px 5px 0 0;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .content { 
+      background-color: #ffffff; 
+      padding: 30px; 
+      border-radius: 0 0 5px 5px;
+    }
+    .alert-box {
+      background-color: #ffebee;
+      border-left: 4px solid #d32f2f;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .info-box { 
+      background-color: #f5f5f5; 
+      padding: 15px; 
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    .message-box { 
+      background-color: #fff9c4; 
+      padding: 15px; 
+      border-left: 4px solid #fbc02d; 
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+      white-space: pre-wrap;
+    }
+    .footer { 
+      text-align: center; 
+      margin-top: 30px; 
+      padding-top: 20px; 
+      color: #777; 
+      font-size: 12px; 
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚠️ Patientenzugangsproblem gemeldet</h1>
+    </div>
+    <div class="content">
+      <p>Sehr geehrte/r Dr. {{physicianName}},</p>
+
+      <div class="alert-box">
+        <strong>Ein Patient hat ein Problem beim Zugriff auf einen von Ihnen betreuten Fall gemeldet.</strong>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Fall-ID:</div>
+        <div>{{caseId}}</div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Zugangscode:</div>
+        <div><strong>{{code}}</strong></div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Gemeldet am:</div>
+        <div>{{submittedAt}}</div>
+      </div>
+
+      <div class="message-box">
+        <div class="info-label">Nachricht des Patienten:</div>
+        {{message}}
+      </div>
+
+      <p>
+        <strong>Erforderliche Maßnahmen:</strong><br>
+        Bitte überprüfen Sie den Fall und den Status des Zugangscodes im Patient Outcome System. Der Patient kann möglicherweise aufgrund eines archivierten oder abgelaufenen Codes nicht auf seine Formulare zugreifen.
+      </p>
+
+      <p>
+        Falls erforderlich, können Sie:
+        <ul>
+          <li>Einen archivierten Zugangscode wiederherstellen</li>
+          <li>Einen neuen Zugangscode für den Fall generieren</li>
+          <li>Den Patienten direkt kontaktieren, um das Problem zu lösen</li>
+        </ul>
+      </p>
+
+      <div class="footer">
+        <p>Dies ist eine automatische Benachrichtigung des Patient Outcome Systems.</p>
+        <p>© {{year}} Patient Outcome. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
