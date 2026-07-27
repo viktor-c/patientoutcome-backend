@@ -26,7 +26,11 @@ export const FormVersion = z.object({
   rawData: PatientFormDataSchema,
   
   // Change metadata
-  changedBy: zId("User"), // User who made the change
+  changedBy: zId("User"), // User who made the change (stored as ID)
+  changedByUser: z.object({
+    id: z.string(),
+    name: z.string(),
+  }).optional(), // Populated user info for display
   changedAt: z.date().default(() => new Date()), // When the change was made
   changeNotes: z.string().default(""), // Description of the change (why/what)
   

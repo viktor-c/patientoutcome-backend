@@ -5,6 +5,7 @@ import { formTemplateRepository } from "@/api/formtemplate/formTemplateRepositor
 import { logger } from "@/common/utils/logger";
 import { ScoringData } from "@/types/scoring";
 import { faker } from "@faker-js/faker";
+import dayjs from "dayjs";
 import { raw } from "express";
 import type { ObjectId } from "mongoose";
 
@@ -235,16 +236,17 @@ export class FormRepository {
        * Mock form data samples for testing and development
        * These are simple sample data structures - NO scoring logic on backend
        * Scoring is calculated by frontend plugins only
+       * contains raw form data
        */
       const mockFormDataSamples: Record<string, CustomFormData> = {
         // EFAS - Evaluation of Functional Ability Scale
         "67b4e612d0feb4ad99ae2e83": {
-          section1: { q1: 3, q2: 2, q3: 4, q4: 3, q5: 2 },
-          section2: { q6: 3, q7: 4, q8: 2, q9: 3, q10: 4 },
+          standardfragebogen: { q1: 3, q2: 2, q3: 4, q4: 3, q5: 2, q6: 3 },
+          sportfragebogen: { s1: 4, s2: 2, s3: 3, s4: 4 },
         },
         // AOFAS - American Orthopaedic Foot & Ankle Society Score
         "67b4e612d0feb4ad99ae2e84": {
-          section1: { q1: 40, q2: 10, q3: 10, q4: 8, q5: 3, q6: 10, q7: 5, q8: 10 },
+          forefoot: { q1: 40, q2: 7, q3: 10, q4: 10, q5: 5, q6: 5, q7: 5, q8: 8 },
         },
         // MOXFQ - Manchester-Oxford Foot Questionnaire
         "67b4e612d0feb4ad99ae2e85": {
@@ -256,8 +258,15 @@ export class FormRepository {
         },
         // VAS - Visual Analog Scale
         "67b4e612d0feb4ad99ae2e86": {
-          pain: { q1: 7 },
+          painScale: { painLevel: 7 },
         },
+        "67b4e612d0feb4ad99ae2e90":{
+          elsnerFeedback: {
+          currentWeek: 1,
+          selectedExpectation: 23,
+          pointsJson: '[{"week":1,"expectation":23}]'
+          }
+        }
       };
 
       // Helper to create PatientFormData without scores (frontend calculates scores)
@@ -299,6 +308,10 @@ export class FormRepository {
         };
       };
 
+      const createdAt = new Date();
+      const getFormEndTime = (createdAtValue: Date, completionSeconds?: number) =>
+        dayjs(createdAtValue).add(completionSeconds ?? 0, "second").toDate();
+
       // EFAS Form 1 (pre-surgery baseline)
       const efasFormData1 = mockFormDataSamples["67b4e612d0feb4ad99ae2e83"];
 
@@ -308,8 +321,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e83", //efas
         patientFormData: createScoredPatientFormData(efasFormData1, 40, 40, "EFAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 125,
+        formEndTime: getFormEndTime(createdAt, 125),
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -324,8 +339,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
         patientFormData: createScoredPatientFormData(vasFormData1, 7, 70, "VAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 15,
+        formEndTime: getFormEndTime(createdAt, 15),
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -341,8 +358,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e84", //aofas
         patientFormData: createScoredPatientFormData(aofasFormData1, 45, 45, "AOFAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 75,
+        formEndTime: getFormEndTime(createdAt, 75),
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -359,8 +378,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e86", //vas
         patientFormData: createScoredPatientFormData(vasFormData2, 7, 72, "VAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 25,
+        formEndTime: getFormEndTime(createdAt, 25),
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -376,8 +397,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
         patientFormData: createScoredPatientFormData(efasFormData2, 38, 38, "EFAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 90,
+        formEndTime: getFormEndTime(createdAt, 90),
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -393,8 +416,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
         patientFormData: createScoredPatientFormData(aofasFormData2, 42, 42, "AOFAS"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 62,
+        formEndTime: getFormEndTime(createdAt, 62),
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -409,8 +434,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a1",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
         patientFormData: createScoredPatientFormData(moxfqFormData1, 68, 68, "MOXFQ"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 168,
+        formEndTime: getFormEndTime(createdAt, 168),
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -424,8 +451,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a2",
         formTemplateId: "67b4e612d0feb4ad99ae2e85", // moxfq
         patientFormData: createScoredPatientFormData(moxfqFormData1, 70, 70, "MOXFQ"),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 170,
+        formEndTime: getFormEndTime(createdAt, 170),
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -435,7 +464,7 @@ export class FormRepository {
       const elsnerTemplate = formTemplateRepository.mockFormTemplateData.find(
         (template) => template._id === "67b4e612d0feb4ad99ae2e8b",
       );
-      
+
       const elsnerFollowupWeek1 = {
         elsnerFeedback: {
           currentWeek: 1,
@@ -492,8 +521,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a8",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek1),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 28,
+        formEndTime: getFormEndTime(createdAt, 28),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -506,8 +537,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a9",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek2),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 38,
+        formEndTime: getFormEndTime(createdAt, 38),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -520,8 +553,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8aa",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek6),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 18,
+        formEndTime: getFormEndTime(createdAt, 18),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -534,8 +569,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8ad",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek9),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 35,
+        formEndTime: getFormEndTime(createdAt, 35),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -548,8 +585,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8ab",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek12),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 45,
+        formEndTime: getFormEndTime(createdAt, 45),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -562,8 +601,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8ac",
         formTemplateId: "67b4e612d0feb4ad99ae2e8b",
         patientFormData: createCompletedPatientFormDataWithoutScore(elsnerFollowupWeek16),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 24,
+        formEndTime: getFormEndTime(createdAt, 24),
         title: elsnerTemplate?.title || "elsner-feedback",
         description: elsnerTemplate?.description || "Subjective postoperative expectation feedback chart",
         accessLevel: FormAccessLevel.PATIENT,
@@ -598,8 +639,10 @@ export class FormRepository {
             s.efas,
             "EFAS",
           ),
-          createdAt: new Date(),
+          createdAt,
           updatedAt: undefined,
+          completionTimeSeconds: 100,
+          formEndTime: getFormEndTime(createdAt, 100),
           title: formTemplateRepository.mockFormTemplateData[0].title,
           description: formTemplateRepository.mockFormTemplateData[0].description,
           accessLevel: FormAccessLevel.PATIENT,
@@ -618,8 +661,10 @@ export class FormRepository {
             s.aofas,
             "AOFAS",
           ),
-          createdAt: new Date(),
+          createdAt,
           updatedAt: undefined,
+          completionTimeSeconds: 120,
+          formEndTime: getFormEndTime(createdAt, 120),
           title: formTemplateRepository.mockFormTemplateData[1].title,
           description: formTemplateRepository.mockFormTemplateData[1].description,
           accessLevel: FormAccessLevel.PATIENT,
@@ -638,8 +683,10 @@ export class FormRepository {
             s.moxfq,
             "MOXFQ",
           ),
-          createdAt: new Date(),
+          createdAt,
           updatedAt: undefined,
+          completionTimeSeconds: 90,
+          formEndTime: getFormEndTime(createdAt, 90),
           title: formTemplateRepository.mockFormTemplateData[2].title,
           description: formTemplateRepository.mockFormTemplateData[2].description,
           accessLevel: FormAccessLevel.PATIENT,
@@ -654,8 +701,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a3",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e83"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 88,
+        formEndTime: getFormEndTime(createdAt, 88),
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -669,8 +718,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a3",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e84"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 95,
+        formEndTime: getFormEndTime(createdAt, 95),
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -684,8 +735,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a4",
         formTemplateId: "67b4e612d0feb4ad99ae2e86",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e86"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 20,
+        formEndTime: getFormEndTime(createdAt, 20),
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -699,8 +752,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a5",
         formTemplateId: "67b4e612d0feb4ad99ae2e84",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e84"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 70,
+        formEndTime: getFormEndTime(createdAt, 70),
         title: formTemplateRepository.mockFormTemplateData[1].title,
         description: formTemplateRepository.mockFormTemplateData[1].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -714,8 +769,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a6",
         formTemplateId: "67b4e612d0feb4ad99ae2e85",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e85"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 60,
+        formEndTime: getFormEndTime(createdAt, 60),
         title: formTemplateRepository.mockFormTemplateData[2].title,
         description: formTemplateRepository.mockFormTemplateData[2].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -729,8 +786,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a6",
         formTemplateId: "67b4e612d0feb4ad99ae2e86",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e86"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 24,
+        formEndTime: getFormEndTime(createdAt, 24),
         title: formTemplateRepository.mockFormTemplateData[3].title,
         description: formTemplateRepository.mockFormTemplateData[3].description,
         accessLevel: FormAccessLevel.PATIENT,
@@ -744,8 +803,10 @@ export class FormRepository {
         consultationId: "60d5ec49f1b2c12d88f1e8a7",
         formTemplateId: "67b4e612d0feb4ad99ae2e83",
         patientFormData: createMockPatientFormData(mockFormDataSamples["67b4e612d0feb4ad99ae2e83"]),
-        createdAt: new Date(),
+        createdAt,
         updatedAt: undefined,
+        completionTimeSeconds: 144,
+        formEndTime: getFormEndTime(createdAt, 144),
         title: formTemplateRepository.mockFormTemplateData[0].title,
         description: formTemplateRepository.mockFormTemplateData[0].description,
         accessLevel: FormAccessLevel.PATIENT,
