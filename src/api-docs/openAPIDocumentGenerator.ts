@@ -14,6 +14,7 @@ export function generateOpenAPIDocument() {
   const { backupRegistry } = require("@/api/backup/backupRouter");
   const { blueprintRegistry } = require("@/api/blueprint/blueprintRouter");
   const { patientCaseRegistry } = require("@/api/case/patientCaseRouter");
+  const { caseContactRegistry } = require("@/api/case/caseContactRouter");
   const { clinicalStudyRegistry } = require("@/api/clinicalStudy/clinicalStudyRouter");
   const { codeRegistry } = require("@/api/code/codeRouter");
   const { consultationRegistry } = require("@/api/consultation/consultationRouter");
@@ -36,6 +37,7 @@ export function generateOpenAPIDocument() {
     activityLogRegistry,
     backupRegistry,
     blueprintRegistry,
+    caseContactRegistry,
     codeRegistry,
     feedbackRegistry,
     healthCheckRegistry,

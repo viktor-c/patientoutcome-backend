@@ -19,8 +19,9 @@ class CodeController {
    */
   public activateCode: RequestHandler = async (req: Request, res: Response) => {
     const { code, consultationId } = req.params;
+    const { ignoreAccessWindow = false } = req.body || {};
     logger.debug(`Activating code: ${code} for consultation: ${consultationId}`);
-    const serviceResponse = await codeService.activateCode(code, consultationId);
+    const serviceResponse = await codeService.activateCode(code, consultationId, ignoreAccessWindow);
     return handleServiceResponse(serviceResponse, res);
   };
 
@@ -223,17 +224,30 @@ class CodeController {
   };
 
   /**
-   * Update code validity period
-   * @route PUT /form-access-code/validity/:code
-   * @param {Request} req - Express request with code in params and dates in body
+   * Get case-level codes expiring soon
+   * @route GET /form-access-code/expiring
+   * @param {Request} req - Express request with optional months query param
+   * @param {Response} res - Express response object
+   * @returns {Promise<Response>} ServiceResponse with array of expiring codes
+   * @description Retrieves case-level codes expiring within the specified months (default 6)
+   */
+  public getExpiringCaseCodes: RequestHandler = async (req: Request, res: Response) => {
+    const months = req.query.months ? Number.parseInt(req.query.months as string, 10) : 6;
+    const serviceResponse = await codeService.getExpiringCaseCodes(months);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
+   * Extend the expiration of a case-level code
+   * @route PUT /form-access-code/:code/extend
+   * @param {Request} req - Express request with code in params
    * @param {Response} res - Express response object
    * @returns {Promise<Response>} ServiceResponse with updated code
-   * @description Updates both activation and expiration dates for a code
+   * @description Extends the expiration date of a case-level code using the configured validity period
    */
-  public updateCodeValidity: RequestHandler = async (req: Request, res: Response) => {
+  public extendCaseCodeExpiration: RequestHandler = async (req: Request, res: Response) => {
     const { code } = req.params;
-    const { activatedOn, expiresOn } = req.body;
-    const serviceResponse = await codeService.updateCodeValidity(code, activatedOn, expiresOn);
+    const serviceResponse = await codeService.extendCaseCodeExpiration(code);
     return handleServiceResponse(serviceResponse, res);
   };
 }

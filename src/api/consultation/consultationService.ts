@@ -120,19 +120,29 @@ export class ConsultationService {
   }
 
   private async resolveConsultationByActiveCode(foundCode: Code): Promise<Consultation | null> {
+    // if the access code is linked to a specific consultation, return that consultation if it is active
     if (foundCode.consultationId) {
       const consultation = await this.consultationRepository.getConsultationById(foundCode.consultationId.toString());
       if (!consultation) {
         return null;
       }
+      
+      // If ignoreAccessWindow is true, skip the access window check
+      if (foundCode.ignoreAccessWindow) {
+        return consultation;
+      }
+      
+      // check if the consultation is allowed to be filled out based on the access window
       const accessWindow = await buildConsultationAccessWindow(consultation);
       return accessWindow?.isActive ? consultation : null;
     }
 
+    // if no consultation and no case are linked to the code, return null
     if (!foundCode.patientCaseId) {
       return null;
     }
 
+    // we are dealing with a case-level access code, so we need to find the most relevant consultation for the case
     const consultations = await this.consultationRepository.getAllConsultations(foundCode.patientCaseId.toString());
     if (!consultations.length) {
       return null;
@@ -153,7 +163,11 @@ export class ConsultationService {
         const rightTime = new Date(right.consultation.dateAndTime || 0).getTime();
         return Math.abs(leftTime - now) - Math.abs(rightTime - now);
       });
+    // logger.debug({ activeConsultations }, "Active consultations sorted by proximity to now");
+    // what if the user already completed the form, should we return the next closest consultation instead? For now, we just return the closest one regardless of completion status.
+    // this way the user can still access the form if they need to make changes, and we can handle completion status separately in the front-end or in a different API call.
 
+    // Return the consultation that is closest to the current time, or null if none are active
     return activeConsultations[0]?.consultation || null;
   }
 
@@ -773,6 +787,10 @@ export class ConsultationService {
       const foundCode = await this.codeRepository.findByCode(code);
       if (!foundCode) {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      if (foundCode.archivedOn) {
+        return ServiceResponse.failure("Code is archived", null, StatusCodes.FORBIDDEN);
       }
 
       if (!foundCode.activatedOn) {

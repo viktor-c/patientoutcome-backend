@@ -430,6 +430,10 @@ formRegistry.registerPath({
         formId: z.string(),
         version: z.number(),
         changedBy: z.string(),
+        changedByUser: z.object({
+          id: z.string(),
+          name: z.string(),
+        }).optional(),
         changedAt: z.string(),
         changeNotes: z.string(),
         isRestoration: z.boolean(),

@@ -10,6 +10,7 @@ import { createApiResponses } from "@/api-docs/openAPIResponseBuilders";
 import { ValidationErrorsSchema } from "@/common/models/serviceResponse";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
+import { AclMiddleware } from "@/common/middleware/globalAclMiddleware";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { Router } from "express";
 import { z } from "zod";
@@ -94,7 +95,16 @@ codeRegistry.registerPath({
   operationId: "activateCode",
   summary: "Activate a code",
   description: "Activate a code by its code.",
-  request: { params: ActivateCodeSchema.shape.params },
+  request: { 
+    params: ActivateCodeSchema.shape.params,
+    body: {
+      content: {
+        'application/json': {
+          schema: ActivateCodeSchema.shape.body,
+        },
+      },
+    },
+  },
   responses: createApiResponses([
     { schema: CodeResponseSchema, description: "Code activated successfully", statusCode: 200 },
     { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
@@ -468,5 +478,63 @@ codeRegistry.registerPath({
   ]),
 });
 formAccessCodeRouter.get("/:code/statistics", validateRequest(GetCodeAccessLogsSchema), codeController.getCodeAccessStatistics);
+
+// Route to get case-level codes expiring soon
+codeRegistry.registerPath({
+  method: "get",
+  path: "/form-access-code/expiring",
+  tags: ["Code"],
+  operationId: "getExpiringCaseCodes",
+  summary: "Get case-level codes expiring soon",
+  description: "Retrieve case-level access codes that will expire within the specified number of months (default 6).",
+  request: {
+    query: z.object({
+      months: z.string().optional(),
+    }),
+  },
+  responses: createApiResponses([
+    {
+      schema: z.array(z.object({
+        code: z.string(),
+        patientCaseId: z.string(),
+        activatedOn: z.string(),
+        expiresOn: z.string(),
+        createdBy: z.string().optional(),
+      })),
+      description: "Expiring codes retrieved successfully",
+      statusCode: 200,
+    },
+    { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
+  ]),
+});
+formAccessCodeRouter.get("/expiring", AclMiddleware("code-read"), codeController.getExpiringCaseCodes);
+
+// Route to extend expiration of a case-level code
+codeRegistry.registerPath({
+  method: "put",
+  path: "/form-access-code/{code}/extend",
+  tags: ["Code"],
+  operationId: "extendCaseCodeExpiration",
+  summary: "Extend the expiration of a case-level code",
+  description: "Extends the expiration date of a case-level access code using the configured validity period. Only works for case-level codes (not consultation codes).",
+  request: { params: GetCodeAccessLogsSchema.shape.params },
+  responses: createApiResponses([
+    {
+      schema: z.object({
+        code: z.string(),
+        patientCaseId: z.string(),
+        activatedOn: z.string(),
+        expiresOn: z.string(),
+        createdBy: z.string().optional(),
+      }),
+      description: "Code expiration extended successfully",
+      statusCode: 200,
+    },
+    { schema: z.object({ message: z.string() }), description: "Code not found", statusCode: 404 },
+    { schema: z.object({ message: z.string() }), description: "Invalid operation (not a case code, archived, or not activated)", statusCode: 400 },
+    { schema: z.object({ message: z.string() }), description: "An error occurred", statusCode: 500 },
+  ]),
+});
+formAccessCodeRouter.put("/:code/extend", AclMiddleware("code-update"), codeController.extendCaseCodeExpiration);
 
 export default formAccessCodeRouter;

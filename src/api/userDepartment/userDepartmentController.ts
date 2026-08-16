@@ -161,6 +161,36 @@ class UserDepartmentController {
   };
 
   /**
+   * Update case code validity setting for a department
+   * @route PATCH /userDepartment/:id/case-code-validity
+   * @access Doctor+
+   * @description Only allows a doctor (or above) to update patientCaseAccessCodeValidUntil
+   *   for a department they belong to.
+   */
+  public updateCaseCodeValiditySetting: RequestHandler = async (req: Request, res: Response) => {
+    const id = z.string().parse(req.params.id);
+    const { patientCaseAccessCodeValidUntil } = req.body as { patientCaseAccessCodeValidUntil: string };
+
+    // Enforce that the requesting user belongs to the target department,
+    // unless they are an admin (who can manage any department).
+    const userRoles: string[] = req.session?.roles ?? [];
+    const isAdmin = userRoles.includes("admin");
+    const userDepts = req.session?.department ?? [];
+    if (!isAdmin && !userDepts.includes(id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update case code validity settings for your own departments.",
+      });
+    }
+
+    const serviceResponse = await userDepartmentService.updateCaseCodeValiditySetting(
+      id,
+      patientCaseAccessCodeValidUntil,
+    );
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  /**
    * Delete a department
    * @route DELETE /userDepartment/:id
    * @access Admin

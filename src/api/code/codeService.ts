@@ -9,6 +9,7 @@ import type { Code } from "./codeModel";
 import { CodeRepository } from "./codeRepository";
 import { CodeAccessLogRepository } from "./codeAccessLogRepository";
 import type { CodeAccessLog, FormCompletionLog } from "./codeAccessLogModel";
+import { isExpiringWithinMonths, getDepartmentCaseCodeValidity } from "./caseCodeValidityUtils";
 
 const formRepository = new FormRepository();
 const codeAccessLogRepository = new CodeAccessLogRepository();
@@ -28,6 +29,11 @@ async function resolveActiveConsultationForCode(codeDocument: Code) {
     const consultation = await consultationRepository.getConsultationById(codeDocument.consultationId.toString());
     if (!consultation) {
       return null;
+    }
+
+    // If ignoreAccessWindow is true, skip the access window check
+    if (codeDocument.ignoreAccessWindow) {
+      return consultation;
     }
 
     const accessWindow = await buildConsultationAccessWindow(consultation);
@@ -82,6 +88,7 @@ async function resolveActiveConsultationForCode(codeDocument: Code) {
   );
 
   // Filter to only active consultations with unfilled forms
+  // Note: For case-level codes, ignoreAccessWindow flag doesn't apply since it's only set on consultation-specific codes
   const activeUnfilledConsultations = withActiveWindow.filter(
     (entry) => entry.accessWindow?.isActive && entry.hasUnfilledForms
   );
@@ -153,9 +160,9 @@ class CodeService {
     }
   }
 
-  async activateCode(code: string, consultationId: string): Promise<ServiceResponse<Code | null>> {
+  async activateCode(code: string, consultationId: string, ignoreAccessWindow = false): Promise<ServiceResponse<Code | null>> {
     try {
-      const foundCode = await this.codeRepository.activateCode(code, consultationId);
+      const foundCode = await this.codeRepository.activateCode(code, consultationId, ignoreAccessWindow);
       if (typeof foundCode === "string") {
         if (foundCode === "Code not found") {
           return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
@@ -690,6 +697,114 @@ class CodeService {
       logger.error({ error, accessLogId }, "Error completing session");
       return ServiceResponse.failure(
         "An error occurred while completing session.",
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Get all case-level access codes expiring within the specified number of months
+   */
+  async getExpiringCaseCodes(months = 6): Promise<ServiceResponse<Code[]>> {
+    try {
+      const codes = await this.codeRepository.findAll();
+      if (!codes) {
+        return ServiceResponse.success("No codes found", []);
+      }
+
+      // Filter to case-level codes (have patientCaseId but no consultationId)
+      // that are active and expiring within the specified months
+      const now = new Date();
+      const expiringCodes = codes.filter((code) => {
+        // Must be a case-level code
+        if (!code.patientCaseId || code.consultationId) return false;
+        
+        // Must be activated
+        if (!code.activatedOn) return false;
+        
+        // Must have an expiration date
+        if (!code.expiresOn) return false;
+        
+        // Must not be archived
+        if (code.archivedOn) return false;
+        
+        // Must not be already expired
+        if (new Date(code.expiresOn) <= now) return false;
+        
+        // Check if expiring within specified months
+        return isExpiringWithinMonths(code.expiresOn, months);
+      });
+
+      return ServiceResponse.success(
+        `Found ${expiringCodes.length} case codes expiring within ${months} months`,
+        expiringCodes
+      );
+    } catch (error) {
+      logger.error({ error, months }, "Error retrieving expiring case codes");
+      return ServiceResponse.failure(
+        "An error occurred while retrieving expiring codes.",
+        [],
+        StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Extend the expiration date of a case-level code using the configured validity period
+   */
+  async extendCaseCodeExpiration(codeString: string): Promise<ServiceResponse<Code | null>> {
+    try {
+      const code = await this.codeRepository.getCodeByString(codeString);
+      if (!code) {
+        return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
+      }
+
+      // Must be a case-level code
+      if (!code.patientCaseId || code.consultationId) {
+        return ServiceResponse.failure(
+          "Can only extend case-level codes (not consultation codes)",
+          null,
+          StatusCodes.BAD_REQUEST,
+        );
+      }
+
+      // Must be activated
+      if (!code.activatedOn) {
+        return ServiceResponse.failure("Code is not activated", null, StatusCodes.BAD_REQUEST);
+      }
+
+      // Must not be archived
+      if (code.archivedOn) {
+        return ServiceResponse.failure("Cannot extend archived code", null, StatusCodes.BAD_REQUEST);
+      }
+
+      // Get the department to determine validity period
+      const departmentId = await this.codeRepository.resolveDepartmentIdForCode(code);
+      
+      // Calculate new expiration from now (not from old expiration)
+      const newExpiresOn = await getDepartmentCaseCodeValidity(departmentId, new Date());
+      
+      const extended = await this.codeRepository.updateCode(codeString, { expiresOn: newExpiresOn });
+      if (!extended) {
+        return ServiceResponse.failure("Failed to extend code", null, StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+
+      logger.info(
+        {
+          code: codeString,
+          oldExpiresOn: code.expiresOn,
+          newExpiresOn,
+          departmentId,
+        },
+        "Case code expiration extended"
+      );
+
+      return ServiceResponse.success("Code expiration extended successfully", extended);
+    } catch (error) {
+      logger.error({ error, codeString }, "Error extending code expiration");
+      return ServiceResponse.failure(
+        "An error occurred while extending code expiration.",
         null,
         StatusCodes.INTERNAL_SERVER_ERROR,
       );

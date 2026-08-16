@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Access Issue Report</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      padding: 20px;
+    }
+    .header { 
+      background-color: #d32f2f; 
+      color: white; 
+      padding: 30px 20px; 
+      border-radius: 5px 5px 0 0;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .content { 
+      background-color: #ffffff; 
+      padding: 30px; 
+      border-radius: 0 0 5px 5px;
+    }
+    .alert-box {
+      background-color: #ffebee;
+      border-left: 4px solid #d32f2f;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .info-box { 
+      background-color: #f5f5f5; 
+      padding: 15px; 
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info-label {
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    .message-box { 
+      background-color: #fff9c4; 
+      padding: 15px; 
+      border-left: 4px solid #fbc02d; 
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+      white-space: pre-wrap;
+    }
+    .footer { 
+      text-align: center; 
+      margin-top: 30px; 
+      padding-top: 20px; 
+      color: #777; 
+      font-size: 12px; 
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚠️ Patient Access Issue Report</h1>
+    </div>
+    <div class="content">
+      <p>Dear Dr. {{physicianName}},</p>
+
+      <div class="alert-box">
+        <strong>A patient has reported an issue accessing a case you are supervising.</strong>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Case ID:</div>
+        <div>{{caseId}}</div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Access Code:</div>
+        <div><strong>{{code}}</strong></div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-label">Reported:</div>
+        <div>{{submittedAt}}</div>
+      </div>
+
+      <div class="message-box">
+        <div class="info-label">Patient Message:</div>
+        {{message}}
+      </div>
+
+      <p>
+        <strong>Action Required:</strong><br>
+        Please review the case and access code status in the patient outcome system. The patient may be unable to access their forms due to an archived or expired code.
+      </p>
+
+      <p>
+        If necessary, you can:
+        <ul>
+          <li>Restore an archived access code</li>
+          <li>Generate a new access code for the case</li>
+          <li>Contact the patient directly to resolve the issue</li>
+        </ul>
+      </p>
+
+      <div class="footer">
+        <p>This is an automated notification from the Patient Outcome System.</p>
+        <p>© {{year}} Patient Outcome. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

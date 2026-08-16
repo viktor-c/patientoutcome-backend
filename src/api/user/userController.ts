@@ -204,7 +204,7 @@ class UserController {
 
             //@ts-ignore-next-line
             serviceResponse.responseObject._id = undefined;
-            
+
             // Save the session and send response
             req.session.save((saveErr) => {
               if (saveErr) {

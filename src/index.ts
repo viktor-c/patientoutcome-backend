@@ -7,7 +7,7 @@ const server = app.listen(env.PORT, async () => {
   // initialize the server
   const { NODE_ENV, HOST, PORT } = env;
   logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
-  
+
   // Initialize backup scheduler
   try {
     await initializeScheduler();
@@ -26,7 +26,7 @@ const server = app.listen(env.PORT, async () => {
 
 const onCloseSignal = () => {
   logger.info("sigint received, shutting down");
-  
+
   // Shutdown backup scheduler
   try {
     shutdownScheduler();
@@ -41,7 +41,7 @@ const onCloseSignal = () => {
   } catch (error) {
     logger.error(error, "Error shutting down notification scheduler");
   }
-  
+
   server.close(() => {
     logger.info("server closed");
     process.exit();

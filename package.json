@@ -9,6 +9,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
+    "dev:faketime": "node scripts/dev-with-faketime.mjs",
     "build": "tsup",
     "build:types": "node scripts/copy-types.js",
     "start": "node dist/index.js",

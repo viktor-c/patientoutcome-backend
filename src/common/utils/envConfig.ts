@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { cleanEnv, host, num, port, str, testOnly } from "envalid";
+import { logger } from "./logger";
 
 dotenv.config();
 
@@ -47,5 +48,8 @@ if (env.NODE_ENV === "development") {
     console.debug("MONGO_URI: ", env.MONGO_URI);
     console.debug("PORT: ", env.PORT);
     console.debug("HOST: ", env.HOST);
+
+    // check time on server to see if fake time is used or not
+    console.debug("Time on server: ", new Date().toISOString());
   }
 }

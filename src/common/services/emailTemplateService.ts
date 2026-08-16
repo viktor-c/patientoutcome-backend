@@ -99,6 +99,10 @@ class EmailTemplateService {
         en: "Reminder: your questionnaire is expiring soon - Patient Outcome",
         de: "Erinnerung: Ihr Fragebogen läuft bald ab - Patient Outcome",
       },
+      "case-contact-report": {
+        en: "Patient Access Issue Report - Patient Outcome",
+        de: "Patientenzugangsproblem gemeldet - Patient Outcome",
+      },
     };
 
     return subjects[templateName]?.[locale] || subjects[templateName]?.en || "Patient Outcome";
@@ -118,6 +122,33 @@ class EmailTemplateService {
       html: this.replaceVariables(template.html, variables),
       text: this.replaceVariables(template.text, variables),
       subject: this.getSubject(templateName, locale),
+    };
+  }
+
+  /**
+   * Get a rendered email template with automatic year variable injection
+   * @param templateName - Name of the template file (without extension or locale suffix)
+   * @param locale - Locale to use (en or de)
+   * @param variables - Template variables to replace
+   * @returns Object with htmlBody, textBody, and subject
+   */
+  getTemplate(
+    templateName: string,
+    locale: SupportedLocale,
+    variables: TemplateVariables,
+  ): { htmlBody: string; textBody: string; subject: string } {
+    // Automatically inject the year variable
+    const enrichedVariables = {
+      ...variables,
+      year: new Date().getFullYear(),
+    };
+
+    const rendered = this.render(templateName, locale, enrichedVariables);
+
+    return {
+      htmlBody: rendered.html,
+      textBody: rendered.text,
+      subject: rendered.subject,
     };
   }
 

@@ -15,6 +15,7 @@ import type { Form } from "./formModel";
 import { formRepository } from "./formRepository";
 import { FormVersionModel, type FormVersion } from "./formVersionModel";
 import type { Role } from "@/common/middleware/aclConfig";
+import { userRepository } from "@/api/user/userRepository";
 
 export interface UserContext {
   userId: string;
@@ -118,7 +119,37 @@ export class FormVersionService {
         .select("-rawData -previousRawData") // Exclude large data fields from list view
         .lean() as FormVersion[];
 
-      return ServiceResponse.success("Version history retrieved", versions);
+      // Populate user information for each version
+      const populatedVersions = await Promise.all(
+        versions.map(async (version) => {
+          let userName = "Unknown User";
+
+          // Check if this is a patient change (no real user ID or special sentinel value)
+          if (!version.changedBy || version.changedBy === "patient" || version.changedBy === "000000000000000000000000") {
+            userName = "Patient with access code";
+          } else {
+            // Fetch user information
+            try {
+              const user = await userRepository.findByIdAsync(version.changedBy.toString());
+              if (user) {
+                userName = user.name || user.username || "Unknown User";
+              }
+            } catch (error) {
+              logger.warn({ userId: version.changedBy, error }, "Failed to fetch user for version history");
+            }
+          }
+
+          return {
+            ...version,
+            changedByUser: {
+              id: version.changedBy?.toString() || "patient",
+              name: userName,
+            },
+          };
+        })
+      );
+
+      return ServiceResponse.success("Version history retrieved", populatedVersions);
     } catch (error) {
       logger.error({ error, formId }, "Error getting version history");
       return ServiceResponse.failure(
