@@ -306,6 +306,7 @@ export class UserService {
         belongsToCenter: user.belongsToCenter,
         consultationAccessDaysBefore: departmentSettings.consultationAccessDaysBefore,
         consultationAccessDaysAfter: departmentSettings.consultationAccessDaysAfter,
+        daysBeforeConsultations: user.daysBeforeConsultations,
       };
 
       return ServiceResponse.success("Login successful", userWithoutPassword, StatusCodes.OK);
