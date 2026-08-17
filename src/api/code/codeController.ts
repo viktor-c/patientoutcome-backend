@@ -58,6 +58,17 @@ class CodeController {
     return handleServiceResponse(serviceResponse, res);
   };
 
+  public updateCodeValidity: RequestHandler = async (req: Request, res: Response) => {
+    const { code } = req.params;
+    const { activatedOn, expiresOn } = req.body as { activatedOn: string | Date; expiresOn: string | Date };
+    const serviceResponse = await codeService.updateCodeValidity(
+      code,
+      new Date(activatedOn),
+      new Date(expiresOn)
+    );
+    return handleServiceResponse(serviceResponse, res);
+  };
+
   public resetConsultationFormsByCode: RequestHandler = async (req: Request, res: Response) => {
     const { code } = req.params;
     const serviceResponse = await codeService.resetConsultationFormsByCode(code);
