@@ -87,12 +87,8 @@ describe("Patient Case Consultation API", () => {
 
   it("should create and delete a consultation", async () => {
     const caseId = patientCaseRepository.mockPatientCases[0]._id;
-    const newConsultation = {
-      ...consultationRepository.mockConsultations[0],
-      formTemplates: ["67b4e612d0feb4ad99ae2e83"],
-    } as Consultation;
-    newConsultation._id = undefined; // Reset _id to undefined to create a new consultation
-
+    const mockConsultation = consultationRepository.mockConsultations[0];
+    
     // create a new form access code
     const createCodeResponse = await agent.post("/form-access-code/addCodes").send({ numberOfCodes: 1 });
     expect(createCodeResponse.status).toBe(StatusCodes.CREATED);
@@ -101,11 +97,30 @@ describe("Patient Case Consultation API", () => {
 
     // Assign the created code string to the new consultation
     const newCode: Code = createCodeResponse.body.responseObject[0];
-    newConsultation.formAccessCode = newCode.code;
+    
+    // Construct a proper CreateConsultation object without fields that shouldn't be there
+    // Convert notes to match CreateNoteSchema (createdBy as optional string)
+    const newConsultation = {
+      patientCaseId: mockConsultation.patientCaseId,
+      dateAndTime: mockConsultation.dateAndTime,
+      reasonForConsultation: mockConsultation.reasonForConsultation,
+      notes: mockConsultation.notes.map(note => ({
+        dateCreated: note.dateCreated,
+        note: note.note,
+        createdBy: note.createdBy?.toString(),
+      })),
+      images: mockConsultation.images,
+      visitedBy: mockConsultation.visitedBy,
+      formTemplates: ["67b4e612d0feb4ad99ae2e83"],
+      formAccessCode: String(newCode.code), // Explicitly convert to string
+    };
 
     // Create a new consultation
     const createResponse = await agent.post(`/consultation/case/${caseId}`).send(newConsultation);
 
+    if (createResponse.status !== StatusCodes.CREATED) {
+      console.error("Validation error:", JSON.stringify(createResponse.body, null, 2));
+    }
     expect(createResponse.status).toBe(StatusCodes.CREATED);
     expect(createResponse.body.message).toBe("Consultation created successfully");
     expect(createResponse.body.responseObject).toBeDefined();

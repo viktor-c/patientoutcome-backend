@@ -422,12 +422,17 @@ export class CodeRepository {
   }
 
   /**
-   * Update code validity (activatedOn and expiresOn) and synchronize consultation time window
+   * Update code validity (activatedOn and expiresOn) and optionally synchronize consultation time window
+   * @param codeString - The code string to update
+   * @param activatedOn - New activation date
+   * @param expiresOn - New expiration date
+   * @param syncConsultation - Whether to synchronize the linked consultation (default: true)
    */
   async updateCodeValidity(
     codeString: string,
     activatedOn: Date,
     expiresOn: Date,
+    syncConsultation: boolean = true,
   ): Promise<Code | string> {
     const existingCode = await codeModel.findOne({ code: codeString });
     if (!existingCode) {
@@ -443,8 +448,8 @@ export class CodeRepository {
     existingCode.expiresOn = expiresOn;
     await existingCode.save();
 
-    // If linked to a consultation, synchronize the consultation's time window
-    if (existingCode.consultationId) {
+    // If linked to a consultation and syncConsultation is true, synchronize the consultation's time window
+    if (syncConsultation && existingCode.consultationId) {
       const consultation = await consultationModel.findById(existingCode.consultationId);
       if (consultation) {
         consultation.consultationAccessActiveFrom = activatedOn;

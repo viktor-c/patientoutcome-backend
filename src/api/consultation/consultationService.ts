@@ -221,7 +221,18 @@ export class ConsultationService {
       }
     }
 
-    const code = await this.codeRepository.findByCode(formAccessCode.toString());
+    // formAccessCode could be either a code string (e.g., "djr71") or an ObjectId string (e.g., "6a8376...")
+    // Try to find by _id first if it looks like an ObjectId (24 character hex string)
+    let code: Code | null = null;
+    if (/^[0-9a-fA-F]{24}$/.test(formAccessCode)) {
+      code = await this.codeRepository.findById(formAccessCode);
+    }
+    
+    // If not found by _id, try finding by code string
+    if (!code) {
+      code = await this.codeRepository.findByCode(formAccessCode.toString());
+    }
+    
     if (!code) {
       return "Code not found";
     }
@@ -572,21 +583,31 @@ export class ConsultationService {
         return ServiceResponse.failure("Failed to update consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
       
-      // Synchronize linked code validity with consultation time window (if not a case code)
+      // Synchronize linked code validity with consultation time window
       if (updatedConsultation && updatedConsultation.formAccessCode) {
         try {
-          const code = await this.codeRepository.findById(updatedConsultation.formAccessCode.toString());
-          if (code && code.consultationId && !code.patientCaseId) {
-            // Only sync if it's a consultation code (not a case code)
+          // Handle both populated (object) and unpopulated (string/ObjectId) formAccessCode
+          let codeIdString: string;
+          if (typeof updatedConsultation.formAccessCode === 'object' && updatedConsultation.formAccessCode !== null) {
+            codeIdString = (updatedConsultation.formAccessCode as any)._id?.toString() || '';
+          } else {
+            codeIdString = updatedConsultation.formAccessCode.toString();
+          }
+          
+          const code = await this.codeRepository.findById(codeIdString);
+          
+          if (code && code.consultationId) {
+            // Sync for any code linked to a consultation (both case codes and consultation-only codes)
             const activeFrom = updatedConsultation.consultationAccessActiveFrom;
             const activeUntil = updatedConsultation.consultationAccessActiveUntil;
             
             if (activeFrom && activeUntil) {
-              // Update code validity to match consultation time window
+              // Update code validity without syncing back to consultation (prevent circular update)
               await this.codeRepository.updateCodeValidity(
                 code.code,
                 new Date(activeFrom),
-                new Date(activeUntil)
+                new Date(activeUntil),
+                false  // Skip consultation synchronization
               );
               logger.info(
                 { consultationId: updatedConsultation._id?.toString(), code: code.code },
@@ -636,8 +657,18 @@ export class ConsultationService {
         return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
       }
 
-      // If consultation has a formAccessCode (which is now a code ID), get the actual code string
+      // If consultation has a formAccessCode (which could be a code ID or populated Code object)
       if (consultation.formAccessCode) {
+        // Check if formAccessCode is already populated (is an object)
+        if (typeof consultation.formAccessCode === 'object' && consultation.formAccessCode !== null) {
+          const codeObj = consultation.formAccessCode as any;
+          // If it has a 'code' field, it's the populated Code document
+          if (codeObj.code) {
+            return ServiceResponse.success("Form access code retrieved successfully", codeObj.code);
+          }
+        }
+        
+        // Otherwise treat it as an ObjectId string and fetch the code
         const code = await this.codeRepository.findById(consultation.formAccessCode.toString());
         if (!code) {
           return ServiceResponse.failure("Associated code not found", null, StatusCodes.NOT_FOUND);
