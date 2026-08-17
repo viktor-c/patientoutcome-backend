@@ -422,6 +422,49 @@ export class CodeRepository {
   }
 
   /**
+   * Update code validity (activatedOn and expiresOn) and synchronize consultation time window
+   */
+  async updateCodeValidity(
+    codeString: string,
+    activatedOn: Date,
+    expiresOn: Date,
+  ): Promise<Code | string> {
+    const existingCode = await codeModel.findOne({ code: codeString });
+    if (!existingCode) {
+      return "Code not found";
+    }
+
+    if (!existingCode.consultationId && !existingCode.patientCaseId) {
+      return "Code is not linked";
+    }
+
+    // Update code validity
+    existingCode.activatedOn = activatedOn;
+    existingCode.expiresOn = expiresOn;
+    await existingCode.save();
+
+    // If linked to a consultation, synchronize the consultation's time window
+    if (existingCode.consultationId) {
+      const consultation = await consultationModel.findById(existingCode.consultationId);
+      if (consultation) {
+        consultation.consultationAccessActiveFrom = activatedOn;
+        consultation.consultationAccessActiveUntil = expiresOn;
+
+        // If consultation dateAndTime falls outside the new validity window, adjust it
+        const consultationDate = new Date(consultation.dateAndTime);
+        if (consultationDate < activatedOn || consultationDate > expiresOn) {
+          consultation.dateAndTime = activatedOn;
+        }
+
+        await consultation.save();
+      }
+    }
+
+    const codeToReturnWithoutId = await codeModel.findById(existingCode.id).select("-_id -__v").lean();
+    return codeToReturnWithoutId || "Code not found";
+  }
+
+  /**
    * Resolve the department ID associated with a code (for configuration lookup)
    */
   async resolveDepartmentIdForCode(code: Code): Promise<string | undefined> {
