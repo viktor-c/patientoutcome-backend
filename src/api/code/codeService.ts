@@ -53,80 +53,27 @@ async function resolveActiveConsultationForCode(codeDocument: Code) {
     return null;
   }
 
-  // Get current date (without time component for comparison)
-  const now = new Date();
-  const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const nowTime = now.getTime();
-
-  // Build list of consultations with their access windows and completion status
-  const withActiveWindow = await Promise.all(
-    consultations.map(async (consultation) => {
-      const accessWindow = await buildConsultationAccessWindow(consultation);
-      
-      // Check if consultation has unfilled forms
-      let hasUnfilledForms = false;
-      if (Array.isArray(consultation.proms) && consultation.proms.length > 0) {
-        // Load the forms to check if they're filled
-        const forms = await FormModel.find({ 
-          _id: { $in: consultation.proms },
-          deletedAt: null 
-        }).lean();
-        
-        // A consultation is considered unfilled if it has at least one form without patient data
-        hasUnfilledForms = forms.some(form => !form.patientFormData);
-      } else {
-        // If no forms exist yet, consider it unfilled
-        hasUnfilledForms = true;
-      }
-      
-      return {
+  const now = new Date().getTime();
+  const activeConsultations = (
+    await Promise.all(
+      consultations.map(async (consultation) => ({
         consultation,
-        accessWindow,
-        hasUnfilledForms,
-      };
-    }),
-  );
+        accessWindow: await buildConsultationAccessWindow(consultation),
+      })),
+    )
+  )
+    .filter((entry) => entry.accessWindow?.isActive)
+    .sort((left, right) => {
+      const leftTime = new Date(left.consultation.dateAndTime || 0).getTime();
+      const rightTime = new Date(right.consultation.dateAndTime || 0).getTime();
+      return Math.abs(leftTime - now) - Math.abs(rightTime - now);
+    });
 
-  // Filter to only active consultations with unfilled forms
-  // Note: For case-level codes, ignoreAccessWindow flag doesn't apply since it's only set on consultation-specific codes
-  const activeUnfilledConsultations = withActiveWindow.filter(
-    (entry) => entry.accessWindow?.isActive && entry.hasUnfilledForms
-  );
-
-  if (activeUnfilledConsultations.length === 0) {
+  if (activeConsultations.length === 0) {
     return null;
   }
 
-  // Sort by nearest date (ignoring time), preferring past over future when equally distant
-  const sorted = activeUnfilledConsultations.sort((left, right) => {
-    const leftDate = new Date(left.consultation.dateAndTime || 0);
-    const rightDate = new Date(right.consultation.dateAndTime || 0);
-    
-    // Convert to date-only for comparison (ignoring time)
-    const leftDateOnly = new Date(leftDate.getFullYear(), leftDate.getMonth(), leftDate.getDate());
-    const rightDateOnly = new Date(rightDate.getFullYear(), rightDate.getMonth(), rightDate.getDate());
-    
-    const leftDistance = Math.abs(leftDateOnly.getTime() - nowDateOnly.getTime());
-    const rightDistance = Math.abs(rightDateOnly.getTime() - nowDateOnly.getTime());
-    
-    // If distances are equal, prefer the one in the past
-    if (leftDistance === rightDistance) {
-      // Negative value means past, positive means future
-      const leftIsPast = leftDateOnly.getTime() <= nowDateOnly.getTime();
-      const rightIsPast = rightDateOnly.getTime() <= nowDateOnly.getTime();
-      
-      if (leftIsPast && !rightIsPast) return -1; // Left is past, prefer it
-      if (!leftIsPast && rightIsPast) return 1;  // Right is past, prefer it
-      
-      // Both in past or both in future, use actual time to break tie
-      return leftDate.getTime() - rightDate.getTime();
-    }
-    
-    // Different distances, use the nearest one
-    return leftDistance - rightDistance;
-  });
-
-  return sorted[0]?.consultation || null;
+  return activeConsultations[0]?.consultation || null;
 }
 
 class CodeService {
@@ -755,7 +702,7 @@ class CodeService {
    */
   async extendCaseCodeExpiration(codeString: string): Promise<ServiceResponse<Code | null>> {
     try {
-      const code = await this.codeRepository.getCodeByString(codeString);
+      const code = await this.codeRepository.findByCode(codeString);
       if (!code) {
         return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
       }

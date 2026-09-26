@@ -69,6 +69,38 @@ function normalizeComments(comments: unknown, userContext?: UserContext) {
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 }
 
+function normalizeReferenceId(value: unknown): string | null {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as { _id?: unknown; toString?: () => string };
+  const nestedId = record._id;
+
+  if (typeof nestedId === "string") {
+    return nestedId;
+  }
+
+  if (nestedId && typeof (nestedId as { toString?: () => string }).toString === "function") {
+    return (nestedId as { toString: () => string }).toString();
+  }
+
+  if (typeof record.toString === "function") {
+    const stringifiedValue = record.toString();
+    return stringifiedValue !== "[object Object]" ? stringifiedValue : null;
+  }
+
+  return null;
+}
+
 /**
  * Helper function to calculate the relative creation date for a form based on postopWeek.
  * For kiosk users, the form's createdAt should reflect the consultation date (which is based on postopWeek),
@@ -120,9 +152,9 @@ async function calculateRelativeCreatedAtDate(
     const surgery = consultationTimestamp == null
       ? surgeries[surgeries.length - 1]
       : [...surgeries].reverse().find((entry) => {
-          const surgeryTimestamp = new Date(String(entry?.surgeryDate ?? "")).getTime();
-          return !Number.isNaN(surgeryTimestamp) && surgeryTimestamp <= consultationTimestamp;
-        }) ?? surgeries[surgeries.length - 1];
+        const surgeryTimestamp = new Date(String(entry?.surgeryDate ?? "")).getTime();
+        return !Number.isNaN(surgeryTimestamp) && surgeryTimestamp <= consultationTimestamp;
+      }) ?? surgeries[surgeries.length - 1];
 
     if (!surgery || !surgery.surgeryDate) {
       logger.debug({ patientCaseId: consultation.patientCaseId }, "Surgery date not found for relative date calculation");
@@ -229,8 +261,8 @@ export class FormService {
    */
   async updateForm(
     formId: string,
-    updatedForm: Partial<Form> & { 
-      code?: string; 
+    updatedForm: Partial<Form> & {
+      code?: string;
       isRestoration?: boolean;
       restoredFromVersion?: number;
       changeNotes?: string;
@@ -263,7 +295,7 @@ export class FormService {
 
           // Find the code and verify it's activated
           const codeDoc = await codeRepository.findByCode(updatedForm.code);
-          if (!codeDoc || !codeDoc.consultationId) {
+          if (!codeDoc || (!codeDoc.consultationId && !codeDoc.patientCaseId)) {
             return ServiceResponse.failure(
               "Invalid or inactive access code",
               null,
@@ -271,15 +303,15 @@ export class FormService {
             );
           }
 
-          // Verify the code's consultation matches this form's consultation
-          const codeConsultationId = typeof codeDoc.consultationId === 'string'
-            ? codeDoc.consultationId
-            : codeDoc.consultationId.toString();
-          const formConsultationId = typeof existingForm.consultationId === 'string'
-            ? existingForm.consultationId
-            : existingForm.consultationId?._id.toString();
+          const codeConsultationId = normalizeReferenceId(codeDoc.consultationId);
+          const codePatientCaseId = normalizeReferenceId(codeDoc.patientCaseId);
+          const formConsultationId = normalizeReferenceId(existingForm.consultationId);
+          const formCaseId = normalizeReferenceId(existingForm.caseId);
 
-          if (codeConsultationId !== formConsultationId) {
+          const consultationMatches = Boolean(codeConsultationId && codeConsultationId === formConsultationId);
+          const patientCaseMatches = Boolean(codePatientCaseId && codePatientCaseId === formCaseId);
+
+          if (!consultationMatches && !patientCaseMatches) {
             return ServiceResponse.failure(
               "Access code does not grant permission to edit this form",
               null,
@@ -288,7 +320,14 @@ export class FormService {
           }
 
           logger.debug(
-            { code: updatedForm.code, formId, consultationId: formConsultationId },
+            {
+              code: updatedForm.code,
+              formId,
+              codeConsultationId,
+              codePatientCaseId,
+              formConsultationId,
+              formCaseId,
+            },
             "✅ Access code verified successfully"
           );
         } catch (error) {
@@ -513,15 +552,15 @@ export class FormService {
               ? "Form restored"
               : "Form updated";
 
-          const previousPatientFormData = existingForm.patientFormData
-            ? {
-              ...existingForm.patientFormData,
-              comments: normalizeComments(
-                (existingForm.patientFormData as { comments?: unknown }).comments,
-                userContext,
-              ),
-            }
-            : null;
+        const previousPatientFormData = existingForm.patientFormData
+          ? {
+            ...existingForm.patientFormData,
+            comments: normalizeComments(
+              (existingForm.patientFormData as { comments?: unknown }).comments,
+              userContext,
+            ),
+          }
+          : null;
 
         await formVersionService.createVersionBackup(
           existingForm,
@@ -530,7 +569,7 @@ export class FormService {
           updatedForm.isRestoration || false,
           updatedForm.restoredFromVersion,
           previousVersion,
-            previousPatientFormData,
+          previousPatientFormData,
         );
       }
 

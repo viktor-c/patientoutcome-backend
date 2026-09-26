@@ -1,4 +1,5 @@
 import { app } from "@/server";
+import { codeRepository } from "@/api/code/codeRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import request from "supertest";
@@ -9,9 +10,19 @@ import { formRepository } from "../formRepository";
 describe("Form API", () => {
   beforeAll(async () => {
     try {
-      const res = await request(app).get("/seed/forms");
-      if (res.status !== 200) {
-        throw new Error("Failed to seed forms");
+      const seedEndpoints = [
+        "/seed/patients",
+        "/seed/patientCase",
+        "/seed/consultation",
+        "/seed/form-access-codes",
+        "/seed/forms",
+      ];
+
+      for (const endpoint of seedEndpoints) {
+        const response = await request(app).get(endpoint);
+        if (response.status !== 200) {
+          throw new Error(`Failed to seed test data via ${endpoint}`);
+        }
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -92,5 +103,30 @@ describe("Form API", () => {
     expect(res.body.responseObject.patientFormData.rawFormData).toEqual(newPatientFormData.rawFormData);
     expect(res.body.responseObject.patientFormData.comments).toBeInstanceOf(Array);
     expect(res.body.responseObject.patientFormData.comments[0].content).toBe("Pain starts in the morning.");
+  });
+
+  it("should allow updating a form with a code from another consultation on the same patient case", async () => {
+    const form = formRepository.mockForms.find((entry) => entry._id === "6832337195b15e2d7e223d52");
+    expect(form).toBeTruthy();
+
+    const updateData = {
+      code: codeRepository.codeMockData[0].code,
+      patientFormData: {
+        rawFormData: {
+          standardfragebogen: { q1: 1 },
+        },
+        subscales: {},
+        totalScore: null,
+        fillStatus: "incomplete" as const,
+        completedAt: null,
+        beginFill: new Date(),
+        comments: [],
+      },
+    };
+
+    const response = await request(app).put(`/form/${form?._id}`).send(updateData);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.responseObject.patientFormData.rawFormData).toEqual(updateData.patientFormData.rawFormData);
   });
 });
