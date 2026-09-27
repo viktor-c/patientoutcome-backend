@@ -1,5 +1,6 @@
 import { app } from "@/server";
 import { loginUserAgent, logoutUser } from "@/utils/unitTesting";
+import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 import type TestAgent from "supertest/lib/agent";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -16,17 +17,25 @@ const DEPT2_ID = "675000000000000000000002";
 
 const PASSWORD = "password123#124";
 
+async function seedOrThrow(path: string, entity: string): Promise<void> {
+  const response = await request(app).get(path);
+  expect(response.status).toBe(StatusCodes.OK);
+  if (response.status !== StatusCodes.OK) {
+    throw new Error(`Failed to seed ${entity}: ${response.status}`);
+  }
+}
+
 describe("Multi-department access isolation", () => {
   let dept1DoctorAgent: TestAgent;
   let dept2DoctorAgent: TestAgent;
   let adminAgent: TestAgent;
 
   beforeAll(async () => {
-    await request(app).get("/seed/user").catch(() => {});
-    await request(app).get("/seed/patient").catch(() => {});
-    await request(app).get("/seed/patientCase").catch(() => {});
-    await request(app).get("/seed/code").catch(() => {});
-    await request(app).get("/seed/consultation").catch(() => {});
+    await seedOrThrow("/seed/users", "users");
+    await seedOrThrow("/seed/patients", "patients");
+    await seedOrThrow("/seed/patientCase", "patient cases");
+    await seedOrThrow("/seed/form-access-codes", "form access codes");
+    await seedOrThrow("/seed/consultation", "consultations");
 
     dept1DoctorAgent = await loginUserAgent("doctor"); // bwhite in department 675...001
 
