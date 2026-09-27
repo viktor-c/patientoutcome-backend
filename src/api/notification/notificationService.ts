@@ -118,7 +118,7 @@ class NotificationService {
     const promises: Promise<void>[] = [];
 
     if (channels.includes("email") && patientEmail) {
-      promises.push(this.sendPatientWindowEmail(event, patientEmail));
+      promises.push(this.sendPatientWindowEmail(event, patientEmail, caseAccessToken));
     }
 
     if (channels.includes("push") && caseAccessToken) {
@@ -126,6 +126,43 @@ class NotificationService {
     }
 
     await Promise.allSettled(promises);
+  }
+
+  async sendDevelopmentTestPush(target: {
+    endpoint: string;
+    title?: string;
+    body?: string;
+    url?: string;
+    tag?: string;
+  }): Promise<"sent" | "not-found" | "unconfigured"> {
+    if (!this.vapidConfigured) {
+      return "unconfigured";
+    }
+
+    const subscription = await PushSubscriptionModel.findOne({
+      endpoint: target.endpoint,
+      archivedAt: null,
+    }).lean();
+
+    if (!subscription) {
+      return "not-found";
+    }
+
+    const payload = JSON.stringify({
+      title: target.title ?? "Test notification",
+      body: target.body ?? "Development test push from Patient Outcome.",
+      url: target.url ?? notificationEnv.FRONTEND_URL,
+      tag: target.tag ?? "dev-test-push",
+    });
+
+    await this.sendPushToSubscriptions([
+      {
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      },
+    ], payload);
+
+    return "sent";
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -167,15 +204,18 @@ class NotificationService {
   private async sendPatientWindowEmail(
     event: NotificationEvent,
     patientEmail: string,
+    caseAccessToken: string | null,
   ): Promise<void> {
     try {
       const locale = event.locale ?? "de";
       const templateName =
         event.type === "consultation_window_opened"
           ? "consultation-window-opened"
-          : "consultation-window-closing";
+          : "consultation-day-reminder";
 
-      const codeUrl = `${notificationEnv.FRONTEND_URL}/flow`;
+      const codeUrl = caseAccessToken
+        ? `${notificationEnv.FRONTEND_URL.replace(/\/$/, "")}/flow/${encodeURIComponent(caseAccessToken)}`
+        : `${notificationEnv.FRONTEND_URL.replace(/\/$/, "")}/flow`;
       const closingDate = event.windowClosesAt
         ? event.windowClosesAt.toLocaleDateString(locale === "de" ? "de-DE" : "en-GB")
         : "";
@@ -219,16 +259,14 @@ class NotificationService {
   }
 
   private buildPatientPushPayload(event: NotificationEvent): string {
-    const closing = event.windowClosesAt
-      ? event.windowClosesAt.toLocaleDateString("de-DE")
-      : "";
+    const deepLinkUrl = `${notificationEnv.FRONTEND_URL.replace(/\/$/, "")}/flow`;
     const isOpening = event.type === "consultation_window_opened";
     return JSON.stringify({
-      title: isOpening ? "Fragebogen verfügbar" : "Fragebogen läuft ab",
+      title: isOpening ? "Fragebogen verfugbar" : "Termin heute",
       body: isOpening
         ? "Sie können jetzt Ihren Fragebogen ausfüllen."
-        : `Ihr Fragebogen läuft am ${closing} ab.`,
-      url: `${notificationEnv.FRONTEND_URL}/flow`,
+        : "Ihr Termin ist heute. Offnen Sie den Link und fullen Sie Ihren Fragebogen aus.",
+      url: deepLinkUrl,
       tag: `patient-window-${event.consultationId}-${event.type}`,
     });
   }
@@ -308,7 +346,10 @@ class NotificationService {
 
       if (subscriptions.length === 0) return;
 
-      const payload = this.buildPatientPushPayload(event);
+      const payload = JSON.stringify({
+        ...JSON.parse(this.buildPatientPushPayload(event)),
+        url: `${notificationEnv.FRONTEND_URL.replace(/\/$/, "")}/flow/${encodeURIComponent(caseAccessToken)}`,
+      });
       const targets: PushTarget[] = subscriptions.map((s) => ({
         endpoint: s.endpoint,
         keys: s.keys,

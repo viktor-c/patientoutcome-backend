@@ -94,7 +94,7 @@ describe("Form API", () => {
         },
       ],
     };
-    
+
     const updateData = { patientFormData: newPatientFormData };
     const res = await request(app).put(`/form/${form._id}`).send(updateData);
     expect(res.status).toBe(200);

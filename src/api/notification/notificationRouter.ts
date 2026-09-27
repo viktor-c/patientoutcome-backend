@@ -3,6 +3,7 @@ import { z } from "zod";
 import { logger } from "@/server";
 import { notificationService } from "@/api/notification/notificationService";
 import { PushSubscriptionModel } from "@/api/notification/pushSubscriptionModel";
+import { env } from "@/common/utils/envConfig";
 
 const router = express.Router();
 
@@ -104,6 +105,46 @@ router.delete("/subscribe", async (req: Request, res: Response) => {
   } catch (error) {
     logger.error({ error }, "Failed to unsubscribe push endpoint");
     res.status(500).json({ message: "Failed to unsubscribe" });
+  }
+});
+
+const TestPushBodySchema = z.object({
+  endpoint: z.string().url(),
+  title: z.string().optional(),
+  body: z.string().optional(),
+  url: z.string().url().optional(),
+  tag: z.string().optional(),
+});
+
+router.post("/test", async (req: Request, res: Response) => {
+  if (env.NODE_ENV !== "development") {
+    res.status(404).json({ message: "Route not found" });
+    return;
+  }
+
+  const parsed = TestPushBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid test push payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    const result = await notificationService.sendDevelopmentTestPush(parsed.data);
+
+    if (result === "not-found") {
+      res.status(404).json({ message: "No active push subscription found for this browser." });
+      return;
+    }
+
+    if (result === "unconfigured") {
+      res.status(503).json({ message: "Push notifications are not configured on this server." });
+      return;
+    }
+
+    res.json({ message: "Test push notification sent." });
+  } catch (error) {
+    logger.error({ error }, "Failed to send development test push notification");
+    res.status(500).json({ message: "Failed to send test push notification" });
   }
 });
 

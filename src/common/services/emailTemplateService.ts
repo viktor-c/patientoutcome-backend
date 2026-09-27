@@ -95,9 +95,9 @@ class EmailTemplateService {
         en: "Your questionnaire is now available - Patient Outcome",
         de: "Ihr Fragebogen ist jetzt verfügbar - Patient Outcome",
       },
-      "consultation-window-closing": {
-        en: "Reminder: your questionnaire is expiring soon - Patient Outcome",
-        de: "Erinnerung: Ihr Fragebogen läuft bald ab - Patient Outcome",
+      "consultation-day-reminder": {
+        en: "Reminder: your consultation is today - Patient Outcome",
+        de: "Erinnerung: Ihr Termin ist heute - Patient Outcome",
       },
       "case-contact-report": {
         en: "Patient Access Issue Report - Patient Outcome",

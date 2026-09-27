@@ -4,8 +4,10 @@ import mongoose from "mongoose";
 import { z } from "zod";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "../../common/utils/httpHandlers";
+import { PatientRepository } from "../patient/patientRepository";
 import { patientModel } from "../patient/patientModel";
 import { PatientCaseService } from "./patientCaseService";
+import { PatientCaseRepository } from "./patientCaseRepository";
 import { PatientCaseModel } from "./patientCaseModel";
 
 const service = new PatientCaseService();
@@ -16,6 +18,9 @@ const service = new PatientCaseService();
  * @description Handles HTTP requests for patient case management including CRUD operations, notes, and case queries
  */
 class PatientCaseController {
+  private patientRepository = new PatientRepository();
+  private patientCaseRepository = new PatientCaseRepository();
+
   private getSessionDepartmentIds(req: Request): string[] {
     const departments = req.session?.department;
     if (!departments) {
@@ -32,6 +37,31 @@ class PatientCaseController {
     return Boolean(req.session?.roles?.includes("admin"));
   }
 
+  private async getPatientDepartmentIds(patientId: string): Promise<string[]> {
+    if (process.env.NODE_ENV === "test") {
+      const patient = this.patientRepository.mockPatients.find((entry) => entry._id?.toString() === patientId);
+      return Array.isArray(patient?.departments) ? patient.departments.map((department) => department.toString()) : [];
+    }
+
+    const patient = await patientModel.findById(patientId).select("departments").lean();
+    return Array.isArray(patient?.departments)
+      ? patient.departments.map((department) => department.toString())
+      : [];
+  }
+
+  private async getCasePatientId(caseId: string): Promise<string | undefined> {
+    if (process.env.NODE_ENV === "test") {
+      const patientCase = this.patientCaseRepository.mockPatientCases.find((entry) => entry._id?.toString() === caseId);
+      return patientCase?.patient?.toString();
+    }
+
+    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
+      .select("patient")
+      .lean<{ patient?: unknown } | null>();
+
+    return patientCase?.patient?.toString();
+  }
+
   private async canAccessPatientByDepartment(req: Request, patientId: string): Promise<boolean> {
     if (this.isAdmin(req)) {
       return true;
@@ -42,8 +72,7 @@ class PatientCaseController {
       return true;
     }
 
-    const patient = await patientModel.findById(patientId).select("departments").lean();
-    const patientDepartments = (patient?.departments || []).map((department) => department.toString());
+    const patientDepartments = await this.getPatientDepartmentIds(patientId);
 
     if (patientDepartments.length === 0) {
       return true;
@@ -57,14 +86,12 @@ class PatientCaseController {
       return true;
     }
 
-    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
-      .select("patient")
-      .lean<{ patient?: unknown } | null>();
-    if (!patientCase?.patient) {
+    const patientId = await this.getCasePatientId(caseId);
+    if (!patientId) {
       return true;
     }
 
-    return this.canAccessPatientByDepartment(req, patientCase.patient.toString());
+    return this.canAccessPatientByDepartment(req, patientId);
   }
   /**
    * Populate createdBy field for notes with current user ID

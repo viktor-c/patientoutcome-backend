@@ -32,6 +32,30 @@ export class ConsultationService {
     this.codeRepository = codeRepository;
   }
 
+  private getFormId(form: unknown): string | null {
+    if (typeof form === "string") {
+      return form;
+    }
+
+    if (!form || typeof form !== "object") {
+      return null;
+    }
+
+    const formRecord = form as Record<string, unknown>;
+    const rawId = formRecord._id ?? formRecord.id;
+    if (typeof rawId === "string") {
+      return rawId;
+    }
+
+    if (rawId && typeof rawId === "object") {
+      const idRecord = rawId as Record<string, unknown>;
+      if (typeof idRecord._id === "string") return idRecord._id;
+      if (typeof idRecord.id === "string") return idRecord.id;
+    }
+
+    return null;
+  }
+
   private async resolveDepartmentIdForCase(caseId: string): Promise<string | undefined> {
     const patientCase = await PatientCaseModel.findById(caseId).select("patient").lean<{ patient?: unknown } | null>();
     if (!patientCase?.patient) {
@@ -90,7 +114,7 @@ export class ConsultationService {
         ? caseField
         : caseField && typeof caseField === "object"
           ? ((caseField as Record<string, unknown>)._id as string | undefined) ||
-            ((caseField as { toString?: () => string }).toString?.() ?? undefined)
+          ((caseField as { toString?: () => string }).toString?.() ?? undefined)
           : undefined;
     if (!caseId) {
       return consultation;
@@ -126,12 +150,12 @@ export class ConsultationService {
       if (!consultation) {
         return null;
       }
-      
+
       // If ignoreAccessWindow is true, skip the access window check
       if (foundCode.ignoreAccessWindow) {
         return consultation;
       }
-      
+
       // check if the consultation is allowed to be filled out based on the access window
       const accessWindow = await buildConsultationAccessWindow(consultation);
       return accessWindow?.isActive ? consultation : null;
@@ -227,12 +251,12 @@ export class ConsultationService {
     if (/^[0-9a-fA-F]{24}$/.test(formAccessCode)) {
       code = await this.codeRepository.findById(formAccessCode);
     }
-    
+
     // If not found by _id, try finding by code string
     if (!code) {
       code = await this.codeRepository.findByCode(formAccessCode.toString());
     }
-    
+
     if (!code) {
       return "Code not found";
     }
@@ -414,7 +438,7 @@ export class ConsultationService {
           ? originalCaseField
           : originalCaseField && typeof originalCaseField === "object"
             ? ((originalCaseField as Record<string, unknown>)._id as string | undefined) ||
-              ((originalCaseField as { toString?: () => string }).toString?.() ?? undefined)
+            ((originalCaseField as { toString?: () => string }).toString?.() ?? undefined)
             : undefined;
       if (caseId) {
         const windowUpdatePayload: Partial<UpdateConsultation> = {
@@ -526,13 +550,16 @@ export class ConsultationService {
         try {
           // if there are excluded forms, soft delete them from the database
           if (excludedFormsById.length > 0) {
-            const deletePromises = excludedFormsById.map((formId) =>
-              formRepository.softDeleteForm(
-                formId.toString(),
-                "system", // deletedBy - system action when removing from consultation
-                "Form removed from consultation"
-              )
-            );
+            const deletePromises = excludedFormsById
+              .map((formId) => this.getFormId(formId))
+              .filter((formId): formId is string => Boolean(formId))
+              .map((formId) =>
+                formRepository.softDeleteForm(
+                  formId,
+                  "system", // deletedBy - system action when removing from consultation
+                  "Form removed from consultation"
+                )
+              );
             await Promise.all(deletePromises);
           }
         } catch (ex) {
@@ -559,13 +586,16 @@ export class ConsultationService {
         // so we need to soft delete all forms from the consultation
         const excludedFormsById = originalConsultation.proms.map((formId) => formId);
         // soft delete the excluded forms from the database, but only after consultation was successfully updated
-        const deletePromises = excludedFormsById.map((formId) =>
-          formRepository.softDeleteForm(
-            formId.toString(),
-            "system", // deletedBy - system action when removing from consultation
-            "All forms removed from consultation"
-          )
-        );
+        const deletePromises = excludedFormsById
+          .map((formId) => this.getFormId(formId))
+          .filter((formId): formId is string => Boolean(formId))
+          .map((formId) =>
+            formRepository.softDeleteForm(
+              formId,
+              "system", // deletedBy - system action when removing from consultation
+              "All forms removed from consultation"
+            )
+          );
         await Promise.all(deletePromises);
         // data.proms already empty, so we can just update the consultation
       }
@@ -582,7 +612,7 @@ export class ConsultationService {
       } catch (error) {
         return ServiceResponse.failure("Failed to update consultation", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
-      
+
       // Synchronize linked code validity with consultation time window
       if (updatedConsultation && updatedConsultation.formAccessCode) {
         try {
@@ -593,14 +623,14 @@ export class ConsultationService {
           } else {
             codeIdString = updatedConsultation.formAccessCode.toString();
           }
-          
+
           const code = await this.codeRepository.findById(codeIdString);
-          
+
           if (code && code.consultationId) {
             // Sync for any code linked to a consultation (both case codes and consultation-only codes)
             const activeFrom = updatedConsultation.consultationAccessActiveFrom;
             const activeUntil = updatedConsultation.consultationAccessActiveUntil;
-            
+
             if (activeFrom && activeUntil) {
               // Update code validity without syncing back to consultation (prevent circular update)
               await this.codeRepository.updateCodeValidity(
@@ -623,7 +653,7 @@ export class ConsultationService {
           // Don't fail the entire operation if code sync fails
         }
       }
-      
+
       // if updatedConsultation was successfully updated, delete excluded forms from forms table
       return ServiceResponse.success(
         "Consultation updated successfully",
@@ -667,7 +697,7 @@ export class ConsultationService {
             return ServiceResponse.success("Form access code retrieved successfully", codeObj.code);
           }
         }
-        
+
         // Otherwise treat it as an ObjectId string and fetch the code
         const code = await this.codeRepository.findById(consultation.formAccessCode.toString());
         if (!code) {
@@ -714,13 +744,16 @@ export class ConsultationService {
       // Soft delete all associated forms before deleting the consultation
       if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
         try {
-          const softDeletePromises = consultation.proms.map((formId) =>
-            formRepository.softDeleteForm(
-              formId.toString(),
-              "system", // deletedBy - system action when consultation is deleted
-              "Consultation was deleted"
-            )
-          );
+          const softDeletePromises = consultation.proms
+            .map((formId) => this.getFormId(formId))
+            .filter((formId): formId is string => Boolean(formId))
+            .map((formId) =>
+              formRepository.softDeleteForm(
+                formId,
+                "system", // deletedBy - system action when consultation is deleted
+                "Consultation was deleted"
+              )
+            );
           await Promise.all(softDeletePromises);
           logger.info(`Soft deleted ${consultation.proms.length} forms associated with consultation ${consultationId}`);
         } catch (formError) {

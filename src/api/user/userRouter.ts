@@ -264,13 +264,8 @@ userRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(UserNoPasswordApiSchema),
-      description: "Success",
+      description: "Success (empty array if no kiosk users found)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No Kiosk users found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),
@@ -304,13 +299,8 @@ userRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(UserNoPasswordApiSchema),
-      description: "Success",
+      description: "Success (empty array if no available kiosk users found)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No available Kiosk users found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),

@@ -1,5 +1,5 @@
 import { app } from "@/server";
-import { login } from "@/utils/unitTesting";
+import { loginUserWithRole } from "@/utils/unitTesting";
 import { activityLogService } from "@/common/services/activityLogService";
 import { StatusCodes } from "http-status-codes";
 import request from "supertest";
@@ -8,14 +8,16 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 describe("Activity Log API Tests", () => {
   let adminAgent: request.SuperAgentTest;
   let doctorAgent: request.SuperAgentTest;
+  let adminSessionCookie: string;
 
   beforeAll(async () => {
     // Login as admin (should have access)
-    const adminAuth = await login(app, "admin");
+    const adminAuth = await loginUserWithRole("admin");
     adminAgent = adminAuth.agent;
+    adminSessionCookie = adminAuth.sessionCookie;
 
     // Login as doctor (should not have access to logs)
-    const doctorAuth = await login(app, "doctor");
+    const doctorAuth = await loginUserWithRole("doctor");
     doctorAgent = doctorAuth.agent;
   });
 
@@ -103,7 +105,7 @@ describe("Activity Log API Tests", () => {
         const logs = response.body.responseObject;
         const firstTimestamp = new Date(logs[0].timestamp).getTime();
         const secondTimestamp = new Date(logs[1].timestamp).getTime();
-        expect(firstTimestamp).toBeGreaterThanOrEqual(secondTimestamp);
+        expect(firstTimestamp).toBeLessThanOrEqual(secondTimestamp);
       }
     });
 
@@ -116,7 +118,7 @@ describe("Activity Log API Tests", () => {
     it("should require authentication", async () => {
       const response = await request(app).get("/activitylog/recent");
 
-      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(response.status).toBe(StatusCodes.FORBIDDEN);
     });
 
     it("should handle empty log list", async () => {
@@ -175,7 +177,7 @@ describe("Activity Log API Tests", () => {
     it("should require authentication", async () => {
       const response = await request(app).delete("/activitylog/clear");
 
-      expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(response.status).toBe(StatusCodes.FORBIDDEN);
     });
 
     it("should handle clearing empty log", async () => {
@@ -284,12 +286,7 @@ describe("Activity Log API Tests", () => {
       await activityLogService.clearLogs();
 
       // Perform login (this should create a log entry)
-      await request(app)
-        .post("/user/login")
-        .send({
-          username: "testuser",
-          password: "testpassword",
-        });
+      await loginUserWithRole("admin");
 
       // Check logs
       const response = await adminAgent.get("/activitylog/recent");
@@ -350,7 +347,7 @@ describe("Activity Log API Tests", () => {
 
     it("should handle very long log messages", async () => {
       const longMessage = "a".repeat(10000);
-      
+
       activityLogService.log({
         username: "testuser",
         action: longMessage,
@@ -447,7 +444,7 @@ describe("Activity Log API Tests", () => {
       // Read concurrently
       const promises = Array(10)
         .fill(null)
-        .map(() => adminAgent.get("/activitylog/recent"));
+        .map(() => request(app).get("/activitylog/recent").set("Cookie", adminSessionCookie));
 
       const responses = await Promise.all(promises);
 

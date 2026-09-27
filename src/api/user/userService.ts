@@ -60,8 +60,8 @@ export class UserService {
       // If user is admin, get all users (optionally filtered by role)
       // If not admin, get users from same department (optionally filtered by role)
       // Convert ObjectId[] to string[] for MongoDB query
-      const departments = isAdmin 
-        ? undefined 
+      const departments = isAdmin
+        ? undefined
         : currentUser.department?.map(d => d.toString());
       const users = await this.userRepository.findAllFilteredAsync(
         departments,
@@ -88,7 +88,7 @@ export class UserService {
     try {
       const kioskUsers = await this.userRepository.findAllByRoleAsync("kiosk");
       if (!kioskUsers || kioskUsers.length === 0) {
-        return ServiceResponse.failure("No Kiosk users found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<UserNoPassword[]>("No Kiosk users found", []);
       }
       return ServiceResponse.success<UserNoPassword[]>("Kiosk users found", kioskUsers);
     } catch (ex) {
@@ -108,14 +108,14 @@ export class UserService {
       // Get all kiosk users
       const kioskUsers = await this.userRepository.findAllByRoleAsync("kiosk");
       if (!kioskUsers || kioskUsers.length === 0) {
-        return ServiceResponse.failure("No Kiosk users found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<UserNoPassword[]>("No Kiosk users found", []);
       }
 
       // Filter out kiosk users that have an active consultation assigned
       const availableKioskUsers = kioskUsers.filter((user) => !user.consultationId);
 
       if (availableKioskUsers.length === 0) {
-        return ServiceResponse.failure("No available Kiosk users found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<UserNoPassword[]>("No available Kiosk users found", []);
       }
 
       return ServiceResponse.success<UserNoPassword[]>("Available kiosk users found", availableKioskUsers);
@@ -272,9 +272,9 @@ export class UserService {
       if (!user._id) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);
       }
-      
+
       logger.debug({ username }, "UserService.ts: Logging in user with username");
-      
+
       const isPasswordValid = await comparePasswords(password, user.password);
       if (!isPasswordValid) {
         return ServiceResponse.failure("Invalid username or password", null, StatusCodes.UNAUTHORIZED);

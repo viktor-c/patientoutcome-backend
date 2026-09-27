@@ -2,6 +2,8 @@ import { StatusCodes } from "http-status-codes";
 import request from "supertest";
 
 import type { PatientCase } from "@/api/case/patientCaseModel";
+import { consultationModel } from "@/api/consultation/consultationModel";
+import { FormModel } from "@/api/form/formModel";
 import { patientRepository } from "@/api/seed/seedRouter";
 import type { ServiceResponse } from "@/common/models/serviceResponse";
 import { app } from "@/server";
@@ -260,22 +262,21 @@ describe("Patient Case Soft Delete API Endpoints", () => {
     it("should not return soft-deleted cases in external ID search", async () => {
       // Use valid 3+ character search query from seeded mock case ("84612")
       const searchQuery = "846";
-      
+
       // Act - search should not return deleted case
-      const response = await request(app).get(`/case/search/${searchQuery}`);
+      const response = await request(app).get(`/cases/searchById/${searchQuery}`);
       const responseBody: ServiceResponse<PatientCase[]> = response.body;
 
-      // Assert - soft deleted case should not appear in results
-      // Search may return OK with empty results or 404 if no matches
-      if (response.statusCode === StatusCodes.OK) {
-        const foundCase = responseBody.responseObject?.find(
-          (c) => c._id?.toString() === testCaseId
-        );
-        expect(foundCase).toBeUndefined();
-      } else {
-        // 404 is also acceptable if no results
-        expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
-      }
+      // Assert - search always returns 200 with empty array or matching cases
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+
+      // Soft deleted case should not appear in results
+      const foundCase = responseBody.responseObject?.find(
+        (c) => c._id?.toString() === testCaseId
+      );
+      expect(foundCase).toBeUndefined();
     });
   });
 
@@ -305,11 +306,11 @@ describe("Patient Case Soft Delete API Endpoints", () => {
       // Use mockPatients[1] case since the first patient's case may have been permanently deleted
       const independentPatientId = patientRepository.mockPatients[1]._id as string;
       const independentCaseId = patientRepository.mockPatients[1].cases?.[0] as string;
-      
+
       // Act - Soft delete case independently
       const softDeleteResponse = await request(app).post(`/patient/${independentPatientId}/case/${independentCaseId}/soft-delete`);
       expect(softDeleteResponse.statusCode).toEqual(StatusCodes.OK);
-      
+
       // Assert - Case should be in deleted list
       const deletedCases = await request(app).get("/case/deleted");
       expect(deletedCases.statusCode).toEqual(StatusCodes.OK);
@@ -318,6 +319,54 @@ describe("Patient Case Soft Delete API Endpoints", () => {
       );
       expect(deletedCase).toBeDefined();
       expect(deletedCase?.deletedAt).toBeDefined();
+    });
+  });
+
+  describe("Case soft-delete cascade and consultation visibility", () => {
+    const PATIENT_WITH_CONSULTATIONS_ID = "6771d9d410ede2552b7bba40";
+    const CASE_WITH_CONSULTATIONS_ID = "677da5d8cb4569ad1c65515f";
+    const CONSULTATION_ID = "60d5ec49f1b2c12d88f1e8a1";
+
+    beforeEach(async () => {
+      await request(app).get("/seed/patients");
+      await request(app).get("/seed/patientCase");
+      await request(app).get("/seed/consultation");
+      await request(app).get("/seed/forms");
+    });
+
+    it("should delete requested consultations and remove active forms from the case", async () => {
+      const response = await request(app)
+        .post(`/patient/${PATIENT_WITH_CONSULTATIONS_ID}/case/${CASE_WITH_CONSULTATIONS_ID}/soft-delete`)
+        .send({ deleteConsultations: true, deleteForms: true });
+
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+
+      const remainingConsultations = await consultationModel.find({ patientCaseId: CASE_WITH_CONSULTATIONS_ID }).lean();
+      expect(remainingConsultations).toHaveLength(0);
+
+      const remainingActiveForms = await FormModel.find({
+        caseId: CASE_WITH_CONSULTATIONS_ID,
+        deletedAt: null,
+      }).lean();
+      expect(remainingActiveForms).toHaveLength(0);
+    });
+
+    it("should hide consultations behind a soft-deleted case even when consultations are preserved", async () => {
+      const deleteResponse = await request(app)
+        .post(`/patient/${PATIENT_WITH_CONSULTATIONS_ID}/case/${CASE_WITH_CONSULTATIONS_ID}/soft-delete`)
+        .send({ deleteConsultations: false, deleteForms: false });
+
+      expect(deleteResponse.statusCode).toEqual(StatusCodes.OK);
+
+      const persistedConsultation = await consultationModel.findById(CONSULTATION_ID).lean();
+      expect(persistedConsultation).toBeTruthy();
+
+      const listResponse = await request(app).get(`/consultations/case/${CASE_WITH_CONSULTATIONS_ID}`);
+      expect(listResponse.statusCode).toEqual(StatusCodes.OK);
+      expect(listResponse.body.responseObject).toEqual([]);
+
+      const getResponse = await request(app).get(`/consultation/${CONSULTATION_ID}`);
+      expect(getResponse.statusCode).toEqual(StatusCodes.NOT_FOUND);
     });
   });
 });

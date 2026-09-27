@@ -16,7 +16,7 @@ export class KioskService {
       const kioskUsers = await userRepository.findAllByRoleAsync("kiosk");
 
       if (!kioskUsers || kioskUsers.length === 0) {
-        return ServiceResponse.failure("No kiosk users found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<UserNoPassword[]>("No kiosk users found", []);
       }
 
       return ServiceResponse.success("Kiosk users retrieved successfully", kioskUsers);
@@ -128,13 +128,13 @@ export class KioskService {
         });
       }
 
-        const consultationId = kioskUser.consultationId?.toString() || consultation._id?.toString();
-        if (!consultationId) {
-          return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
-        }
+      const consultationId = kioskUser.consultationId?.toString() || consultation._id?.toString();
+      if (!consultationId) {
+        return ServiceResponse.failure("Consultation not found", null, StatusCodes.NOT_FOUND);
+      }
 
       const updatedConsultation = await consultationRepository.updateConsultation(
-          consultationId,
+        consultationId,
         updateData,
       );
 

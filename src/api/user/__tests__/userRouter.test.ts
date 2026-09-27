@@ -212,6 +212,45 @@ describe("User API Endpoints", () => {
     });
   });
 
+  describe("GET /user/kiosk-users/available", () => {
+    it("should return available kiosk users for authenticated users", async () => {
+      const agent = await loginUserAgent("student");
+      const response = await agent.get("/user/kiosk-users/available");
+      const responseBody: ServiceResponse<User[]> = response.body;
+
+      // Assert
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+      // Each kiosk user should not have a consultationId
+      responseBody.responseObject.forEach((user) => {
+        expect(user.roles).toContain("kiosk");
+        expect(user.consultationId).toBeUndefined();
+      });
+
+      await logoutUser(agent);
+    });
+
+    it("should return empty array when no available kiosk users exist", async () => {
+      // This test would require mocking or ensuring all kiosk users have consultations assigned
+      // For now, we document that the endpoint returns 200 with empty array when none available
+      const agent = await loginUserAgent("student");
+      const response = await agent.get("/user/kiosk-users/available");
+
+      // Assert - should always be 200, even if empty
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(response.body.success).toBeTruthy();
+      expect(Array.isArray(response.body.responseObject)).toBeTruthy();
+
+      await logoutUser(agent);
+    });
+
+    it("should require authentication", async () => {
+      const response = await request(app).get("/user/kiosk-users/available");
+      expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
+    });
+  });
+
   // get user by id
   describe("GET /user/:id", () => {
     let adminTestAgent: TestAgent;

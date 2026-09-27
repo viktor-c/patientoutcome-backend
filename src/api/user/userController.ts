@@ -164,7 +164,8 @@ class UserController {
     const { username, password } = req.body;
     const serviceResponse = await userService.login(username, password);
     if (serviceResponse.statusCode === 200 && serviceResponse.responseObject) {
-      if (serviceResponse.responseObject._id === undefined) {
+      const responseObject = serviceResponse.responseObject;
+      if (responseObject === undefined || responseObject._id === undefined) {
         req.session.userId = undefined;
         // do we need to destroy session?
         await req.session.destroy(() => { });
@@ -183,27 +184,26 @@ class UserController {
             }
 
             // Set session data after regeneration
-            req.session.userId = isValidObjectId(serviceResponse.responseObject._id)
-              ? serviceResponse.responseObject._id.toString()
-              : undefined; // Store userId in the session
-            req.session.roles = serviceResponse.responseObject.roles; // Store user roles in the session
-            req.session.permissions = serviceResponse.responseObject.permissions; // Store user permissions in the session
+            //@ts-ignore-next-line responseObject is already validated, we are in the else path
+            req.session.userId = isValidObjectId(responseObject._id) ? responseObject._id.toString() : undefined; // Store userId in the session
+            req.session.roles = responseObject.roles; // Store user roles in the session
+            req.session.permissions = responseObject.permissions; // Store user permissions in the session
             req.session.lastLogin = new Date(); // Store last login time
             req.session.loggedIn = true; // Mark the user as logged in
             req.session.username = username;
             // Store user departments as string array in session
-            req.session.department = (serviceResponse.responseObject.department || []).map((dept) => dept.toString());
+            req.session.department = (responseObject.department || []).map((dept) => dept.toString());
 
             // Log the activity
             activityLogService.log({
               username,
               action: "User logged in",
               type: "login",
-              details: `Roles: ${serviceResponse.responseObject.roles.join(", ")}`,
+              details: `Roles: ${responseObject.roles.join(", ")}`,
             });
 
             //@ts-ignore-next-line
-            serviceResponse.responseObject._id = undefined;
+            responseObject._id = undefined;
 
             // Save the session and send response
             req.session.save((saveErr) => {

@@ -4,7 +4,7 @@
 export type NotificationEventType =
   | "form_completed"
   | "consultation_window_opened"
-  | "consultation_window_closing_soon";
+  | "consultation_day_reminder";
 
 /**
  * Notification delivery channels.

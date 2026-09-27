@@ -107,7 +107,7 @@ describe("ClinicalStudy API Endpoints", () => {
       expect(responseBody.responseObject[1].studyNurses).toContain(studyNurseId);
     });
 
-    it("should return 404 because the id cannot be found", async () => {
+    it("should return empty array when no studies found for study nurse", async () => {
       const studyNurseId = "123456789012345678910123";
 
       // Act
@@ -115,10 +115,10 @@ describe("ClinicalStudy API Endpoints", () => {
       const responseBody: ServiceResponse<ClinicalStudy[]> = response.body;
 
       // Assert
-      expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
-      expect(responseBody.success).toBeFalsy();
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain("No Clinical Studies found for study nurse");
-      // Add more assertions based on your mock data
+      expect(responseBody.responseObject).toEqual([]);
     });
   });
 

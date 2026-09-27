@@ -24,6 +24,11 @@ export const ImageSchema = z.object({
   notes: z.array(NoteSchema),
 });
 
+const ConsultationNotificationTrackingSchema = z.object({
+  windowOpenNotifiedAt: dateSchema.optional(),
+  consultationDayNotifiedAt: dateSchema.optional(),
+});
+
 // Define the PatientCaseConsultation schema (for database)
 export const ConsultationSchema = z.object({
   _id: zId().optional(),
@@ -41,6 +46,7 @@ export const ConsultationSchema = z.object({
   visitedBy: z.array(zId("User")),
   formAccessCode: zId("Code").optional(),
   kioskId: zId("User").optional().nullable(),
+  notificationTracking: ConsultationNotificationTrackingSchema.optional(),
 });
 
 // Define the PatientCaseConsultation schema for OpenAPI (with populated forms)

@@ -1,0 +1,4 @@
+Your consultation is today.
+
+Please complete your questionnaire using the following link:
+{{codeUrl}}

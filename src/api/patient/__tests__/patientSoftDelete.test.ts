@@ -132,7 +132,7 @@ describe("Patient Soft Delete API Endpoints", () => {
       expect(responseBody.message).toContain("Deleted patients found");
       expect(responseBody.responseObject?.patients).toBeDefined();
       expect(responseBody.responseObject?.patients.length).toBeGreaterThanOrEqual(2);
-      
+
       // Verify all returned patients have deletedAt set
       responseBody.responseObject?.patients.forEach((patient) => {
         expect(patient.deletedAt).toBeDefined();
@@ -254,7 +254,7 @@ describe("Patient Soft Delete API Endpoints", () => {
     it("should not return soft-deleted patients in external ID search", async () => {
       // Use the external ID from the seeded mock patient (index 2 = "q1w2e")
       const externalId = patientRepository.mockPatients[2].externalPatientId?.[0];
-      
+
       // Act
       const response = await request(app).get(`/patient/externalId/${externalId}`);
 
@@ -265,22 +265,21 @@ describe("Patient Soft Delete API Endpoints", () => {
     it("should not return soft-deleted patients in partial search", async () => {
       // Use valid 3+ character search query from seeded mock patient (index 2 = "q1w2e")
       const searchQuery = "q1w";
-      
+
       // Act
-      const response = await request(app).get(`/patient/search/${searchQuery}`);
+      const response = await request(app).get(`/patient/search/externalId/${searchQuery}`);
       const responseBody: ServiceResponse<Patient[]> = response.body;
 
-      // Assert - soft deleted patient should not appear in search results
-      // Search may return OK with empty results or 404 if no matches
-      if (response.statusCode === StatusCodes.OK) {
-        const foundPatient = responseBody.responseObject?.find(
-          (p) => p._id?.toString() === testPatientId
-        );
-        expect(foundPatient).toBeUndefined();
-      } else {
-        // 404 is also acceptable if no results
-        expect(response.statusCode).toEqual(StatusCodes.NOT_FOUND);
-      }
+      // Assert - search always returns 200 with empty array or matching patients
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(responseBody.success).toBeTruthy();
+      expect(Array.isArray(responseBody.responseObject)).toBeTruthy();
+
+      // Soft deleted patient should not appear in search results
+      const foundPatient = responseBody.responseObject?.find(
+        (p) => p._id?.toString() === testPatientId
+      );
+      expect(foundPatient).toBeUndefined();
     });
   });
 
@@ -316,7 +315,7 @@ describe("Patient Soft Delete API Endpoints", () => {
      * These IDs come straight from the seeded mock data and are stable across runs.
      */
     const PATIENT_WITH_DATA_ID = "6771d9d410ede2552b7bba40";
-    const CASE_ID              = "677da5d8cb4569ad1c65515f";
+    const CASE_ID = "677da5d8cb4569ad1c65515f";
 
     beforeAll(async () => {
       // Seed all related data in the correct order (parent before child).

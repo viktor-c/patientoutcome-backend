@@ -146,13 +146,8 @@ patientCaseRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(PatientCaseSearchResultSchema),
-      description: "Returns a list of case IDs and external IDs matching the search query",
+      description: "Returns a list of case IDs and external IDs matching the search query (empty array if no matches)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Patient cases not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),

@@ -47,13 +47,8 @@ userDepartmentRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(UserDepartmentSchema),
-      description: "Success",
+      description: "Success (empty array if no departments found)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No departments found",
-      statusCode: 404,
     },
   ]),
 });

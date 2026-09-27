@@ -6,6 +6,7 @@ import { surgeryController } from "../surgery/surgeryController";
 import { SurgeryRepository } from "../surgery/surgeryRepository";
 import { consultationRepository } from "@/api/consultation/consultationRepository";
 import { formRepository } from "@/api/form/formRepository";
+import { codeRepository } from "@/api/code/codeRepository";
 import type { PatientCase, PatientCaseWithPopulatedSurgeries } from "./patientCaseModel";
 import { PatientCaseRepository } from "./patientCaseRepository";
 
@@ -26,6 +27,21 @@ export class PatientCaseService {
     if (!consultation || typeof consultation !== "object") return null;
     const consultationRecord = consultation as Record<string, unknown>;
     const rawId = consultationRecord._id ?? consultationRecord.id;
+    if (typeof rawId === "string") return rawId;
+    if (rawId && typeof rawId === "object") {
+      const idRecord = rawId as Record<string, unknown>;
+      if (typeof idRecord._id === "string") return idRecord._id;
+      if (typeof idRecord.id === "string") return idRecord.id;
+    }
+    return null;
+  }
+
+  private getFormId(form: unknown): string | null {
+    if (typeof form === "string") return form;
+    if (!form || typeof form !== "object") return null;
+
+    const formRecord = form as Record<string, unknown>;
+    const rawId = formRecord._id ?? formRecord.id;
     if (typeof rawId === "string") return rawId;
     if (rawId && typeof rawId === "object") {
       const idRecord = rawId as Record<string, unknown>;
@@ -211,26 +227,30 @@ export class PatientCaseService {
       const shouldDeleteConsultations = options.deleteConsultations ?? false;
       const shouldDeleteForms = options.deleteForms ?? false;
 
-      if (shouldDeleteConsultations || shouldDeleteForms) {
+      if (shouldDeleteConsultations) {
+        const consultationIds = await consultationRepository.getIdsByCaseIds([caseId]);
+
+        if (consultationIds.length > 0) {
+          await formRepository.hardDeleteFormsByConsultationIds(consultationIds);
+          await codeRepository.detachConsultationIds(consultationIds);
+        }
+
+        await consultationRepository.hardDeleteConsultationsByCaseIds([caseId]);
+        await formRepository.hardDeleteFormsByCaseIds([caseId]);
+      } else if (shouldDeleteForms) {
         const consultations = await consultationRepository.getAllConsultations(caseId);
 
         for (const consultation of consultations) {
           const consultationId = this.getConsultationId(consultation);
           if (!consultationId) continue;
+          const formIds = (consultation.proms ?? [])
+            .map((form) => this.getFormId(form))
+            .filter((formId): formId is string => Boolean(formId));
 
-          if (shouldDeleteConsultations) {
-            if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
-              await Promise.all(
-                consultation.proms.map((formId) =>
-                  formRepository.softDeleteForm(formId.toString(), "system", "Consultation was deleted"),
-                ),
-              );
-            }
-            await consultationRepository.deleteConsultation(consultationId);
-          } else if (shouldDeleteForms && consultation.proms && consultation.proms.length > 0) {
+          if (formIds.length > 0) {
             await Promise.all(
-              consultation.proms.map((formId) =>
-                formRepository.softDeleteForm(formId.toString(), "system", "Parent case was soft deleted"),
+              formIds.map((formId) =>
+                formRepository.softDeleteForm(formId, "system", "Parent case was soft deleted"),
               ),
             );
           }
@@ -393,7 +413,7 @@ export class PatientCaseService {
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ${diagnosis}: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure("An error occurred while retrieving cases with the given diagnosis.", [], StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -410,7 +430,7 @@ export class PatientCaseService {
     } catch (ex) {
       const errorMessage = `Error finding cases with diagnosis ICD10 ${diagnosisICD10}: ${(ex as Error).message}`;
       logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
+      return ServiceResponse.failure("An error occurred while searching cases.", [], StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 

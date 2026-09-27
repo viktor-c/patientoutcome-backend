@@ -272,13 +272,8 @@ clinicalStudyRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(ClinicalStudyWithUsersSchema),
-      description: "Success",
+      description: "Success (empty array if no studies found for this study nurse)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "Clinical study not found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),

@@ -30,14 +30,16 @@ vi.mock("nodemailer", () => ({
 
 // ── Mock PushSubscriptionModel ───────────────────────────────────────────────
 // vi.hoisted ensures these are declared before vi.mock() hoisting runs
-const { mockLeanFn, mockUpdateOne } = vi.hoisted(() => ({
+const { mockLeanFn, mockFindOneLean, mockUpdateOne } = vi.hoisted(() => ({
   mockLeanFn: vi.fn().mockResolvedValue([]),
+  mockFindOneLean: vi.fn().mockResolvedValue(null),
   mockUpdateOne: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock("@/api/notification/pushSubscriptionModel", () => ({
   PushSubscriptionModel: {
     find: vi.fn().mockReturnValue({ lean: mockLeanFn }),
+    findOne: vi.fn().mockReturnValue({ lean: mockFindOneLean }),
     updateOne: mockUpdateOne,
   },
 }));
@@ -91,6 +93,7 @@ describe("NotificationService", () => {
     vi.clearAllMocks();
     // Reset lean mock to return empty array by default
     mockLeanFn.mockResolvedValue([]);
+    mockFindOneLean.mockResolvedValue(null);
     // Restore NOTIFICATIONS_ENABLED to true before each test
     (notificationEnv as any).NOTIFICATIONS_ENABLED = true;
     (notificationEnv as any).NOTIFICATION_ADMIN_EMAILS = "";
@@ -236,6 +239,46 @@ describe("NotificationService", () => {
     );
 
     expect(mockSendMail).not.toHaveBeenCalled();
+  });
+
+  it("deep-links patient push notifications to the subscribed access-code flow", async () => {
+    const mockSub = {
+      endpoint: "https://fcm.googleapis.com/patient",
+      keys: { auth: "auth", p256dh: "p256dh" },
+    };
+    mockLeanFn.mockResolvedValueOnce([mockSub]);
+
+    await notificationService.notifyPatient(
+      { type: "consultation_day_reminder", consultationId: "consult-1", caseId: "case-1" },
+      null,
+      "XOL70",
+      ["push"],
+    );
+
+    expect(webpush.sendNotification).toHaveBeenCalledOnce();
+    const [, payloadArg] = vi.mocked(webpush.sendNotification).mock.calls[0];
+    const payload = JSON.parse(payloadArg as string);
+    expect(payload.url).toBe("http://localhost:5173/flow/XOL70");
+    expect(payload.title).toBe("Termin heute");
+  });
+
+  it("sends a development test push to a stored endpoint", async () => {
+    mockFindOneLean.mockResolvedValueOnce({
+      endpoint: "https://fcm.googleapis.com/test-endpoint",
+      keys: { auth: "auth", p256dh: "p256dh" },
+    });
+
+    const result = await notificationService.sendDevelopmentTestPush({
+      endpoint: "https://fcm.googleapis.com/test-endpoint",
+      url: "http://localhost:5173/consultation/forms/external-code/SJM13",
+    });
+
+    expect(result).toBe("sent");
+    expect(webpush.sendNotification).toHaveBeenCalledOnce();
+    const [, payloadArg] = vi.mocked(webpush.sendNotification).mock.calls[0];
+    const payload = JSON.parse(payloadArg as string);
+    expect(payload.title).toBe("Test notification");
+    expect(payload.url).toBe("http://localhost:5173/consultation/forms/external-code/SJM13");
   });
 
   // ── VAPID key helper ─────────────────────────────────────────────────────

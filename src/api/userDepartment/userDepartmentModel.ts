@@ -42,6 +42,18 @@ export const UserDepartmentSchema = z.object({
 // Infer TypeScript type from the schema
 export type UserDepartment = z.infer<typeof UserDepartmentSchema>;
 
+const DepartmentFormTemplateIdsSchema = z.object({
+  formTemplateIds: z.array(commonValidations.id).optional(),
+});
+
+export type CreateUserDepartmentInput = Omit<UserDepartment, "_id"> & {
+  formTemplateIds?: string[];
+};
+
+export type UpdateUserDepartmentInput = Partial<Omit<UserDepartment, "_id">> & {
+  formTemplateIds?: string[];
+};
+
 /** Create Mongoose Schema and Model */
 const MongooseUserDepartmentSchema = zodSchema(UserDepartmentSchema.omit({ _id: true }));
 export const userDepartmentModel = mongoose.model("UserDepartment", MongooseUserDepartmentSchema, "userDepartments");
@@ -56,7 +68,9 @@ export const GetUserDepartmentSchema = z.object({
 
 // Input validation for 'POST userDepartment' endpoint
 export const CreateUserDepartmentSchema = z.object({
-  body: UserDepartmentSchema.omit({ _id: true, hasChildDepartments: true }),
+  body: UserDepartmentSchema.omit({ _id: true, hasChildDepartments: true }).extend(
+    DepartmentFormTemplateIdsSchema.shape
+  ),
   query: z.object({}).optional(),
   params: z.object({}).optional(),
 });
@@ -64,7 +78,9 @@ export const CreateUserDepartmentSchema = z.object({
 // Input validation for 'PUT userDepartment/:id' endpoint
 export const UpdateUserDepartmentSchema = z.object({
   params: z.object({ id: commonValidations.id }),
-  body: UserDepartmentSchema.omit({ _id: true, hasChildDepartments: true }).partial(),
+  body: UserDepartmentSchema.omit({ _id: true, hasChildDepartments: true })
+    .extend(DepartmentFormTemplateIdsSchema.shape)
+    .partial(),
 });
 
 // Input validation for 'DELETE userDepartment/:id' endpoint

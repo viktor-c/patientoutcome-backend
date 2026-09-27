@@ -64,13 +64,8 @@ kioskRegistry.registerPath({
   responses: createApiResponses([
     {
       schema: z.array(UserNoPasswordSchema),
-      description: "Kiosk users retrieved successfully",
+      description: "Kiosk users retrieved successfully (empty array if none found)",
       statusCode: 200,
-    },
-    {
-      schema: z.object({ message: z.string() }),
-      description: "No kiosks found",
-      statusCode: 404,
     },
     {
       schema: z.object({ message: z.string() }),

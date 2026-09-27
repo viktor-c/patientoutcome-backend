@@ -13,6 +13,37 @@ export class ConsultationRepository {
     refDate: new Date(Date.now() - 170 * 24 * 60 * 60 * 1000),
   });
 
+  private isParentChainActive(patientCaseField: unknown): boolean {
+    if (!patientCaseField || typeof patientCaseField !== "object") {
+      return true;
+    }
+
+    const patientCase = patientCaseField as Record<string, unknown>;
+    if (patientCase.deletedAt) {
+      return false;
+    }
+
+    const patientField = patientCase.patient;
+    if (!patientField || typeof patientField !== "object") {
+      return true;
+    }
+
+    const patient = patientField as Record<string, unknown>;
+    return !patient.deletedAt;
+  }
+
+  private filterInactiveParentConsultation<T extends Consultation | null>(consultation: T): T {
+    if (!consultation) {
+      return consultation;
+    }
+
+    return (this.isParentChainActive(consultation.patientCaseId) ? consultation : null) as T;
+  }
+
+  private filterInactiveParentConsultations<T extends Consultation[]>(consultations: T): T {
+    return consultations.filter((consultation) => this.isParentChainActive(consultation.patientCaseId)) as T;
+  }
+
   private selectedCaseFollowupDate(weeksAfterSurgery: number): Date {
     return new Date(this.selectedCaseSurgeryDate.getTime() + weeksAfterSurgery * 7 * 24 * 60 * 60 * 1000);
   }
@@ -74,7 +105,7 @@ export class ConsultationRepository {
       ])
       .lean();
 
-      return this.attachSurgeriesToConsultation(consultation);
+    return this.filterInactiveParentConsultation(await this.attachSurgeriesToConsultation(consultation));
   }
 
   /**
@@ -98,7 +129,7 @@ export class ConsultationRepository {
       .select("-__v")
       .lean();
 
-      return this.attachSurgeriesToConsultations(consultations);
+    return this.filterInactiveParentConsultations(await this.attachSurgeriesToConsultations(consultations));
   }
   /**
    * @param formAccessCode use the form access code to get the consultation, this is the id of the consultation
@@ -117,7 +148,7 @@ export class ConsultationRepository {
       ])
       .lean();
 
-      return this.attachSurgeriesToConsultation(consultation);
+    return this.filterInactiveParentConsultation(await this.attachSurgeriesToConsultation(consultation));
   }
 
   /**
@@ -139,7 +170,7 @@ export class ConsultationRepository {
       ])
       .lean();
 
-      return this.attachSurgeriesToConsultation(consultation);
+    return this.filterInactiveParentConsultation(await this.attachSurgeriesToConsultation(consultation));
   }
 
   /**
@@ -167,10 +198,10 @@ export class ConsultationRepository {
         addedBy: typeof image.addedBy === "string" ? new mongoose.Types.ObjectId(image.addedBy) : image.addedBy,
         notes: image.notes
           ? image.notes.map((note: any) => ({
-              ...note,
-              createdBy:
-                typeof note.createdBy === "string" ? new mongoose.Types.ObjectId(note.createdBy) : note.createdBy,
-            }))
+            ...note,
+            createdBy:
+              typeof note.createdBy === "string" ? new mongoose.Types.ObjectId(note.createdBy) : note.createdBy,
+          }))
           : [],
       }));
     }
@@ -227,7 +258,7 @@ export class ConsultationRepository {
         { path: "formAccessCode" },
       ])
       .lean();
-    return this.attachSurgeriesToConsultations(cons);
+    return this.filterInactiveParentConsultations(await this.attachSurgeriesToConsultations(cons));
   }
 
   public _mockConsultations: Consultation[] = [];

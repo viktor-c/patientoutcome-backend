@@ -1,6 +1,11 @@
 import { StatusCodes } from "http-status-codes";
 
-import type { UserDepartment } from "@/api/userDepartment/userDepartmentModel";
+import { FormTemplateRepository } from "@/api/formtemplate/formTemplateRepository";
+import type {
+  CreateUserDepartmentInput,
+  UpdateUserDepartmentInput,
+  UserDepartment,
+} from "@/api/userDepartment/userDepartmentModel";
 import { UserDepartmentRepository } from "@/api/userDepartment/userDepartmentRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/common/utils/logger";
@@ -11,9 +16,59 @@ import { logger } from "@/common/utils/logger";
  */
 export class UserDepartmentService {
   private userDepartmentRepository: UserDepartmentRepository;
+  private formTemplateRepository: FormTemplateRepository;
 
-  constructor(repository: UserDepartmentRepository = new UserDepartmentRepository()) {
+  constructor(
+    repository: UserDepartmentRepository = new UserDepartmentRepository(),
+    formTemplateRepository: FormTemplateRepository = new FormTemplateRepository(),
+  ) {
     this.userDepartmentRepository = repository;
+    this.formTemplateRepository = formTemplateRepository;
+  }
+
+  private async ensureDepartmentTemplateMapping(departmentId: string): Promise<void> {
+    const existingMapping = await this.formTemplateRepository.getDepartmentMapping(departmentId);
+    if (existingMapping) {
+      return;
+    }
+
+    const allTemplates = await this.formTemplateRepository.getAllTemplates();
+    const formTemplateIds = allTemplates
+      .map((template) => template._id?.toString())
+      .filter((templateId): templateId is string => typeof templateId === "string" && templateId.length > 0);
+
+    await this.formTemplateRepository.setDepartmentMapping(departmentId, formTemplateIds);
+  }
+
+  private toPersistableDepartmentData(
+    departmentData: Omit<UserDepartment, "_id"> | Partial<Omit<UserDepartment, "_id">>,
+  ): Omit<UserDepartment, "_id"> | Partial<Omit<UserDepartment, "_id">> {
+    const { hasChildDepartments: _hasChildDepartments, ...persistableData } = departmentData;
+    return persistableData;
+  }
+
+  private async syncDepartmentTemplateMapping(departmentId: string, formTemplateIds?: string[]): Promise<void> {
+    if (Array.isArray(formTemplateIds)) {
+      await this.formTemplateRepository.setDepartmentMapping(departmentId, formTemplateIds);
+      return;
+    }
+
+    await this.ensureDepartmentTemplateMapping(departmentId);
+  }
+
+  private async rollbackDepartmentTemplateMapping(
+    departmentId: string,
+    previousMapping: Awaited<ReturnType<FormTemplateRepository["getDepartmentMapping"]>>,
+  ): Promise<void> {
+    if (previousMapping) {
+      await this.formTemplateRepository.setDepartmentMapping(
+        departmentId,
+        previousMapping.formTemplateIds.map((templateId) => templateId.toString()),
+      );
+      return;
+    }
+
+    await this.formTemplateRepository.deleteDepartmentMapping(departmentId);
   }
 
   // Retrieves all departments from the database
@@ -21,13 +76,13 @@ export class UserDepartmentService {
     try {
       const departments = await this.userDepartmentRepository.findAllAsync();
       if (!departments || departments.length === 0) {
-        return ServiceResponse.failure("No departments found", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<UserDepartment[]>("No departments found", []);
       }
 
       // Enrich departments with hasChildDepartments info
       const enrichedDepartments = await Promise.all(
         departments.map(async (dept) => {
-          const hasChildDepartments = dept.departmentType === "center" 
+          const hasChildDepartments = dept.departmentType === "center"
             ? await this.userDepartmentRepository.countChildDepartments(dept._id?.toString() || "") > 0
             : false;
           return {
@@ -58,10 +113,10 @@ export class UserDepartmentService {
       }
 
       // Add hasChildDepartments info
-      const hasChildDepartments = department.departmentType === "center" 
+      const hasChildDepartments = department.departmentType === "center"
         ? await this.userDepartmentRepository.countChildDepartments(department._id?.toString() || "") > 0
         : false;
-      
+
       const enrichedDepartment = {
         ...department,
         hasChildDepartments,
@@ -99,10 +154,13 @@ export class UserDepartmentService {
   }
 
   // Creates a new department
-  async create(departmentData: Omit<UserDepartment, "_id">): Promise<ServiceResponse<UserDepartment | null>> {
+  async create(departmentData: CreateUserDepartmentInput): Promise<ServiceResponse<UserDepartment | null>> {
     try {
+      const { formTemplateIds, ...departmentFields } = departmentData;
+      const persistableDepartmentData = this.toPersistableDepartmentData(departmentFields) as Omit<UserDepartment, "_id">;
+
       // Validate that centers don't have parent centers (prevent circular references)
-      if (departmentData.departmentType === "center" && departmentData.center) {
+      if (persistableDepartmentData.departmentType === "center" && persistableDepartmentData.center) {
         return ServiceResponse.failure(
           "Centers cannot have a parent center assigned",
           null,
@@ -111,7 +169,7 @@ export class UserDepartmentService {
       }
 
       // Check if department with same name already exists
-      const existingDepartment = await this.userDepartmentRepository.findByNameAsync(departmentData.name);
+      const existingDepartment = await this.userDepartmentRepository.findByNameAsync(persistableDepartmentData.name);
       if (existingDepartment) {
         return ServiceResponse.failure(
           "Department with this name already exists",
@@ -120,7 +178,25 @@ export class UserDepartmentService {
         );
       }
 
-      const department = await this.userDepartmentRepository.createAsync(departmentData);
+      const department = await this.userDepartmentRepository.createAsync(persistableDepartmentData);
+
+      const departmentId = department._id?.toString();
+      if (!departmentId) {
+        throw new Error("Created department is missing an id");
+      }
+
+      try {
+        await this.syncDepartmentTemplateMapping(departmentId, formTemplateIds);
+      } catch (mappingError) {
+        try {
+          await this.userDepartmentRepository.deleteAsync(departmentId);
+        } catch (rollbackError) {
+          logger.error({ rollbackError, departmentId }, "Failed to rollback department creation after mapping initialization error");
+        }
+
+        throw mappingError;
+      }
+
       return ServiceResponse.success<UserDepartment>("Department created successfully", department, StatusCodes.CREATED);
     } catch (ex) {
       const errorMessage = `Error creating department: ${(ex as Error).message}`;
@@ -134,8 +210,11 @@ export class UserDepartmentService {
   }
 
   // Updates an existing department
-  async update(id: string, departmentData: Partial<Omit<UserDepartment, "_id">>): Promise<ServiceResponse<UserDepartment | null>> {
+  async update(id: string, departmentData: UpdateUserDepartmentInput): Promise<ServiceResponse<UserDepartment | null>> {
     try {
+      const { formTemplateIds, ...departmentFields } = departmentData;
+      const persistableDepartmentData = this.toPersistableDepartmentData(departmentFields) as Partial<Omit<UserDepartment, "_id">>;
+
       // Get existing department first
       const existingDepartment = await this.userDepartmentRepository.findByIdAsync(id);
       if (!existingDepartment) {
@@ -143,7 +222,7 @@ export class UserDepartmentService {
       }
 
       // Check if department type is being changed
-      if (departmentData.departmentType && departmentData.departmentType !== existingDepartment.departmentType) {
+      if (persistableDepartmentData.departmentType && persistableDepartmentData.departmentType !== existingDepartment.departmentType) {
         // Check if current type is "center" and has child departments
         if (existingDepartment.departmentType === "center") {
           const childCount = await this.userDepartmentRepository.countChildDepartments(id);
@@ -158,7 +237,7 @@ export class UserDepartmentService {
       }
 
       // Validate that centers don't have parent centers (prevent circular references)
-      if (departmentData.departmentType === "center" && departmentData.center) {
+      if (persistableDepartmentData.departmentType === "center" && persistableDepartmentData.center) {
         return ServiceResponse.failure(
           "Centers cannot have a parent center assigned",
           null,
@@ -167,8 +246,8 @@ export class UserDepartmentService {
       }
 
       // If name is being updated, check for conflicts
-      if (departmentData.name) {
-        const existingDepartment = await this.userDepartmentRepository.findByNameAsync(departmentData.name);
+      if (persistableDepartmentData.name) {
+        const existingDepartment = await this.userDepartmentRepository.findByNameAsync(persistableDepartmentData.name);
         if (existingDepartment && existingDepartment._id?.toString() !== id) {
           return ServiceResponse.failure(
             "Department with this name already exists",
@@ -178,16 +257,33 @@ export class UserDepartmentService {
         }
       }
 
-      const department = await this.userDepartmentRepository.updateAsync(id, departmentData);
+      const previousMapping = await this.formTemplateRepository.getDepartmentMapping(id);
+      const department = await this.userDepartmentRepository.updateAsync(id, persistableDepartmentData);
       if (!department) {
         return ServiceResponse.failure("Department not found", null, StatusCodes.NOT_FOUND);
       }
 
+      try {
+        await this.syncDepartmentTemplateMapping(id, formTemplateIds);
+      } catch (mappingError) {
+        try {
+          await this.userDepartmentRepository.updateAsync(
+            id,
+            this.toPersistableDepartmentData(existingDepartment) as Partial<Omit<UserDepartment, "_id">>,
+          );
+          await this.rollbackDepartmentTemplateMapping(id, previousMapping);
+        } catch (rollbackError) {
+          logger.error({ rollbackError, departmentId: id }, "Failed to rollback department update after mapping sync error");
+        }
+
+        throw mappingError;
+      }
+
       // Add hasChildDepartments info
-      const hasChildDepartments = department.departmentType === "center" 
+      const hasChildDepartments = department.departmentType === "center"
         ? await this.userDepartmentRepository.countChildDepartments(department._id?.toString() || "") > 0
         : false;
-      
+
       const enrichedDepartment = {
         ...department,
         hasChildDepartments,
@@ -306,7 +402,7 @@ export class UserDepartmentService {
       // Check if any users are assigned to this department (by ID)
       const { userModel } = await import("../user/userModel.js");
       const usersInDepartment = await userModel.find({ department: id }).lean();
-      
+
       if (usersInDepartment && usersInDepartment.length > 0) {
         return ServiceResponse.failure(
           "Cannot delete department. Users are still assigned to this department.",
@@ -319,7 +415,13 @@ export class UserDepartmentService {
       if (!deleted) {
         return ServiceResponse.failure("Failed to delete department", null, StatusCodes.INTERNAL_SERVER_ERROR);
       }
-      
+
+      try {
+        await this.formTemplateRepository.deleteDepartmentMapping(id);
+      } catch (mappingError) {
+        logger.error({ mappingError, departmentId: id }, "Department deleted but failed to remove department-formtemplate mapping");
+      }
+
       return ServiceResponse.success("Department deleted successfully", null);
     } catch (ex) {
       const errorMessage = `Error deleting department: ${(ex as Error).message}`;

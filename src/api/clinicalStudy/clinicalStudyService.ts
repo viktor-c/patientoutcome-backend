@@ -123,7 +123,7 @@ export class ClinicalStudyService {
     try {
       const studies = await this.clinicalStudyRepository.getClinicalStudiesByStudyNurse(studyNurseId);
       if (!studies || studies.length === 0) {
-        return ServiceResponse.failure("No Clinical Studies found for study nurse", null, StatusCodes.NOT_FOUND);
+        return ServiceResponse.success<ClinicalStudy[]>("No Clinical Studies found for study nurse", []);
       }
       return ServiceResponse.success<ClinicalStudy[]>("Clinical Studies found for study nurse", studies);
     } catch (ex) {

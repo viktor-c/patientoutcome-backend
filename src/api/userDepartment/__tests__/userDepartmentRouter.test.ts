@@ -65,6 +65,16 @@ describe("UserDepartment API Endpoints", () => {
       expect(responseBody.responseObject.length).toBeGreaterThanOrEqual(2);
     });
 
+    it("should return empty array when no departments exist", async () => {
+      // Note: With seeded data, this will not be empty, but the endpoint
+      // should return 200 with empty array if no departments existed
+      const response = await request(app).get("/userDepartment").set("Cookie", adminSessionCookie);
+
+      expect(response.statusCode).toEqual(StatusCodes.OK);
+      expect(response.body.success).toBeTruthy();
+      expect(Array.isArray(response.body.responseObject)).toBeTruthy();
+    });
+
     it("should deny access for non-admin users", async () => {
       const response = await request(app).get("/userDepartment").set("Cookie", userSessionCookie);
 

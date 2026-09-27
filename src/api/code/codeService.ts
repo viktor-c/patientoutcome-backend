@@ -385,12 +385,12 @@ class CodeService {
       if (!codeDocument) {
         return ServiceResponse.failure("Code not found", false, StatusCodes.NOT_FOUND);
       }
-      
+
       // Check if code is archived
       if (codeDocument.archivedOn) {
         return ServiceResponse.failure("Code has been archived and is no longer valid", false, StatusCodes.FORBIDDEN);
       }
-      
+
       if (!codeDocument.activatedOn) {
         return ServiceResponse.failure("Code is not active", false, StatusCodes.BAD_REQUEST);
       }
@@ -485,7 +485,7 @@ class CodeService {
   async archiveCode(code: string, userId?: string): Promise<ServiceResponse<Code | null>> {
     try {
       const result = await this.codeRepository.archiveCode(code, userId);
-      
+
       if (typeof result === "string") {
         if (result === "Code not found") {
           return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
@@ -495,7 +495,7 @@ class CodeService {
         }
         return ServiceResponse.failure(result, null, StatusCodes.BAD_REQUEST);
       }
-      
+
       return ServiceResponse.success("Code archived successfully", result);
     } catch (error) {
       logger.error({ error, code }, "Error archiving code");
@@ -513,7 +513,7 @@ class CodeService {
   async restoreCode(code: string): Promise<ServiceResponse<Code | null>> {
     try {
       const result = await this.codeRepository.restoreCode(code);
-      
+
       if (typeof result === "string") {
         if (result === "Code not found") {
           return ServiceResponse.failure("Code not found", null, StatusCodes.NOT_FOUND);
@@ -523,7 +523,7 @@ class CodeService {
         }
         return ServiceResponse.failure(result, null, StatusCodes.BAD_REQUEST);
       }
-      
+
       return ServiceResponse.success("Code restored successfully", result);
     } catch (error) {
       logger.error({ error, code }, "Error restoring code");
@@ -666,19 +666,19 @@ class CodeService {
       const expiringCodes = codes.filter((code) => {
         // Must be a case-level code
         if (!code.patientCaseId || code.consultationId) return false;
-        
+
         // Must be activated
         if (!code.activatedOn) return false;
-        
+
         // Must have an expiration date
         if (!code.expiresOn) return false;
-        
+
         // Must not be archived
         if (code.archivedOn) return false;
-        
+
         // Must not be already expired
         if (new Date(code.expiresOn) <= now) return false;
-        
+
         // Check if expiring within specified months
         return isExpiringWithinMonths(code.expiresOn, months);
       });
@@ -728,10 +728,10 @@ class CodeService {
 
       // Get the department to determine validity period
       const departmentId = await this.codeRepository.resolveDepartmentIdForCode(code);
-      
+
       // Calculate new expiration from now (not from old expiration)
       const newExpiresOn = await getDepartmentCaseCodeValidity(departmentId, new Date());
-      
+
       const extended = await this.codeRepository.updateCode(codeString, { expiresOn: newExpiresOn });
       if (!extended) {
         return ServiceResponse.failure("Failed to extend code", null, StatusCodes.INTERNAL_SERVER_ERROR);

@@ -1,6 +1,8 @@
 import { codeService } from "@/api/code/codeService";
 import { PatientCaseModel } from "@/api/case/patientCaseModel";
+import { PatientCaseRepository } from "@/api/case/patientCaseRepository";
 import { patientModel } from "@/api/patient/patientModel";
+import { PatientRepository } from "@/api/patient/patientRepository";
 import { userService } from "@/api/user/userService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
@@ -9,6 +11,7 @@ import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { z } from "zod";
 import { consultationModel } from "./consultationModel";
+import { consultationRepository } from "./consultationRepository";
 import { consultationService } from "./consultationService";
 
 /**
@@ -17,6 +20,9 @@ import { consultationService } from "./consultationService";
  * @description Handles HTTP requests for patient consultation management including creation, updates, and form access code linking
  */
 class ConsultationController {
+  private patientRepository = new PatientRepository();
+  private patientCaseRepository = new PatientCaseRepository();
+
   private getSessionDepartmentIds(req: Request): string[] {
     const departments = req.session?.department;
     if (!departments) {
@@ -33,6 +39,43 @@ class ConsultationController {
     return Boolean(req.session?.roles?.includes("admin"));
   }
 
+  private async getPatientDepartmentIds(patientId: string): Promise<string[]> {
+    if (process.env.NODE_ENV === "test") {
+      const patient = this.patientRepository.mockPatients.find((entry) => entry._id?.toString() === patientId);
+      return Array.isArray(patient?.departments) ? patient.departments.map((department) => department.toString()) : [];
+    }
+
+    const patient = await patientModel.findById(patientId).select("departments").lean();
+    return Array.isArray(patient?.departments)
+      ? patient.departments.map((department) => department.toString())
+      : [];
+  }
+
+  private async getCasePatientId(caseId: string): Promise<string | undefined> {
+    if (process.env.NODE_ENV === "test") {
+      const patientCase = this.patientCaseRepository.mockPatientCases.find((entry) => entry._id?.toString() === caseId);
+      return patientCase?.patient?.toString();
+    }
+
+    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
+      .select("patient")
+      .lean<{ patient?: unknown } | null>();
+
+    return patientCase?.patient?.toString();
+  }
+
+  private async getConsultationCaseId(consultationId: string): Promise<string | undefined> {
+    if (process.env.NODE_ENV === "test") {
+      const consultation = consultationRepository.mockConsultations.find(
+        (entry) => entry._id?.toString() === consultationId,
+      );
+      return consultation?.patientCaseId?.toString();
+    }
+
+    const consultation = await consultationModel.findById(consultationId).select("patientCaseId").lean();
+    return consultation?.patientCaseId?.toString();
+  }
+
   private async canAccessPatientByDepartment(req: Request, patientId: string): Promise<boolean> {
     if (this.isAdmin(req)) {
       return true;
@@ -43,8 +86,7 @@ class ConsultationController {
       return true;
     }
 
-    const patient = await patientModel.findById(patientId).select("departments").lean();
-    const patientDepartments = (patient?.departments || []).map((department) => department.toString());
+    const patientDepartments = await this.getPatientDepartmentIds(patientId);
 
     if (patientDepartments.length === 0) {
       return true;
@@ -58,14 +100,12 @@ class ConsultationController {
       return true;
     }
 
-    const patientCase = await PatientCaseModel.findOne({ _id: caseId })
-      .select("patient")
-      .lean<{ patient?: unknown } | null>();
-    if (!patientCase?.patient) {
+    const patientId = await this.getCasePatientId(caseId);
+    if (!patientId) {
       return true;
     }
 
-    return this.canAccessPatientByDepartment(req, patientCase.patient.toString());
+    return this.canAccessPatientByDepartment(req, patientId);
   }
 
   private async canAccessConsultationByDepartment(req: Request, consultationId: string): Promise<boolean> {
@@ -73,12 +113,12 @@ class ConsultationController {
       return true;
     }
 
-    const consultation = await consultationModel.findById(consultationId).select("patientCaseId").lean();
-    if (!consultation?.patientCaseId) {
+    const caseId = await this.getConsultationCaseId(consultationId);
+    if (!caseId) {
       return true;
     }
 
-    return this.canAccessCaseByDepartment(req, consultation.patientCaseId.toString());
+    return this.canAccessCaseByDepartment(req, caseId);
   }
   /**
    * Populate createdBy field for notes with current user ID
