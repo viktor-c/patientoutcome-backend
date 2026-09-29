@@ -137,7 +137,7 @@ export class CodeRepository {
   async getAllAvailableCodes(): Promise<Code[]> {
     try {
       // Find codes where activatedOn is either null or undefined, and not archived
-      return codeModel.find({ 
+      return codeModel.find({
         $and: [
           { $or: [{ activatedOn: null }, { activatedOn: { $exists: false } }] },
           { archivedOn: { $exists: false } }
@@ -308,11 +308,11 @@ export class CodeRepository {
 
       code.activatedOn = new Date();
       const departmentId = await this.resolveDepartmentIdForPatientCase(patientCaseId);
-      
+
       // For case-level codes, use the case code validity configuration (years, not hours like consultation codes)
       const expiresOn = await getDepartmentCaseCodeValidity(departmentId, code.activatedOn);
       code.expiresOn = expiresOn;
-      
+
       code.consultationId = undefined;
       code.patientCaseId = patientCaseId;
       await code.save();
@@ -551,14 +551,26 @@ export class CodeRepository {
       if (!existingCode.activatedOn) {
         return Promise.reject("Code already deactivated");
       }
-      // Deactivate the code by setting activatedOn, expiresOn, and consultationId to undefined
-      // Note: This will not delete the code, just reset its activation status
-      // If the code is already expired, we can still deactivate it
+
+      // Case-level access codes remain valid after a form completion flow so they can be reused later.
+      // Only consultation-linked codes are invalidated when the form is completed.
+      const isCaseLevelCode = !existingCode.consultationId && Boolean(existingCode.patientCaseId);
+      if (isCaseLevelCode) {
+        logger.info(
+          {
+            code: existingCode.code,
+            patientCaseId: existingCode.patientCaseId?.toString(),
+          },
+          "Skipping deactivation for patient case access code; case-level codes remain active.",
+        );
+        return codeModel.findById(existingCode.id).select("-_id -__v").lean();
+      }
+
+      // Deactivate consultation-linked codes by setting activation status and clearing the code link.
       if (existingCode.expiresOn && existingCode.expiresOn < new Date()) {
         logger.warn("Code is already expired, deactivating it.");
       }
 
-      // Unlink code from consultation - update the consultation document directly
       if (existingCode.consultationId) {
         const consultationId =
           typeof existingCode.consultationId === "object"
@@ -567,7 +579,6 @@ export class CodeRepository {
         await consultationModel.findByIdAndUpdate(consultationId, { $unset: { formAccessCode: 1 } });
       }
 
-      // If the code is expired, we can still deactivate it
       existingCode.activatedOn = undefined;
       existingCode.expiresOn = undefined;
       existingCode.consultationId = undefined;
@@ -575,8 +586,6 @@ export class CodeRepository {
       await existingCode.save();
 
       logger.info({ codeId: existingCode.id }, "Code deactivated successfully");
-      // remove _id before returnin existing code
-      // search again for the code and deselct id
       return codeModel.findById(existingCode.id).select("-_id -__v").lean();
     } catch (error) {
       logger.error({ error }, "Error deactivating code");
@@ -617,7 +626,7 @@ export class CodeRepository {
       await code.save();
 
       logger.info({ codeId: code._id, code: codeString, archivedBy: userId }, "Code archived successfully");
-      
+
       const archivedCode = await codeModel.findById(code._id).select("-_id -__v").lean();
       return archivedCode || "Code not found";
     } catch (error) {
@@ -647,7 +656,7 @@ export class CodeRepository {
       await code.save();
 
       logger.info({ codeId: code._id, code: codeString }, "Code restored successfully");
-      
+
       const restoredCode = await codeModel.findById(code._id).select("-_id -__v").lean();
       return restoredCode || "Code not found";
     } catch (error) {
