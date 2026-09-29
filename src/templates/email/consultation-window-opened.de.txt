@@ -7,5 +7,8 @@ Bitte füllen Sie ihn bis zum {{closingDate}} aus.
 Öffnen Sie die Anwendung und geben Sie Ihren Zugangscode ein:
 {{codeUrl}}
 
+Wenn Sie keine Erinnerungs-E-Mails mehr erhalten möchten, können Sie sich hier abmelden:
+{{unsubscribeUrl}}
+
 ---
 Patient Outcome — Diese E-Mail wurde automatisch generiert.

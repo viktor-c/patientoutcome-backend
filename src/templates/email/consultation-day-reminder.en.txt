@@ -2,3 +2,6 @@ Your consultation is today.
 
 Please complete your questionnaire using the following link:
 {{codeUrl}}
+
+If you no longer want reminder emails, unsubscribe here:
+{{unsubscribeUrl}}

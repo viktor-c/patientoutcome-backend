@@ -52,6 +52,7 @@ vi.mock("@/common/utils/notificationEnvConfig", () => ({
     VAPID_PRIVATE_KEY: "test-vapid-private-key",
     VAPID_SUBJECT: "mailto:test@example.com",
     FRONTEND_URL: "http://localhost:5173",
+    BACKEND_URL: "http://localhost:40001",
     NOTIFICATION_ADMIN_EMAILS: "",
   },
 }));
@@ -145,6 +146,35 @@ describe("NotificationService", () => {
     // Both addresses should appear in the `to` field
     expect(call.to).toContain("supervisor@hospital.de");
     expect(call.to).toContain("extra@hospital.de");
+  });
+
+  it("sends scheduler summary emails to configured admin recipients", async () => {
+    (notificationEnv as any).NOTIFICATION_ADMIN_EMAILS = "ops@hospital.de,admin@hospital.de";
+
+    await notificationService.sendSchedulerRunSummary({
+      jobName: "consultation-day reminder",
+      schedule: "0 8 * * *",
+      startedAt: new Date("2026-09-26T08:00:00.000Z"),
+      finishedAt: new Date("2026-09-26T08:02:00.000Z"),
+      consultationsFound: 2,
+      consultationsWithTargets: 2,
+      consultationsMarkedNotified: 1,
+      consultationsSkipped: 0,
+      processingFailures: 1,
+      emailTargetsRequested: 1,
+      pushTargetsRequested: 2,
+      email: { attempted: 1, succeeded: 1, failed: 0 },
+      push: { attempted: 2, succeeded: 1, failed: 1 },
+      failureDetails: ["Failed consultation consult-2: push send failed"],
+    });
+
+    expect(mockSendMail).toHaveBeenCalledOnce();
+    const call = mockSendMail.mock.calls[0][0];
+    expect(call.to).toContain("ops@hospital.de");
+    expect(call.to).toContain("admin@hospital.de");
+    expect(call.subject).toContain("consultation-day reminder");
+    expect(call.text).toContain("Consultations found: 2");
+    expect(call.text).toContain("Push delivery: attempted=2, succeeded=1, failed=1");
   });
 
   it("deduplicates recipient email addresses", async () => {

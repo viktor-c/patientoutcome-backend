@@ -7,6 +7,38 @@ import { emailTemplateService } from "@/common/services/emailTemplateService";
 import { PushSubscriptionModel } from "@/api/notification/pushSubscriptionModel";
 import type { NotificationEvent, NotificationChannel, PushTarget } from "@/api/notification/notificationTypes";
 
+export interface NotificationDeliveryStats {
+  attempted: number;
+  succeeded: number;
+  failed: number;
+}
+
+export interface PatientNotificationDispatchSummary {
+  email: NotificationDeliveryStats;
+  push: NotificationDeliveryStats;
+}
+
+export interface NotificationSchedulerRunSummary {
+  jobName: string;
+  schedule: string;
+  startedAt: Date;
+  finishedAt: Date;
+  consultationsFound: number;
+  consultationsWithTargets: number;
+  consultationsMarkedNotified: number;
+  consultationsSkipped: number;
+  processingFailures: number;
+  emailTargetsRequested: number;
+  pushTargetsRequested: number;
+  email: NotificationDeliveryStats;
+  push: NotificationDeliveryStats;
+  failureDetails: string[];
+}
+
+function emptyDeliveryStats(): NotificationDeliveryStats {
+  return { attempted: 0, succeeded: 0, failed: 0 };
+}
+
 /**
  * NotificationService — central hub for sending event-driven notifications.
  *
@@ -80,10 +112,7 @@ class NotificationService {
       return;
     }
 
-    const extraEmails = notificationEnv.NOTIFICATION_ADMIN_EMAILS
-      ? notificationEnv.NOTIFICATION_ADMIN_EMAILS.split(",").map((e) => e.trim()).filter(Boolean)
-      : [];
-    const allEmails = [...new Set([...recipientEmails, ...extraEmails])];
+    const allEmails = this.getAdminEmailRecipients(recipientEmails);
 
     const promises: Promise<void>[] = [];
 
@@ -96,6 +125,84 @@ class NotificationService {
     }
 
     await Promise.allSettled(promises);
+  }
+
+  async sendSchedulerRunSummary(summary: NotificationSchedulerRunSummary): Promise<void> {
+    if (!notificationEnv.NOTIFICATIONS_ENABLED) {
+      logger.debug({ summary }, "notificationService: notifications disabled, skipping scheduler summary");
+      return;
+    }
+
+    const recipients = this.getAdminEmailRecipients();
+    if (recipients.length === 0) {
+      logger.debug({ summary }, "notificationService: no admin recipients configured for scheduler summary");
+      return;
+    }
+
+    const failureLines = summary.failureDetails.length > 0
+      ? summary.failureDetails.map((detail) => `- ${detail}`).join("\n")
+      : "- none";
+    const escapedFailureLines = summary.failureDetails.length > 0
+      ? summary.failureDetails.map((detail) => `<li>${this.escapeHtml(detail)}</li>`).join("")
+      : "<li>none</li>";
+
+    const subject = `Notification scheduler summary: ${summary.jobName} - Patient Outcome`;
+    const text = [
+      `Notification scheduler summary for ${summary.jobName}`,
+      "",
+      `Schedule: ${summary.schedule}`,
+      `Started at: ${summary.startedAt.toISOString()}`,
+      `Finished at: ${summary.finishedAt.toISOString()}`,
+      `Consultations found: ${summary.consultationsFound}`,
+      `Consultations with targets: ${summary.consultationsWithTargets}`,
+      `Consultations marked notified: ${summary.consultationsMarkedNotified}`,
+      `Consultations skipped: ${summary.consultationsSkipped}`,
+      `Processing failures: ${summary.processingFailures}`,
+      `Email targets requested: ${summary.emailTargetsRequested}`,
+      `Email delivery: attempted=${summary.email.attempted}, succeeded=${summary.email.succeeded}, failed=${summary.email.failed}`,
+      `Push targets requested: ${summary.pushTargetsRequested}`,
+      `Push delivery: attempted=${summary.push.attempted}, succeeded=${summary.push.succeeded}, failed=${summary.push.failed}`,
+      "",
+      "Failure details:",
+      failureLines,
+    ].join("\n");
+    const html = `
+      <h2>Notification scheduler summary</h2>
+      <p><strong>Job:</strong> ${this.escapeHtml(summary.jobName)}</p>
+      <p><strong>Schedule:</strong> ${this.escapeHtml(summary.schedule)}</p>
+      <ul>
+        <li><strong>Started at:</strong> ${this.escapeHtml(summary.startedAt.toISOString())}</li>
+        <li><strong>Finished at:</strong> ${this.escapeHtml(summary.finishedAt.toISOString())}</li>
+        <li><strong>Consultations found:</strong> ${summary.consultationsFound}</li>
+        <li><strong>Consultations with targets:</strong> ${summary.consultationsWithTargets}</li>
+        <li><strong>Consultations marked notified:</strong> ${summary.consultationsMarkedNotified}</li>
+        <li><strong>Consultations skipped:</strong> ${summary.consultationsSkipped}</li>
+        <li><strong>Processing failures:</strong> ${summary.processingFailures}</li>
+        <li><strong>Email targets requested:</strong> ${summary.emailTargetsRequested}</li>
+        <li><strong>Email delivery:</strong> attempted=${summary.email.attempted}, succeeded=${summary.email.succeeded}, failed=${summary.email.failed}</li>
+        <li><strong>Push targets requested:</strong> ${summary.pushTargetsRequested}</li>
+        <li><strong>Push delivery:</strong> attempted=${summary.push.attempted}, succeeded=${summary.push.succeeded}, failed=${summary.push.failed}</li>
+      </ul>
+      <h3>Failure details</h3>
+      <ul>${escapedFailureLines}</ul>
+    `;
+
+    try {
+      await this.getTransporter().sendMail({
+        from: feedbackEnv.SMTP_FROM_EMAIL,
+        to: recipients.join(", "),
+        subject,
+        text,
+        html,
+      });
+
+      logger.info(
+        { summary, recipients },
+        "notificationService: scheduler summary email sent",
+      );
+    } catch (error) {
+      logger.error({ error, summary }, "notificationService: failed to send scheduler summary email");
+    }
   }
 
   /**
@@ -112,20 +219,26 @@ class NotificationService {
     patientEmail: string | null,
     caseAccessToken: string | null,
     channels: NotificationChannel[] = ["email", "push"],
-  ): Promise<void> {
-    if (!notificationEnv.NOTIFICATIONS_ENABLED) return;
-
-    const promises: Promise<void>[] = [];
-
-    if (channels.includes("email") && patientEmail) {
-      promises.push(this.sendPatientWindowEmail(event, patientEmail, caseAccessToken));
+    unsubscribeToken: string | null = null,
+  ): Promise<PatientNotificationDispatchSummary> {
+    if (!notificationEnv.NOTIFICATIONS_ENABLED) {
+      return {
+        email: emptyDeliveryStats(),
+        push: emptyDeliveryStats(),
+      };
     }
 
-    if (channels.includes("push") && caseAccessToken) {
-      promises.push(this.sendPatientWindowPush(event, caseAccessToken));
-    }
+    const emailPromise = channels.includes("email") && patientEmail
+      ? this.sendPatientWindowEmail(event, patientEmail, caseAccessToken, unsubscribeToken)
+      : Promise.resolve(emptyDeliveryStats());
 
-    await Promise.allSettled(promises);
+    const pushPromise = channels.includes("push") && caseAccessToken
+      ? this.sendPatientWindowPush(event, caseAccessToken)
+      : Promise.resolve(emptyDeliveryStats());
+
+    const [email, push] = await Promise.all([emailPromise, pushPromise]);
+
+    return { email, push };
   }
 
   async sendDevelopmentTestPush(target: {
@@ -169,6 +282,23 @@ class NotificationService {
   // Email helpers
   // ─────────────────────────────────────────────────────────────────────────
 
+  private getAdminEmailRecipients(recipientEmails: string[] = []): string[] {
+    const extraEmails = notificationEnv.NOTIFICATION_ADMIN_EMAILS
+      ? notificationEnv.NOTIFICATION_ADMIN_EMAILS.split(",").map((e) => e.trim()).filter(Boolean)
+      : [];
+
+    return [...new Set([...recipientEmails, ...extraEmails])];
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
   private async sendAdminFormCompletedEmail(
     event: NotificationEvent,
     recipients: string[],
@@ -205,7 +335,8 @@ class NotificationService {
     event: NotificationEvent,
     patientEmail: string,
     caseAccessToken: string | null,
-  ): Promise<void> {
+    unsubscribeToken: string | null,
+  ): Promise<NotificationDeliveryStats> {
     try {
       const locale = event.locale ?? "de";
       const templateName =
@@ -219,12 +350,16 @@ class NotificationService {
       const closingDate = event.windowClosesAt
         ? event.windowClosesAt.toLocaleDateString(locale === "de" ? "de-DE" : "en-GB")
         : "";
+      const unsubscribeUrl = unsubscribeToken
+        ? `${notificationEnv.BACKEND_URL.replace(/\/$/, "")}/notifications/email/unsubscribe/${encodeURIComponent(unsubscribeToken)}`
+        : notificationEnv.BACKEND_URL;
 
       const rendered = emailTemplateService.render(templateName as any, locale, {
         caseId: event.caseId,
         consultationId: event.consultationId,
         codeUrl,
         closingDate,
+        unsubscribeUrl,
       });
 
       await this.getTransporter().sendMail({
@@ -239,8 +374,12 @@ class NotificationService {
         { event, patientEmail },
         "notificationService: patient window email sent",
       );
+
+      return { attempted: 1, succeeded: 1, failed: 0 };
     } catch (error) {
       logger.error({ error, event }, "notificationService: failed to send patient window email");
+
+      return { attempted: 1, succeeded: 0, failed: 1 };
     }
   }
 
@@ -274,11 +413,21 @@ class NotificationService {
   private async sendPushToSubscriptions(
     targets: PushTarget[],
     payload: string,
-  ): Promise<void> {
+  ): Promise<NotificationDeliveryStats> {
     if (!this.vapidConfigured) {
       logger.warn("notificationService: VAPID not configured, skipping push");
-      return;
+      return {
+        attempted: targets.length,
+        succeeded: 0,
+        failed: targets.length,
+      };
     }
+
+    const result: NotificationDeliveryStats = {
+      attempted: targets.length,
+      succeeded: 0,
+      failed: 0,
+    };
 
     for (const target of targets) {
       try {
@@ -286,6 +435,7 @@ class NotificationService {
           { endpoint: target.endpoint, keys: target.keys },
           payload,
         );
+        result.succeeded += 1;
       } catch (err: any) {
         // 410 Gone or 404 = subscription expired; mark it archived
         if (err?.statusCode === 410 || err?.statusCode === 404) {
@@ -301,8 +451,12 @@ class NotificationService {
             { $inc: { failureCount: 1 } },
           ).catch(() => undefined);
         }
+
+        result.failed += 1;
       }
     }
+
+    return result;
   }
 
   private async sendAdminFormCompletedPush(
@@ -337,14 +491,14 @@ class NotificationService {
   private async sendPatientWindowPush(
     event: NotificationEvent,
     caseAccessToken: string,
-  ): Promise<void> {
+  ): Promise<NotificationDeliveryStats> {
     try {
       const subscriptions = await PushSubscriptionModel.find({
         caseAccessToken,
         archivedAt: null,
       }).lean();
 
-      if (subscriptions.length === 0) return;
+      if (subscriptions.length === 0) return emptyDeliveryStats();
 
       const payload = JSON.stringify({
         ...JSON.parse(this.buildPatientPushPayload(event)),
@@ -355,14 +509,18 @@ class NotificationService {
         keys: s.keys,
       }));
 
-      await this.sendPushToSubscriptions(targets, payload);
+      const result = await this.sendPushToSubscriptions(targets, payload);
 
       logger.info(
         { event, count: targets.length },
         "notificationService: patient push notifications sent",
       );
+
+      return result;
     } catch (error) {
       logger.error({ error, event }, "notificationService: failed to send patient push");
+
+      return { attempted: 1, succeeded: 0, failed: 1 };
     }
   }
 

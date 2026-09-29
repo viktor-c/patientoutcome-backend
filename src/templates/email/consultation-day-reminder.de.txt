@@ -2,3 +2,6 @@ Ihr Termin ist heute.
 
 Bitte fullen Sie Ihren Fragebogen uber den folgenden Link aus:
 {{codeUrl}}
+
+Wenn Sie keine Erinnerungs-E-Mails mehr erhalten möchten, können Sie sich hier abmelden:
+{{unsubscribeUrl}}

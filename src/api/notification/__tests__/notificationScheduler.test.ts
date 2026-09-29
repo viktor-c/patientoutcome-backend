@@ -8,6 +8,7 @@ const {
   mockInfo,
   mockError,
   mockNotifyPatient,
+  mockSendSchedulerRunSummary,
   mockConsultationLean,
   mockConsultationUpdateOne,
   mockPatientCaseLean,
@@ -24,7 +25,15 @@ const {
   mockWarn: vi.fn(),
   mockInfo: vi.fn(),
   mockError: vi.fn(),
-  mockNotifyPatient: vi.fn().mockResolvedValue(undefined),
+  mockNotifyPatient: vi.fn(async (_event: unknown, _email: string | null, _token: string | null, channels: string[]) => ({
+    email: channels.includes("email")
+      ? { attempted: 1, succeeded: 1, failed: 0 }
+      : { attempted: 0, succeeded: 0, failed: 0 },
+    push: channels.includes("push")
+      ? { attempted: 1, succeeded: 1, failed: 0 }
+      : { attempted: 0, succeeded: 0, failed: 0 },
+  })),
+  mockSendSchedulerRunSummary: vi.fn().mockResolvedValue(undefined),
   mockConsultationLean: vi.fn(),
   mockConsultationUpdateOne: vi.fn().mockResolvedValue({ acknowledged: true }),
   mockPatientCaseLean: vi.fn(),
@@ -48,6 +57,7 @@ vi.mock("@/common/utils/logger", () => ({
 vi.mock("@/api/notification/notificationService", () => ({
   notificationService: {
     notifyPatient: mockNotifyPatient,
+    sendSchedulerRunSummary: mockSendSchedulerRunSummary,
   },
 }));
 
@@ -85,6 +95,14 @@ describe("notificationScheduler", () => {
     vi.clearAllMocks();
     scheduledCallbacks.length = 0;
     jobStops.length = 0;
+    mockNotifyPatient.mockImplementation(async (_event: unknown, _email: string | null, _token: string | null, channels: string[]) => ({
+      email: channels.includes("email")
+        ? { attempted: 1, succeeded: 1, failed: 0 }
+        : { attempted: 0, succeeded: 0, failed: 0 },
+      push: channels.includes("push")
+        ? { attempted: 1, succeeded: 1, failed: 0 }
+        : { attempted: 0, succeeded: 0, failed: 0 },
+    }));
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-26T08:00:00.000Z"));
   });
@@ -96,7 +114,11 @@ describe("notificationScheduler", () => {
 
   it("resolvePatientNotificationTargets returns only active unique code strings", async () => {
     mockPatientCaseLean.mockResolvedValueOnce({
-      notificationContact: { email: "patient@example.com" },
+      notificationContact: {
+        email: "patient@example.com",
+        futureConsultationReminders: true,
+        unsubscribeToken: "unsubscribe-token",
+      },
     });
     mockCodeLean.mockResolvedValueOnce([
       { code: "CASE01", activatedOn: "2026-09-25T08:00:00.000Z", expiresOn: "2026-09-27T08:00:00.000Z" },
@@ -111,6 +133,7 @@ describe("notificationScheduler", () => {
     expect(result).toEqual({
       patientEmail: "patient@example.com",
       caseAccessTokens: ["CASE01", "CASE02"],
+      unsubscribeToken: "unsubscribe-token",
     });
   });
 
@@ -127,7 +150,11 @@ describe("notificationScheduler", () => {
       },
     ]);
     mockPatientCaseLean.mockResolvedValueOnce({
-      notificationContact: { email: "patient@example.com" },
+      notificationContact: {
+        email: "patient@example.com",
+        futureConsultationReminders: true,
+        unsubscribeToken: "unsubscribe-token",
+      },
     });
     mockCodeLean.mockResolvedValueOnce([
       { code: "CASE01", activatedOn: "2026-09-25T08:00:00.000Z", expiresOn: "2026-09-27T08:00:00.000Z" },
@@ -144,8 +171,9 @@ describe("notificationScheduler", () => {
         windowClosesAt: new Date("2026-09-29T08:00:00.000Z"),
       },
       "patient@example.com",
-      null,
+      "CASE01",
       ["email"],
+      "unsubscribe-token",
     );
     expect(mockNotifyPatient).toHaveBeenNthCalledWith(
       2,
@@ -163,6 +191,20 @@ describe("notificationScheduler", () => {
       { _id: "consult-1" },
       { $set: { "notificationTracking.windowOpenNotifiedAt": expect.any(Date) } },
     );
+    expect(mockSendSchedulerRunSummary).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobName: "window-open detector",
+        consultationsFound: 1,
+        consultationsWithTargets: 1,
+        consultationsMarkedNotified: 1,
+        consultationsSkipped: 0,
+        processingFailures: 0,
+        emailTargetsRequested: 1,
+        pushTargetsRequested: 1,
+        email: { attempted: 1, succeeded: 1, failed: 0 },
+        push: { attempted: 1, succeeded: 1, failed: 0 },
+      }),
+    );
   });
 
   it("sends consultation-day reminders and updates day-tracking state", async () => {
@@ -176,7 +218,11 @@ describe("notificationScheduler", () => {
       },
     ]);
     mockPatientCaseLean.mockResolvedValueOnce({
-      notificationContact: { email: "day@example.com" },
+      notificationContact: {
+        email: "day@example.com",
+        futureConsultationReminders: true,
+        unsubscribeToken: "day-unsubscribe-token",
+      },
     });
     mockCodeLean.mockResolvedValueOnce([
       { code: "DAY01", activatedOn: "2026-09-24T08:00:00.000Z", expiresOn: "2026-09-27T08:00:00.000Z" },
@@ -192,8 +238,9 @@ describe("notificationScheduler", () => {
         caseId: "case-2",
       },
       "day@example.com",
-      null,
+      "DAY01",
       ["email"],
+      "day-unsubscribe-token",
     );
     expect(mockNotifyPatient).toHaveBeenNthCalledWith(
       2,
@@ -209,6 +256,20 @@ describe("notificationScheduler", () => {
     expect(mockConsultationUpdateOne).toHaveBeenCalledWith(
       { _id: "consult-2" },
       { $set: { "notificationTracking.consultationDayNotifiedAt": expect.any(Date) } },
+    );
+    expect(mockSendSchedulerRunSummary).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobName: "consultation-day reminder",
+        consultationsFound: 1,
+        consultationsWithTargets: 1,
+        consultationsMarkedNotified: 1,
+        consultationsSkipped: 0,
+        processingFailures: 0,
+        emailTargetsRequested: 1,
+        pushTargetsRequested: 1,
+        email: { attempted: 1, succeeded: 1, failed: 0 },
+        push: { attempted: 1, succeeded: 1, failed: 0 },
+      }),
     );
   });
 

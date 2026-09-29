@@ -7,5 +7,8 @@ Please complete it before {{closingDate}}.
 Open the app and enter your access code:
 {{codeUrl}}
 
+If you no longer want reminder emails, unsubscribe here:
+{{unsubscribeUrl}}
+
 ---
 Patient Outcome — This email was generated automatically.
