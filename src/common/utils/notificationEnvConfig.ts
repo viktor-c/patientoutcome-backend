@@ -16,6 +16,12 @@ export const notificationEnv = cleanEnv(process.env, {
   FRONTEND_URL: str({ default: "http://localhost:5173", desc: "Frontend base URL for deep-links" }),
 
   /**
+   * Base URL of the backend app, used to build direct unsubscribe links.
+   * e.g. https://app.example.com/api
+   */
+  BACKEND_URL: str({ default: "http://localhost:40001", desc: "Backend base URL for notification callbacks" }),
+
+  /**
    * VAPID public key (base64url) — generate with `web-push generate-vapid-keys`.
    * Sent to the browser during push subscription registration.
    */

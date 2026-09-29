@@ -27,6 +27,8 @@ export const ImageSchema = z.object({
 const ConsultationNotificationTrackingSchema = z.object({
   windowOpenNotifiedAt: dateSchema.optional(),
   consultationDayNotifiedAt: dateSchema.optional(),
+  windowOpenManualSentAt: dateSchema.optional(),
+  consultationDayManualSentAt: dateSchema.optional(),
 });
 
 // Define the PatientCaseConsultation schema (for database)

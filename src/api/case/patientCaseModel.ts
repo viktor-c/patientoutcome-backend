@@ -6,6 +6,16 @@ import { z } from "zod";
 export const DiagnosisSchema = z.string();
 export type DiagnosisSchema = z.infer<typeof DiagnosisSchema>;
 
+export const PatientCaseNotificationContactSchema = z.object({
+  email: z.string().email().optional().nullable(),
+  futureConsultationReminders: z.boolean().optional().default(false),
+  consentedAt: dateSchema.optional().nullable(),
+  unsubscribedAt: dateSchema.optional().nullable(),
+  unsubscribeToken: z.string().optional().nullable(),
+});
+
+export type PatientCaseNotificationContact = z.infer<typeof PatientCaseNotificationContactSchema>;
+
 export const CreatePatientCaseSchema = z.object({
   _id: zId(),
   externalId: z.string().optional(),
@@ -24,6 +34,7 @@ export const CreatePatientCaseSchema = z.object({
   medicalHistory: z.string().optional(),
   consultations: z.array(zId("Consultation")).optional(),
   consultationTemplate: z.array(zId("ConsultationTemplate")).optional(),
+  notificationContact: PatientCaseNotificationContactSchema.optional(),
 });
 
 export const PatientCaseSchema = z.object({
@@ -45,6 +56,7 @@ export const PatientCaseSchema = z.object({
   medicalHistory: z.string().optional(),
   consultations: z.array(zId("Consultation")).optional(),
   consultationTemplate: z.array(zId("ConsultationTemplate")).optional(),
+  notificationContact: PatientCaseNotificationContactSchema.optional(),
 });
 
 export type PatientCase = z.infer<typeof PatientCaseSchema>;
