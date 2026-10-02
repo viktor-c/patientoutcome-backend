@@ -119,6 +119,90 @@ export async function resolvePatientNotificationTargets(
   };
 }
 
+export async function runConsultationDayReminderJob(referenceNow: Date = new Date()): Promise<void> {
+  const summary = createRunSummary("consultation-day reminder");
+
+  logger.info("notificationScheduler: running consultation-day reminder");
+  try {
+    const { consultationModel } = await import("@/api/consultation/consultationModel.js");
+
+    const startOfDay = new Date(referenceNow.getFullYear(), referenceNow.getMonth(), referenceNow.getDate(), 0, 0, 0);
+    const endOfDay = new Date(referenceNow.getFullYear(), referenceNow.getMonth(), referenceNow.getDate(), 23, 59, 59);
+
+    const consultations = await (consultationModel as any).find({
+      dateAndTime: { $gte: startOfDay, $lte: endOfDay },
+      "notificationTracking.consultationDayNotifiedAt": { $exists: false },
+      deletedAt: { $exists: false },
+    }).lean() as any[];
+    summary.consultationsFound = consultations.length;
+
+    logger.info({ count: consultations.length }, "notificationScheduler: consultation-day candidates");
+
+    for (const consultation of consultations) {
+      try {
+        const consultationId = consultation._id?.toString() ?? "unknown";
+        const caseId = consultation.patientCaseId?.toString() ?? "";
+        if (!caseId) {
+          summary.consultationsSkipped += 1;
+          addFailureDetail(summary, `Skipped consultation ${consultationId}: missing case ID`);
+          continue;
+        }
+
+        const { patientEmail, caseAccessTokens, unsubscribeToken } = await resolvePatientNotificationTargets(
+          consultationId,
+          caseId,
+        );
+
+        if (!patientEmail && caseAccessTokens.length === 0) {
+          summary.consultationsSkipped += 1;
+          addFailureDetail(summary, `Skipped consultation ${consultationId}: no email or active access codes`);
+          continue;
+        }
+
+        summary.consultationsWithTargets += 1;
+
+        const event = {
+          type: "consultation_day_reminder" as const,
+          consultationId,
+          caseId,
+        };
+
+        if (patientEmail) {
+          summary.emailTargetsRequested += 1;
+          const result = await notificationService.notifyPatient(event, patientEmail, caseAccessTokens[0] ?? null, ["email"], unsubscribeToken);
+          addDeliveryStats(summary.email, result.email);
+        }
+
+        for (const caseAccessToken of caseAccessTokens) {
+          summary.pushTargetsRequested += 1;
+          const result = await notificationService.notifyPatient(event, null, caseAccessToken, ["push"]);
+          addDeliveryStats(summary.push, result.push);
+        }
+
+        await (consultationModel as any).updateOne(
+          { _id: consultation._id },
+          { $set: { "notificationTracking.consultationDayNotifiedAt": new Date() } },
+        );
+        summary.consultationsMarkedNotified += 1;
+      } catch (err) {
+        summary.processingFailures += 1;
+        addFailureDetail(
+          summary,
+          `Failed consultation ${consultation._id?.toString?.() ?? "unknown"}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        logger.error({ err, consultationId: consultation._id }, "notificationScheduler: consultation-day error");
+      }
+    }
+  } catch (error) {
+    summary.processingFailures += 1;
+    addFailureDetail(summary, `Job failure: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error({ error }, "notificationScheduler: consultation-day job failed");
+  } finally {
+    summary.finishedAt = new Date();
+    await notificationService.sendSchedulerRunSummary(summary);
+  }
+}
+
 export function initializeNotificationScheduler(): void {
   if (windowOpenJob || consultationDayJob) {
     logger.warn("notificationScheduler: already initialized, skipping");
@@ -216,88 +300,7 @@ export function initializeNotificationScheduler(): void {
 
   // Job 2: consultation-day reminder — fires at 08:00 daily
   consultationDayJob = cron.schedule("0 8 * * *", async () => {
-    const summary = createRunSummary("consultation-day reminder");
-
-    logger.info("notificationScheduler: running consultation-day reminder");
-    try {
-      const { consultationModel } = await import("@/api/consultation/consultationModel.js");
-
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-      const consultations = await (consultationModel as any).find({
-        dateAndTime: { $gte: startOfDay, $lte: endOfDay },
-        "notificationTracking.consultationDayNotifiedAt": { $exists: false },
-        deletedAt: { $exists: false },
-      }).lean() as any[];
-      summary.consultationsFound = consultations.length;
-
-      logger.info({ count: consultations.length }, "notificationScheduler: consultation-day candidates");
-
-      for (const consultation of consultations) {
-        try {
-          const consultationId = consultation._id?.toString() ?? "unknown";
-          const caseId = consultation.patientCaseId?.toString() ?? "";
-          if (!caseId) {
-            summary.consultationsSkipped += 1;
-            addFailureDetail(summary, `Skipped consultation ${consultationId}: missing case ID`);
-            continue;
-          }
-
-          const { patientEmail, caseAccessTokens, unsubscribeToken } = await resolvePatientNotificationTargets(
-            consultationId,
-            caseId,
-          );
-
-          if (!patientEmail && caseAccessTokens.length === 0) {
-            summary.consultationsSkipped += 1;
-            addFailureDetail(summary, `Skipped consultation ${consultationId}: no email or active access codes`);
-            continue;
-          }
-
-          summary.consultationsWithTargets += 1;
-
-          const event = {
-            type: "consultation_day_reminder" as const,
-            consultationId,
-            caseId,
-          };
-
-          if (patientEmail) {
-            summary.emailTargetsRequested += 1;
-            const result = await notificationService.notifyPatient(event, patientEmail, caseAccessTokens[0] ?? null, ["email"], unsubscribeToken);
-            addDeliveryStats(summary.email, result.email);
-          }
-
-          for (const caseAccessToken of caseAccessTokens) {
-            summary.pushTargetsRequested += 1;
-            const result = await notificationService.notifyPatient(event, null, caseAccessToken, ["push"]);
-            addDeliveryStats(summary.push, result.push);
-          }
-
-          await (consultationModel as any).updateOne(
-            { _id: consultation._id },
-            { $set: { "notificationTracking.consultationDayNotifiedAt": new Date() } },
-          );
-          summary.consultationsMarkedNotified += 1;
-        } catch (err) {
-          summary.processingFailures += 1;
-          addFailureDetail(
-            summary,
-            `Failed consultation ${consultation._id?.toString?.() ?? "unknown"}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          logger.error({ err, consultationId: consultation._id }, "notificationScheduler: consultation-day error");
-        }
-      }
-    } catch (error) {
-      summary.processingFailures += 1;
-      addFailureDetail(summary, `Job failure: ${error instanceof Error ? error.message : String(error)}`);
-      logger.error({ error }, "notificationScheduler: consultation-day job failed");
-    } finally {
-      summary.finishedAt = new Date();
-      await notificationService.sendSchedulerRunSummary(summary);
-    }
+    await runConsultationDayReminderJob();
   });
 
   logger.info("notificationScheduler: initialized (08:00 daily)");

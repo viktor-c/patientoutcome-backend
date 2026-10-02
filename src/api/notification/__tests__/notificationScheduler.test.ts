@@ -87,6 +87,7 @@ vi.mock("@/api/code/codeModel.js", () => ({
 import {
   initializeNotificationScheduler,
   resolvePatientNotificationTargets,
+  runConsultationDayReminderJob,
   shutdownNotificationScheduler,
 } from "@/api/notification/notificationScheduler";
 
@@ -270,6 +271,45 @@ describe("notificationScheduler", () => {
         email: { attempted: 1, succeeded: 1, failed: 0 },
         push: { attempted: 1, succeeded: 1, failed: 0 },
       }),
+    );
+  });
+
+  it("runs the consultation-day reminder job for an explicit reference date", async () => {
+    mockConsultationLean.mockResolvedValueOnce([
+      {
+        _id: "consult-3",
+        patientCaseId: "case-3",
+        dateAndTime: "2026-09-27T10:00:00.000Z",
+      },
+    ]);
+    mockPatientCaseLean.mockResolvedValueOnce({
+      notificationContact: {
+        email: "seeded@example.com",
+        futureConsultationReminders: true,
+        unsubscribeToken: "seeded-unsubscribe-token",
+      },
+    });
+    mockCodeLean.mockResolvedValueOnce([
+      { code: "CASE99", activatedOn: "2026-09-24T08:00:00.000Z", expiresOn: "2026-10-10T08:00:00.000Z" },
+    ]);
+
+    await runConsultationDayReminderJob(new Date("2026-09-27T08:00:00.000Z"));
+
+    expect(mockNotifyPatient).toHaveBeenNthCalledWith(
+      1,
+      {
+        type: "consultation_day_reminder",
+        consultationId: "consult-3",
+        caseId: "case-3",
+      },
+      "seeded@example.com",
+      "CASE99",
+      ["email"],
+      "seeded-unsubscribe-token",
+    );
+    expect(mockConsultationUpdateOne).toHaveBeenCalledWith(
+      { _id: "consult-3" },
+      { $set: { "notificationTracking.consultationDayNotifiedAt": expect.any(Date) } },
     );
   });
 
