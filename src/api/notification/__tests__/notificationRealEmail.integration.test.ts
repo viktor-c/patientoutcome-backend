@@ -213,8 +213,8 @@ maybeDescribe("Notification real email integration", () => {
 
     const serverModule = await import("@/server");
     app = serverModule.app;
-  patientCaseModel = (await import("@/api/case/patientCaseModel")).PatientCaseModel;
-  runConsultationDayReminderJob = (await import("@/api/notification/notificationScheduler")).runConsultationDayReminderJob;
+    patientCaseModel = (await import("@/api/case/patientCaseModel")).PatientCaseModel;
+    runConsultationDayReminderJob = (await import("@/api/notification/notificationScheduler")).runConsultationDayReminderJob;
 
     await waitForMongooseConnection();
 

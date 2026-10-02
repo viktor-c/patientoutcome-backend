@@ -64,13 +64,13 @@ export async function resolvePatientNotificationTargets(
   const patientCase = await (PatientCaseModel as any).findById(caseId)
     .select("notificationContact")
     .lean() as {
-    notificationContact?: {
-      email?: string;
-      futureConsultationReminders?: boolean;
-      unsubscribeToken?: string;
-      unsubscribedAt?: string | Date;
-    };
-  } | null;
+      notificationContact?: {
+        email?: string;
+        futureConsultationReminders?: boolean;
+        unsubscribeToken?: string;
+        unsubscribedAt?: string | Date;
+      };
+    } | null;
 
   const now = Date.now();
   const accessCodes = await (codeModel as any).find({

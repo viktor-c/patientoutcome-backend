@@ -12,13 +12,13 @@ export class PatientCaseRepository {
     try {
       // Import security utilities
       const { sanitizeSearchQuery } = await import("@/utils/securityUtils");
-      
+
       // Sanitize search query to prevent NoSQL injection and ReDoS attacks
       const sanitized = sanitizeSearchQuery(searchCasesById);
       if (!sanitized) {
         return []; // Return empty array for invalid queries
       }
-      
+
       return PatientCaseModel.find({
         externalId: { $regex: sanitized, $options: "i" },
         deletedAt: null,
