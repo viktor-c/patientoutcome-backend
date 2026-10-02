@@ -4,9 +4,13 @@ import { logger } from "@/server";
 import { notificationService } from "@/api/notification/notificationService";
 import { PushSubscriptionModel } from "@/api/notification/pushSubscriptionModel";
 import {
+  clearPatientNotificationContactByCaseId,
   clearPatientNotificationContact,
+  confirmPatientNotificationContactByToken,
   getNotificationAdminStatus,
   getPatientNotificationContact,
+  resendPatientNotificationConfirmationByCaseId,
+  renewPatientNotificationConfirmationByToken,
   resolveNotificationScopeFromAccessToken,
   sendManualNotification,
   unsubscribePatientNotificationEmailByToken,
@@ -112,6 +116,7 @@ const PatientContactSchema = z.object({
   caseAccessToken: z.string().min(1),
   email: z.string().email(),
   futureConsultationReminders: z.boolean(),
+  locale: z.string().optional(),
 });
 
 router.get("/patient-contact/:caseAccessToken", async (req: Request, res: Response) => {
@@ -135,11 +140,67 @@ router.post("/patient-contact", async (req: Request, res: Response) => {
     const result = await upsertPatientNotificationContact(parsed.data.caseAccessToken, {
       email: parsed.data.email,
       futureConsultationReminders: parsed.data.futureConsultationReminders,
+      locale: parsed.data.locale,
     });
     res.status(200).json(result);
   } catch (error) {
     logger.error({ error }, "Failed to save patient notification contact");
-    res.status(404).json({ message: "Failed to save notification contact for this access token." });
+    if (error instanceof Error && error.message === "No patient case found for the provided access token.") {
+      res.status(404).json({ message: "Failed to save notification contact for this access token." });
+      return;
+    }
+
+    res.status(500).json({ message: "Failed to send the confirmation email for notification reminders." });
+  }
+});
+
+router.get("/email/confirm/:token", async (req: Request, res: Response) => {
+  const result = await confirmPatientNotificationContactByToken(req.params.token);
+
+  if (result === "confirmed") {
+    res
+      .status(200)
+      .type("html")
+      .send("<html><body><h1>Email reminders enabled</h1><p>Your email address has been confirmed. You can close this page now.</p></body></html>");
+    return;
+  }
+
+  if (result === "expired") {
+    res
+      .status(410)
+      .type("html")
+      .send("<html><body><h1>Link expired</h1><p>This confirmation link expired after 24 hours. Use the renewal link from the email to request a new confirmation message.</p></body></html>");
+    return;
+  }
+
+  res
+    .status(404)
+    .type("html")
+    .send("<html><body><h1>Link expired</h1><p>This confirmation link is invalid or has already been used.</p></body></html>");
+});
+
+router.get("/email/renew/:token", async (req: Request, res: Response) => {
+  try {
+    const result = await renewPatientNotificationConfirmationByToken(req.params.token);
+
+    if (result === "renewed") {
+      res
+        .status(200)
+        .type("html")
+        .send("<html><body><h1>New confirmation email sent</h1><p>We sent you a fresh confirmation email. Please use the new link in that message within 24 hours.</p></body></html>");
+      return;
+    }
+
+    res
+      .status(404)
+      .type("html")
+      .send("<html><body><h1>Link expired</h1><p>This renewal link is invalid or can no longer be used.</p></body></html>");
+  } catch (error) {
+    logger.error({ error }, "Failed to renew patient notification confirmation");
+    res
+      .status(500)
+      .type("html")
+      .send("<html><body><h1>Unable to send email</h1><p>We could not send a renewed confirmation email right now. Please try again later.</p></body></html>");
   }
 });
 
@@ -200,6 +261,12 @@ const AdminSendBodySchema = z.object({
   type: z.enum(["consultation_window_opened", "consultation_day_reminder"]),
 });
 
+const AdminContactCaseSchema = z.object({
+  params: z.object({
+    caseId: z.string().min(1),
+  }),
+});
+
 router.post("/admin/send", async (req: Request, res: Response) => {
   if (!req.session?.userId) {
     res.status(401).json({ message: "Authentication required." });
@@ -223,6 +290,63 @@ router.post("/admin/send", async (req: Request, res: Response) => {
   } catch (error) {
     logger.error({ error }, "Failed to send manual notification");
     res.status(400).json({ message: error instanceof Error ? error.message : "Failed to send notification." });
+  }
+});
+
+router.post("/admin/patient-contact/:caseId/resend-confirmation", async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ message: "Authentication required." });
+    return;
+  }
+
+  if (!hasNotificationAdminAccess(req)) {
+    res.status(403).json({ message: "Admin access required." });
+    return;
+  }
+
+  const parsed = AdminContactCaseSchema.safeParse({ params: req.params });
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid notification contact request", errors: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    const result = await resendPatientNotificationConfirmationByCaseId(parsed.data.params.caseId);
+    if (result === "invalid") {
+      res.status(404).json({ message: "No pending notification confirmation found for this case." });
+      return;
+    }
+
+    res.status(200).json({ message: "Confirmation email resent." });
+  } catch (error) {
+    logger.error({ error }, "Failed to resend patient notification confirmation");
+    res.status(500).json({ message: "Failed to resend confirmation email." });
+  }
+});
+
+router.delete("/admin/patient-contact/:caseId", async (req: Request, res: Response) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ message: "Authentication required." });
+    return;
+  }
+
+  if (!hasNotificationAdminAccess(req)) {
+    res.status(403).json({ message: "Admin access required." });
+    return;
+  }
+
+  const parsed = AdminContactCaseSchema.safeParse({ params: req.params });
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid notification contact request", errors: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    await clearPatientNotificationContactByCaseId(parsed.data.params.caseId);
+    res.status(204).send();
+  } catch (error) {
+    logger.error({ error }, "Failed to clear patient notification contact by case id");
+    res.status(404).json({ message: "Failed to clear notification contact for this case." });
   }
 });
 

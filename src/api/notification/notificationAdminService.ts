@@ -18,7 +18,11 @@ interface CaseNotificationContactSummary {
   caseId: string;
   patientId: string;
   email: string | null;
+  pendingEmail: string | null;
   futureConsultationReminders: boolean;
+  confirmationPending: boolean;
+  confirmationExpired: boolean;
+  confirmationExpiresAt: string | null;
   consentedAt: string | null;
   unsubscribedAt: string | null;
 }
@@ -71,8 +75,12 @@ export interface PatientNotificationContactResponse {
   caseId: string;
   patientId: string;
   email: string | null;
+  pendingEmail: string | null;
   futureConsultationReminders: boolean;
   subscribed: boolean;
+  confirmationPending: boolean;
+  confirmationExpired: boolean;
+  confirmationExpiresAt: string | null;
   consentedAt: string | null;
   unsubscribedAt: string | null;
 }
@@ -106,6 +114,12 @@ interface NotificationConsultationRecord {
   };
 }
 
+type NotificationConfirmationResult = "confirmed" | "expired" | "invalid";
+type NotificationRenewalResult = "renewed" | "invalid";
+
+const EMAIL_CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
+const NO_PATIENT_CASE_FOUND_ERROR = "No patient case found for the provided access token.";
+
 interface ScopeResolution {
   patientIds: string[];
   caseIds: string[];
@@ -134,6 +148,44 @@ function isActiveEmailContact(contact?: PatientCaseNotificationContact): contact
     && contact.futureConsultationReminders
     && !contact.unsubscribedAt,
   );
+}
+
+function hasPendingEmailConfirmation(contact?: PatientCaseNotificationContact): boolean {
+  return Boolean(contact?.pendingEmail && contact?.renewalToken);
+}
+
+function isEmailConfirmationExpired(contact?: PatientCaseNotificationContact): boolean {
+  if (!contact?.pendingEmail || !contact.confirmationExpiresAt) {
+    return false;
+  }
+
+  const expiresAt = new Date(contact.confirmationExpiresAt).getTime();
+  return !Number.isNaN(expiresAt) && expiresAt < Date.now();
+}
+
+function buildPatientNotificationContactResponse(
+  patientCase: NotificationCaseRecord,
+  caseId: string,
+  patientId: string,
+): PatientNotificationContactResponse {
+  const contact = patientCase.notificationContact;
+  const confirmationPending = hasPendingEmailConfirmation(contact);
+
+  return {
+    caseId,
+    patientId,
+    email: contact?.email ?? null,
+    pendingEmail: contact?.pendingEmail ?? null,
+    futureConsultationReminders: confirmationPending
+      ? Boolean(contact?.pendingFutureConsultationReminders)
+      : Boolean(contact?.futureConsultationReminders),
+    subscribed: isActiveEmailContact(contact),
+    confirmationPending,
+    confirmationExpired: isEmailConfirmationExpired(contact),
+    confirmationExpiresAt: toIsoString(contact?.confirmationExpiresAt ?? null),
+    consentedAt: toIsoString(contact?.consentedAt ?? null),
+    unsubscribedAt: toIsoString(contact?.unsubscribedAt ?? null),
+  };
 }
 
 function isWithinNextDays(value: string | Date | undefined, days: number): boolean {
@@ -276,7 +328,13 @@ export async function getNotificationAdminStatus(
         caseId,
         patientId,
         email: patientCase.notificationContact?.email ?? null,
-        futureConsultationReminders: Boolean(patientCase.notificationContact?.futureConsultationReminders),
+        pendingEmail: patientCase.notificationContact?.pendingEmail ?? null,
+        futureConsultationReminders: hasPendingEmailConfirmation(patientCase.notificationContact)
+          ? Boolean(patientCase.notificationContact?.pendingFutureConsultationReminders)
+          : Boolean(patientCase.notificationContact?.futureConsultationReminders),
+        confirmationPending: hasPendingEmailConfirmation(patientCase.notificationContact),
+        confirmationExpired: isEmailConfirmationExpired(patientCase.notificationContact),
+        confirmationExpiresAt: toIsoString(patientCase.notificationContact?.confirmationExpiresAt ?? null),
         consentedAt: toIsoString(patientCase.notificationContact?.consentedAt ?? null),
         unsubscribedAt: toIsoString(patientCase.notificationContact?.unsubscribedAt ?? null),
       } satisfies CaseNotificationContactSummary;
@@ -478,41 +536,87 @@ async function findPatientCaseByAccessToken(caseAccessToken: string): Promise<No
   return await PatientCaseModel.findById(caseId).select("patient notificationContact").lean() as NotificationCaseRecord | null;
 }
 
+async function findPatientCaseByCaseId(caseId: string): Promise<NotificationCaseRecord | null> {
+  return await PatientCaseModel.findById(caseId).select("patient notificationContact").lean() as NotificationCaseRecord | null;
+}
+
 function ensureUnsubscribeToken(contact?: PatientCaseNotificationContact): string {
   return contact?.unsubscribeToken ?? randomUUID();
 }
 
+function buildPendingNotificationContact(
+  contact: PatientCaseNotificationContact | undefined,
+  payload: { email: string; futureConsultationReminders: boolean },
+): PatientCaseNotificationContact {
+  const now = new Date();
+
+  return {
+    email: null,
+    futureConsultationReminders: false,
+    consentedAt: null,
+    unsubscribedAt: null,
+    unsubscribeToken: ensureUnsubscribeToken(contact),
+    pendingEmail: payload.email,
+    pendingFutureConsultationReminders: payload.futureConsultationReminders,
+    confirmationToken: randomUUID(),
+    confirmationRequestedAt: now,
+    confirmationExpiresAt: new Date(now.getTime() + EMAIL_CONFIRMATION_TTL_MS),
+    renewalToken: randomUUID(),
+  };
+}
+
+function isSameActiveSubscription(
+  contact: PatientCaseNotificationContact | undefined,
+  payload: { email: string; futureConsultationReminders: boolean },
+): boolean {
+  return Boolean(
+    isActiveEmailContact(contact)
+    && !contact?.pendingEmail
+    && contact.email?.trim().toLowerCase() === payload.email.trim().toLowerCase()
+    && Boolean(contact.futureConsultationReminders) === payload.futureConsultationReminders,
+  );
+}
+
 export async function upsertPatientNotificationContact(
   caseAccessToken: string,
-  payload: { email: string; futureConsultationReminders: boolean },
+  payload: { email: string; futureConsultationReminders: boolean; locale?: string },
 ): Promise<PatientNotificationContactResponse> {
   const patientCase = await findPatientCaseByAccessToken(caseAccessToken);
   const caseId = toIdString(patientCase?._id);
   const patientId = toIdString(patientCase?.patient);
   if (!patientCase || !caseId || !patientId) {
-    throw new Error("No patient case found for the provided access token.");
+    throw new Error(NO_PATIENT_CASE_FOUND_ERROR);
   }
 
-  const now = new Date();
-  const notificationContact: PatientCaseNotificationContact = {
-    email: payload.email,
+  const normalizedPayload = {
+    email: payload.email.trim(),
     futureConsultationReminders: payload.futureConsultationReminders,
-    consentedAt: payload.futureConsultationReminders ? now : patientCase.notificationContact?.consentedAt ?? null,
-    unsubscribedAt: null,
-    unsubscribeToken: ensureUnsubscribeToken(patientCase.notificationContact),
   };
+
+  if (isSameActiveSubscription(patientCase.notificationContact, normalizedPayload)) {
+    return buildPatientNotificationContactResponse(patientCase, caseId, patientId);
+  }
+
+  const notificationContact = buildPendingNotificationContact(patientCase.notificationContact, normalizedPayload);
 
   await PatientCaseModel.updateOne({ _id: caseId }, { $set: { notificationContact } });
+  await notificationService.sendPatientEmailConfirmation({
+    patientEmail: normalizedPayload.email,
+    locale: payload.locale,
+    confirmToken: notificationContact.confirmationToken ?? "",
+    renewToken: notificationContact.renewalToken ?? "",
+    unsubscribeToken: notificationContact.unsubscribeToken ?? null,
+    expiresAt: notificationContact.confirmationExpiresAt ?? new Date(Date.now() + EMAIL_CONFIRMATION_TTL_MS),
+  });
 
-  return {
+  return buildPatientNotificationContactResponse(
+    {
+      ...patientCase,
+      notificationContact,
+    },
     caseId,
     patientId,
-    email: notificationContact.email ?? null,
-    futureConsultationReminders: Boolean(notificationContact.futureConsultationReminders),
-    subscribed: Boolean(notificationContact.email && notificationContact.futureConsultationReminders),
-    consentedAt: toIsoString(notificationContact.consentedAt ?? null),
-    unsubscribedAt: toIsoString(notificationContact.unsubscribedAt ?? null),
-  };
+  );
 }
 
 export async function getPatientNotificationContact(
@@ -522,25 +626,130 @@ export async function getPatientNotificationContact(
   const caseId = toIdString(patientCase?._id);
   const patientId = toIdString(patientCase?.patient);
   if (!patientCase || !caseId || !patientId) {
-    throw new Error("No patient case found for the provided access token.");
+    throw new Error(NO_PATIENT_CASE_FOUND_ERROR);
   }
 
-  return {
-    caseId,
-    patientId,
-    email: patientCase.notificationContact?.email ?? null,
-    futureConsultationReminders: Boolean(patientCase.notificationContact?.futureConsultationReminders),
-    subscribed: isActiveEmailContact(patientCase.notificationContact),
-    consentedAt: toIsoString(patientCase.notificationContact?.consentedAt ?? null),
-    unsubscribedAt: toIsoString(patientCase.notificationContact?.unsubscribedAt ?? null),
-  };
+  return buildPatientNotificationContactResponse(patientCase, caseId, patientId);
+}
+
+export async function confirmPatientNotificationContactByToken(token: string): Promise<NotificationConfirmationResult> {
+  const patientCase = await PatientCaseModel.findOne({ "notificationContact.confirmationToken": token })
+    .select("patient notificationContact")
+    .lean() as NotificationCaseRecord | null;
+  const caseId = toIdString(patientCase?._id);
+  const contact = patientCase?.notificationContact;
+
+  if (!patientCase || !caseId || !contact?.pendingEmail || contact.confirmationToken !== token) {
+    return "invalid";
+  }
+
+  if (isEmailConfirmationExpired(contact)) {
+    return "expired";
+  }
+
+  await PatientCaseModel.updateOne(
+    { _id: caseId },
+    {
+      $set: {
+        "notificationContact.email": contact.pendingEmail,
+        "notificationContact.futureConsultationReminders": Boolean(contact.pendingFutureConsultationReminders),
+        "notificationContact.consentedAt": new Date(),
+        "notificationContact.unsubscribedAt": null,
+        "notificationContact.unsubscribeToken": ensureUnsubscribeToken(contact),
+      },
+      $unset: {
+        "notificationContact.pendingEmail": "",
+        "notificationContact.pendingFutureConsultationReminders": "",
+        "notificationContact.confirmationToken": "",
+        "notificationContact.confirmationRequestedAt": "",
+        "notificationContact.confirmationExpiresAt": "",
+        "notificationContact.renewalToken": "",
+      },
+    },
+  );
+
+  return "confirmed";
+}
+
+export async function renewPatientNotificationConfirmationByToken(token: string): Promise<NotificationRenewalResult> {
+  const patientCase = await PatientCaseModel.findOne({ "notificationContact.renewalToken": token })
+    .select("patient notificationContact")
+    .lean() as NotificationCaseRecord | null;
+  const caseId = toIdString(patientCase?._id);
+  const contact = patientCase?.notificationContact;
+
+  if (!patientCase || !caseId || !contact?.pendingEmail || contact.renewalToken !== token) {
+    return "invalid";
+  }
+
+  const confirmationToken = randomUUID();
+  const renewalToken = randomUUID();
+  const confirmationExpiresAt = new Date(Date.now() + EMAIL_CONFIRMATION_TTL_MS);
+
+  await PatientCaseModel.updateOne(
+    { _id: caseId },
+    {
+      $set: {
+        "notificationContact.confirmationToken": confirmationToken,
+        "notificationContact.confirmationRequestedAt": new Date(),
+        "notificationContact.confirmationExpiresAt": confirmationExpiresAt,
+        "notificationContact.renewalToken": renewalToken,
+      },
+    },
+  );
+
+  await notificationService.sendPatientEmailConfirmation({
+    patientEmail: contact.pendingEmail,
+    confirmToken: confirmationToken,
+    renewToken: renewalToken,
+    unsubscribeToken: ensureUnsubscribeToken(contact),
+    expiresAt: confirmationExpiresAt,
+  });
+
+  return "renewed";
+}
+
+export async function resendPatientNotificationConfirmationByCaseId(caseId: string): Promise<NotificationRenewalResult> {
+  const patientCase = await findPatientCaseByCaseId(caseId);
+  const resolvedCaseId = toIdString(patientCase?._id);
+  const contact = patientCase?.notificationContact;
+
+  if (!patientCase || !resolvedCaseId || !contact?.pendingEmail) {
+    return "invalid";
+  }
+
+  const confirmationToken = randomUUID();
+  const renewalToken = randomUUID();
+  const confirmationExpiresAt = new Date(Date.now() + EMAIL_CONFIRMATION_TTL_MS);
+
+  await PatientCaseModel.updateOne(
+    { _id: resolvedCaseId },
+    {
+      $set: {
+        "notificationContact.confirmationToken": confirmationToken,
+        "notificationContact.confirmationRequestedAt": new Date(),
+        "notificationContact.confirmationExpiresAt": confirmationExpiresAt,
+        "notificationContact.renewalToken": renewalToken,
+      },
+    },
+  );
+
+  await notificationService.sendPatientEmailConfirmation({
+    patientEmail: contact.pendingEmail,
+    confirmToken: confirmationToken,
+    renewToken: renewalToken,
+    unsubscribeToken: ensureUnsubscribeToken(contact),
+    expiresAt: confirmationExpiresAt,
+  });
+
+  return "renewed";
 }
 
 export async function clearPatientNotificationContact(caseAccessToken: string): Promise<void> {
   const patientCase = await findPatientCaseByAccessToken(caseAccessToken);
   const caseId = toIdString(patientCase?._id);
   if (!patientCase || !caseId) {
-    throw new Error("No patient case found for the provided access token.");
+    throw new Error(NO_PATIENT_CASE_FOUND_ERROR);
   }
 
   const now = new Date();
@@ -550,10 +759,48 @@ export async function clearPatientNotificationContact(caseAccessToken: string): 
       $set: {
         "notificationContact.email": null,
         "notificationContact.futureConsultationReminders": false,
+        "notificationContact.pendingEmail": null,
+        "notificationContact.pendingFutureConsultationReminders": false,
         "notificationContact.unsubscribedAt": now,
         "notificationContact.unsubscribeToken": ensureUnsubscribeToken(patientCase.notificationContact),
       },
-      $unset: { "notificationContact.consentedAt": "" },
+      $unset: {
+        "notificationContact.consentedAt": "",
+        "notificationContact.confirmationToken": "",
+        "notificationContact.confirmationRequestedAt": "",
+        "notificationContact.confirmationExpiresAt": "",
+        "notificationContact.renewalToken": "",
+      },
+    },
+  );
+}
+
+export async function clearPatientNotificationContactByCaseId(caseId: string): Promise<void> {
+  const patientCase = await findPatientCaseByCaseId(caseId);
+  const resolvedCaseId = toIdString(patientCase?._id);
+  if (!patientCase || !resolvedCaseId) {
+    throw new Error("No patient case found for the provided case ID.");
+  }
+
+  const now = new Date();
+  await PatientCaseModel.updateOne(
+    { _id: resolvedCaseId },
+    {
+      $set: {
+        "notificationContact.email": null,
+        "notificationContact.futureConsultationReminders": false,
+        "notificationContact.pendingEmail": null,
+        "notificationContact.pendingFutureConsultationReminders": false,
+        "notificationContact.unsubscribedAt": now,
+        "notificationContact.unsubscribeToken": ensureUnsubscribeToken(patientCase.notificationContact),
+      },
+      $unset: {
+        "notificationContact.consentedAt": "",
+        "notificationContact.confirmationToken": "",
+        "notificationContact.confirmationRequestedAt": "",
+        "notificationContact.confirmationExpiresAt": "",
+        "notificationContact.renewalToken": "",
+      },
     },
   );
 }
@@ -573,9 +820,17 @@ export async function unsubscribePatientNotificationEmailByToken(token: string):
       $set: {
         "notificationContact.email": null,
         "notificationContact.futureConsultationReminders": false,
+        "notificationContact.pendingEmail": null,
+        "notificationContact.pendingFutureConsultationReminders": false,
         "notificationContact.unsubscribedAt": new Date(),
       },
-      $unset: { "notificationContact.consentedAt": "" },
+      $unset: {
+        "notificationContact.consentedAt": "",
+        "notificationContact.confirmationToken": "",
+        "notificationContact.confirmationRequestedAt": "",
+        "notificationContact.confirmationExpiresAt": "",
+        "notificationContact.renewalToken": "",
+      },
     },
   );
 

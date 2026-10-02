@@ -12,6 +12,7 @@ const {
   mockCodeFindOneLean,
   mockPushFindLean,
   mockNotifyPatient,
+  mockSendPatientEmailConfirmation,
   mockResolveTargets,
 } = vi.hoisted(() => ({
   mockConsultationFindLean: vi.fn(),
@@ -25,6 +26,7 @@ const {
   mockCodeFindOneLean: vi.fn(),
   mockPushFindLean: vi.fn(),
   mockNotifyPatient: vi.fn(),
+  mockSendPatientEmailConfirmation: vi.fn().mockResolvedValue(undefined),
   mockResolveTargets: vi.fn(),
 }));
 
@@ -61,6 +63,7 @@ vi.mock("@/api/notification/pushSubscriptionModel", () => ({
 vi.mock("@/api/notification/notificationService", () => ({
   notificationService: {
     notifyPatient: mockNotifyPatient,
+    sendPatientEmailConfirmation: mockSendPatientEmailConfirmation,
   },
 }));
 
@@ -69,8 +72,12 @@ vi.mock("@/api/notification/notificationScheduler", () => ({
 }));
 
 import {
+  clearPatientNotificationContactByCaseId,
   clearPatientNotificationContact,
+  confirmPatientNotificationContactByToken,
   getNotificationAdminStatus,
+  resendPatientNotificationConfirmationByCaseId,
+  renewPatientNotificationConfirmationByToken,
   sendManualNotification,
   unsubscribePatientNotificationEmailByToken,
   upsertPatientNotificationContact,
@@ -236,7 +243,7 @@ describe("notificationAdminService", () => {
     );
   });
 
-  it("stores and clears patient email reminder preferences", async () => {
+  it("stores patient email reminder preferences as pending confirmation and sends a confirmation email", async () => {
     mockCodeFindOneLean.mockResolvedValueOnce({ patientCaseId: "case-1" });
     mockCaseFindByIdLean.mockResolvedValueOnce({
       _id: "case-1",
@@ -247,21 +254,130 @@ describe("notificationAdminService", () => {
     const saved = await upsertPatientNotificationContact("CASE01", {
       email: "patient@example.com",
       futureConsultationReminders: true,
+      locale: "en-US",
     });
 
-    expect(saved.subscribed).toBe(true);
+    expect(saved.subscribed).toBe(false);
+    expect(saved.confirmationPending).toBe(true);
+    expect(saved.email).toBeNull();
+    expect(saved.pendingEmail).toBe("patient@example.com");
     expect(mockCaseUpdateOne).toHaveBeenCalledWith(
       { _id: "case-1" },
       expect.objectContaining({
         $set: expect.objectContaining({
           notificationContact: expect.objectContaining({
-            email: "patient@example.com",
-            futureConsultationReminders: true,
+            pendingEmail: "patient@example.com",
+            pendingFutureConsultationReminders: true,
+            confirmationToken: expect.any(String),
+            confirmationExpiresAt: expect.any(Date),
+            renewalToken: expect.any(String),
           }),
         }),
       }),
     );
+    expect(mockSendPatientEmailConfirmation).toHaveBeenCalledOnce();
+    expect(mockSendPatientEmailConfirmation).toHaveBeenCalledWith(expect.objectContaining({
+      patientEmail: "patient@example.com",
+      locale: "en-US",
+      confirmToken: expect.any(String),
+      renewToken: expect.any(String),
+      unsubscribeToken: expect.any(String),
+    }));
+  });
 
+  it("confirms a pending patient notification contact when the confirmation token is valid", async () => {
+    mockCaseFindOneLean.mockResolvedValueOnce({
+      _id: "case-1",
+      patient: "patient-1",
+      notificationContact: {
+        pendingEmail: "patient@example.com",
+        pendingFutureConsultationReminders: true,
+        confirmationToken: "confirm-token",
+        confirmationExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+        renewalToken: "renew-token",
+        unsubscribeToken: "unsubscribe-token",
+      },
+    });
+
+    const result = await confirmPatientNotificationContactByToken("confirm-token");
+
+    expect(result).toBe("confirmed");
+    expect(mockCaseUpdateOne).toHaveBeenCalledWith(
+      { _id: "case-1" },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "notificationContact.email": "patient@example.com",
+          "notificationContact.futureConsultationReminders": true,
+          "notificationContact.consentedAt": expect.any(Date),
+          "notificationContact.unsubscribedAt": null,
+        }),
+        $unset: expect.objectContaining({
+          "notificationContact.pendingEmail": "",
+          "notificationContact.confirmationToken": "",
+          "notificationContact.renewalToken": "",
+        }),
+      }),
+    );
+  });
+
+  it("renews a pending patient notification confirmation and sends a fresh email", async () => {
+    mockCaseFindOneLean.mockResolvedValueOnce({
+      _id: "case-1",
+      patient: "patient-1",
+      notificationContact: {
+        pendingEmail: "patient@example.com",
+        pendingFutureConsultationReminders: true,
+        renewalToken: "renew-token",
+        unsubscribeToken: "unsubscribe-token",
+      },
+    });
+
+    const result = await renewPatientNotificationConfirmationByToken("renew-token");
+
+    expect(result).toBe("renewed");
+    expect(mockCaseUpdateOne).toHaveBeenCalledWith(
+      { _id: "case-1" },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "notificationContact.confirmationToken": expect.any(String),
+          "notificationContact.confirmationExpiresAt": expect.any(Date),
+          "notificationContact.renewalToken": expect.any(String),
+        }),
+      }),
+    );
+    expect(mockSendPatientEmailConfirmation).toHaveBeenCalledWith(expect.objectContaining({
+      patientEmail: "patient@example.com",
+      confirmToken: expect.any(String),
+      renewToken: expect.any(String),
+      unsubscribeToken: "unsubscribe-token",
+    }));
+  });
+
+  it("clears active or pending notification contact data when unsubscribing by token", async () => {
+    mockCaseFindOneLean.mockResolvedValueOnce({
+      _id: "case-1",
+      notificationContact: {
+        unsubscribeToken: "unsubscribe-token",
+      },
+    });
+
+    const unsubscribed = await unsubscribePatientNotificationEmailByToken("unsubscribe-token");
+    expect(unsubscribed).toBe(true);
+    expect(mockCaseUpdateOne).toHaveBeenCalledWith(
+      { _id: "case-1" },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "notificationContact.email": null,
+          "notificationContact.futureConsultationReminders": false,
+          "notificationContact.pendingEmail": null,
+          "notificationContact.pendingFutureConsultationReminders": false,
+          "notificationContact.unsubscribedAt": expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it("clears confirmed patient email reminder preferences by access token", async () => {
     mockCodeFindOneLean.mockResolvedValueOnce({ patientCaseId: "case-1" });
     mockCaseFindByIdLean.mockResolvedValueOnce({
       _id: "case-1",
@@ -277,13 +393,53 @@ describe("notificationAdminService", () => {
         $set: expect.objectContaining({
           "notificationContact.email": null,
           "notificationContact.futureConsultationReminders": false,
+          "notificationContact.pendingEmail": null,
+          "notificationContact.pendingFutureConsultationReminders": false,
         }),
       }),
     );
+  });
 
-    mockCaseFindOneLean.mockResolvedValueOnce({ _id: "case-1", notificationContact: { unsubscribeToken: "unsubscribe-token" } });
+  it("allows admins to clear a notification subscription directly by case id", async () => {
+    mockCaseFindByIdLean.mockResolvedValueOnce({
+      _id: "case-1",
+      patient: "patient-1",
+      notificationContact: { unsubscribeToken: "unsubscribe-token" },
+    });
 
-    const unsubscribed = await unsubscribePatientNotificationEmailByToken("unsubscribe-token");
-    expect(unsubscribed).toBe(true);
+    await clearPatientNotificationContactByCaseId("case-1");
+
+    expect(mockCaseUpdateOne).toHaveBeenCalledWith(
+      { _id: "case-1" },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "notificationContact.email": null,
+          "notificationContact.futureConsultationReminders": false,
+          "notificationContact.pendingEmail": null,
+          "notificationContact.pendingFutureConsultationReminders": false,
+        }),
+      }),
+    );
+  });
+
+  it("allows admins to resend a pending confirmation email by case id", async () => {
+    mockCaseFindByIdLean.mockResolvedValueOnce({
+      _id: "case-1",
+      patient: "patient-1",
+      notificationContact: {
+        pendingEmail: "patient@example.com",
+        pendingFutureConsultationReminders: true,
+        renewalToken: "renew-token",
+        unsubscribeToken: "unsubscribe-token",
+      },
+    });
+
+    const result = await resendPatientNotificationConfirmationByCaseId("case-1");
+
+    expect(result).toBe("renewed");
+    expect(mockSendPatientEmailConfirmation).toHaveBeenCalledWith(expect.objectContaining({
+      patientEmail: "patient@example.com",
+      unsubscribeToken: "unsubscribe-token",
+    }));
   });
 });
