@@ -12,6 +12,12 @@ export const PatientCaseNotificationContactSchema = z.object({
   consentedAt: dateSchema.optional().nullable(),
   unsubscribedAt: dateSchema.optional().nullable(),
   unsubscribeToken: z.string().optional().nullable(),
+  pendingEmail: z.string().email().optional().nullable(),
+  pendingFutureConsultationReminders: z.boolean().optional().default(false),
+  confirmationToken: z.string().optional().nullable(),
+  confirmationRequestedAt: dateSchema.optional().nullable(),
+  confirmationExpiresAt: dateSchema.optional().nullable(),
+  renewalToken: z.string().optional().nullable(),
 });
 
 export type PatientCaseNotificationContact = z.infer<typeof PatientCaseNotificationContactSchema>;
