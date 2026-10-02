@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background-color: #1565c0; padding: 24px 32px; color: #fff; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .content { padding: 24px 32px; color: #333; line-height: 1.6; }
+    .cta { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #1565c0; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    .secondary-link { display: inline-block; margin-top: 16px; color: #1565c0; }
+    .footer { padding: 16px 32px; background: #f9f9f9; font-size: 12px; color: #888; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Confirm your reminder emails</h1>
+    </div>
+    <div class="content">
+      <p>You asked to receive reminder emails about future consultations.</p>
+      <p>Please confirm your email address within 24 hours. This confirmation link is valid until <strong>{{expiresAt}}</strong>.</p>
+      <a class="cta" href="{{confirmUrl}}">Confirm email reminders</a>
+      <p>If the confirmation link expires before you use it, request a new email here:</p>
+      <a class="secondary-link" href="{{renewUrl}}">Send a new confirmation email</a>
+      <p style="margin-top: 24px; font-size: 12px; color: #666;">If you do not want to receive reminder emails, you can <a href="{{unsubscribeUrl}}">unsubscribe here</a>.</p>
+    </div>
+    <div class="footer">Patient Outcome — This email was generated automatically.</div>
+  </div>
+</body>
+</html>

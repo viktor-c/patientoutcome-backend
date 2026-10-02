@@ -99,6 +99,10 @@ class EmailTemplateService {
         en: "Reminder: your consultation is today - Patient Outcome",
         de: "Erinnerung: Ihr Termin ist heute - Patient Outcome",
       },
+      "notification-email-confirmation": {
+        en: "Confirm your reminder emails - Patient Outcome",
+        de: "Bestätigen Sie Ihre Erinnerungs-E-Mails - Patient Outcome",
+      },
       "case-contact-report": {
         en: "Patient Access Issue Report - Patient Outcome",
         de: "Patientenzugangsproblem gemeldet - Patient Outcome",

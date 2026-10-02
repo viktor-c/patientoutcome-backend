@@ -1,0 +1,17 @@
+Confirm your reminder emails
+
+You asked to receive reminder emails about future consultations.
+
+Please confirm your email address within 24 hours. This confirmation link is valid until {{expiresAt}}.
+
+Confirm email reminders:
+{{confirmUrl}}
+
+If the confirmation link expires before you use it, request a new email here:
+{{renewUrl}}
+
+If you do not want to receive reminder emails, unsubscribe here:
+{{unsubscribeUrl}}
+
+---
+Patient Outcome — This email was generated automatically.

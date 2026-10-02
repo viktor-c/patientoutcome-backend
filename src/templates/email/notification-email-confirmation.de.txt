@@ -1,0 +1,17 @@
+Bestätigen Sie Ihre Erinnerungs-E-Mails
+
+Sie haben darum gebeten, Erinnerungs-E-Mails zu künftigen Konsultationen zu erhalten.
+
+Bitte bestätigen Sie Ihre E-Mail-Adresse innerhalb von 24 Stunden. Dieser Bestätigungslink ist bis {{expiresAt}} gültig.
+
+E-Mail-Erinnerungen bestätigen:
+{{confirmUrl}}
+
+Falls der Bestätigungslink abläuft, bevor Sie ihn verwenden, können Sie hier eine neue E-Mail anfordern:
+{{renewUrl}}
+
+Wenn Sie keine Erinnerungs-E-Mails erhalten möchten, können Sie sich hier abmelden:
+{{unsubscribeUrl}}
+
+---
+Patient Outcome — Diese E-Mail wurde automatisch erstellt.
