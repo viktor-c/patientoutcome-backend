@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import { type PatientCase, PatientCaseModel } from "./patientCaseModel";
 
 export class PatientCaseRepository {
+  private readonly seededNotificationEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "patient@example.com";
+
   async searchCasesByExternalId(searchCasesById: string): Promise<PatientCase[]> {
     try {
       // Import security utilities
@@ -439,6 +441,13 @@ export class PatientCaseRepository {
         },
       ],
       supervisors: ["676336bea497301f6eff8c91"],
+      notificationContact: {
+        email: this.seededNotificationEmail,
+        futureConsultationReminders: true,
+        consentedAt: new Date(),
+        unsubscribedAt: null,
+        unsubscribeToken: "seed-unsubscribe-token-case-160",
+      },
     },
     {
       _id: "677da5efcb4569ad1c655161",

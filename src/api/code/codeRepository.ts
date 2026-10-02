@@ -71,14 +71,16 @@ export class CodeRepository {
       expiresOn: dayjs().add(4, "hours").toDate(),
       consultationId: "60d5ec49f1b2c12d88f1e8a1",
       patientCaseId: "677da5d8cb4569ad1c65515f",
+      ignoreAccessWindow: false,
     },
     {
       code: "SJM13",
       _id: "682f7de54ef4eb7a14be67f7",
       activatedOn: new Date(),
-      expiresOn: dayjs().add(4, "hours").toDate(),
-      // consultationId: "60d5ec49f1b2c12d88f1e8a3",
+      expiresOn: dayjs().add(14, "days").toDate(),
+      consultationId: "60d5ec49f1b2c12d88f1e8a3",
       patientCaseId: "677da5efcb4569ad1c655160",
+      ignoreAccessWindow: false,
     },
     {
       code: "BWX94",
@@ -87,6 +89,7 @@ export class CodeRepository {
       expiresOn: dayjs().add(4, "hours").toDate(),
       consultationId: "60d5ec49f1b2c12d88f1e8a6",
       // patientCaseId: "677da5efcb4569ad1c655161",
+      ignoreAccessWindow: true,
     },
     {
       code: "JUS93",
@@ -94,6 +97,7 @@ export class CodeRepository {
       activatedOn: undefined,
       expiresOn: undefined,
       consultationId: undefined,
+      ignoreAccessWindow: false,
     },
     {
       code: "AAA68",
@@ -101,6 +105,7 @@ export class CodeRepository {
       activatedOn: undefined,
       expiresOn: undefined,
       consultationId: undefined,
+      ignoreAccessWindow: false
     },
   ];
 
@@ -173,6 +178,7 @@ export class CodeRepository {
         expiresOn: undefined,
         consultationId: undefined,
         patientCaseId: undefined,
+        ignoreAccessWindow: false
       };
 
       if (consultationDate) {

@@ -13,6 +13,13 @@ export class ConsultationRepository {
     refDate: new Date(Date.now() - 170 * 24 * 60 * 60 * 1000),
   });
 
+  private seededReminderConsultationDate(): Date {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    date.setHours(10, 0, 0, 0);
+    return date;
+  }
+
   private isParentChainActive(patientCaseField: unknown): boolean {
     if (!patientCaseField || typeof patientCaseField !== "object") {
       return true;
@@ -320,12 +327,12 @@ export class ConsultationRepository {
         _id: "60d5ec49f1b2c12d88f1e8a3",
         __v: 0,
         patientCaseId: "677da5efcb4569ad1c655160",
-        dateAndTime: faker.date.soon({ days: 3 }),
+        dateAndTime: this.seededReminderConsultationDate(),
         reasonForConsultation: ["pain"],
         notes: [
           {
             _id: "60d5ec49f1b2c12d88f1e8b6",
-            dateCreated: faker.date.soon({ days: 3 }),
+            dateCreated: this.seededReminderConsultationDate(),
             createdBy: userRepository.mockUsers?.[2]?._id || "",
             note: faker.lorem.paragraph(),
           },
