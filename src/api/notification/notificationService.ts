@@ -18,6 +18,15 @@ export interface PatientNotificationDispatchSummary {
   push: NotificationDeliveryStats;
 }
 
+export interface PatientNotificationConfirmationEmailInput {
+  patientEmail: string;
+  locale?: string;
+  confirmToken: string;
+  renewToken: string;
+  unsubscribeToken: string | null;
+  expiresAt: Date;
+}
+
 export interface NotificationSchedulerRunSummary {
   jobName: string;
   schedule: string;
@@ -239,6 +248,41 @@ class NotificationService {
     const [email, push] = await Promise.all([emailPromise, pushPromise]);
 
     return { email, push };
+  }
+
+  async sendPatientEmailConfirmation(input: PatientNotificationConfirmationEmailInput): Promise<void> {
+    const locale = emailTemplateService.normalizeLocale(input.locale);
+    const confirmUrl = `${notificationEnv.BACKEND_URL.replace(/\/$/, "")}/notifications/email/confirm/${encodeURIComponent(input.confirmToken)}`;
+    const renewUrl = `${notificationEnv.BACKEND_URL.replace(/\/$/, "")}/notifications/email/renew/${encodeURIComponent(input.renewToken)}`;
+    const unsubscribeUrl = input.unsubscribeToken
+      ? `${notificationEnv.BACKEND_URL.replace(/\/$/, "")}/notifications/email/unsubscribe/${encodeURIComponent(input.unsubscribeToken)}`
+      : notificationEnv.BACKEND_URL;
+    const expiresAt = input.expiresAt.toLocaleString(locale === "de" ? "de-DE" : "en-GB");
+
+    const rendered = emailTemplateService.render("notification-email-confirmation", locale, {
+      confirmUrl,
+      renewUrl,
+      unsubscribeUrl,
+      expiresAt,
+    });
+
+    try {
+      await this.getTransporter().sendMail({
+        from: feedbackEnv.SMTP_FROM_EMAIL,
+        to: input.patientEmail,
+        subject: rendered.subject,
+        text: rendered.text,
+        html: rendered.html,
+      });
+
+      logger.info(
+        { patientEmail: input.patientEmail },
+        "notificationService: patient notification confirmation email sent",
+      );
+    } catch (error) {
+      logger.error({ error, patientEmail: input.patientEmail }, "notificationService: failed to send confirmation email");
+      throw error;
+    }
   }
 
   async sendDevelopmentTestPush(target: {

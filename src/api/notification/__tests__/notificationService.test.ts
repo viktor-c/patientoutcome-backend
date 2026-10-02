@@ -58,13 +58,18 @@ vi.mock("@/common/utils/notificationEnvConfig", () => ({
 }));
 
 // ── Mock emailTemplateService ─────────────────────────────────────────────────
+const { mockRenderTemplate } = vi.hoisted(() => ({
+  mockRenderTemplate: vi.fn().mockReturnValue({
+    html: "<p>test</p>",
+    text: "test",
+    subject: "Test subject",
+  }),
+}));
+
 vi.mock("@/common/services/emailTemplateService", () => ({
   emailTemplateService: {
-    render: vi.fn().mockReturnValue({
-      html: "<p>test</p>",
-      text: "test",
-      subject: "Test subject",
-    }),
+    render: mockRenderTemplate,
+    normalizeLocale: vi.fn((locale?: string) => (locale?.startsWith("en") ? "en" : "de")),
   },
 }));
 
@@ -255,6 +260,30 @@ describe("NotificationService", () => {
       ["email"],
     );
 
+    expect(mockSendMail).toHaveBeenCalledOnce();
+    const call = mockSendMail.mock.calls[0][0];
+    expect(call.to).toBe("patient@example.de");
+  });
+
+  it("sends patient confirmation email with the reminder confirmation template", async () => {
+    await notificationService.sendPatientEmailConfirmation({
+      patientEmail: "patient@example.de",
+      locale: "en-US",
+      confirmToken: "confirm-token",
+      renewToken: "renew-token",
+      unsubscribeToken: "unsubscribe-token",
+      expiresAt: new Date("2026-10-01T08:00:00.000Z"),
+    });
+
+    expect(mockRenderTemplate).toHaveBeenCalledWith(
+      "notification-email-confirmation",
+      "en",
+      expect.objectContaining({
+        confirmUrl: "http://localhost:40001/notifications/email/confirm/confirm-token",
+        renewUrl: "http://localhost:40001/notifications/email/renew/renew-token",
+        unsubscribeUrl: "http://localhost:40001/notifications/email/unsubscribe/unsubscribe-token",
+      }),
+    );
     expect(mockSendMail).toHaveBeenCalledOnce();
     const call = mockSendMail.mock.calls[0][0];
     expect(call.to).toBe("patient@example.de");
